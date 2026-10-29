@@ -9,10 +9,10 @@
 | JE | 6 h (trabaja en su empleo) | 12 h | 12 h | 10 h | **40 h** | 34 h | **32 h** |
 | JM | — | — | — | — | **8 h** (SUPUESTO; se confirma el 30-oct, 12:00) | 6,8 h | **6,4 h** |
 
-Se compromete el valor menor de los dos (**JE 32 h, JM 6,4 h**), así que se cumplen la regla de foco y la de G3. El congelamiento (`SCOPE_FREEZE_DATE=2026-11-02`) se aplica **al cierre** del lunes 2-nov.
+JE compromete **32 h** (el valor menor de los dos, así que se cumplen la regla de foco y la de G3). JM compromete **8 h** (TASK-020, TASK-002 y TASK-009): el **100 % de su capacidad**, por encima del 80 % de G3. Es una **excepción aprobada por el equipo el 2026-10-29**; su capacidad es SUPUESTO hasta que la confirme el 30-oct a las 12:00, y si es menor, TASK-009 vuelve a la cola de Should. El congelamiento (`SCOPE_FREEZE_DATE=2026-11-02`) se aplica **al cierre** del lunes 2-nov.
 
-## Línea de corte — PROPUESTA pendiente de confirmación del equipo
-Todos los Must suman **37,5 h para JE**: no caben en 32 h. Ni siquiera cabían aplicando el orden de sacrificio acordado (sensibilidades → contraste Early↔Final → pulido del mapa), porque esas tres tareas ya eran Should. Sin tocar los innegociables (aviso de no alerta oficial, compuerta de verificación, explicación con Muse Spark y reproducción de la demo), se proponen además estos recortes:
+## Línea de corte (aprobada el 2026-10-29)
+Todos los Must suman **37,5 h para JE**: no caben en 32 h. Ni siquiera cabían aplicando el orden de sacrificio acordado (sensibilidades → contraste Early↔Final → pulido del mapa), porque esas tres tareas ya eran Should. Sin tocar los innegociables (aviso de no alerta oficial, compuerta de verificación, explicación con Muse Spark y reproducción de la demo), se aplicaron además estos recortes:
 
 | # | Baja a Should | Ahorro | Efecto |
 |---|---------------|--------|--------|
@@ -20,12 +20,12 @@ Todos los Must suman **37,5 h para JE**: no caben en 32 h. Ni siquiera cabían a
 | 5 | TASK-009 + TASK-028 IMERG Early 2000→hoy | 4 h | El sprint arranca con el **plan B de Earthdata** (estaciones + CHIRPS; IMERG solo como evidencia). Early es el **primer** Should en entrar si el viernes va por delante |
 | — | TASK-001 se reestima de 1,5 a 1 h | 0,5 h | Con Claude Code, el esqueleto es configuración |
 
-Con la propuesta, JE compromete **32 h**; JM, **5 h**.
+JE compromete **32 h**; JM, **8 h**. El sprint arranca en `DATA_PLAN=plan_b_earthdata`.
 
 | Orden de entrada si sobra capacidad | Tarea | Horas |
 |-------------------------------------|-------|-------|
-| 1 | TASK-009 Descarga de IMERG Early 2000→hoy | 3 |
-| 2 | TASK-028 Early a la tabla diaria y al modelo | 1 |
+| 1 | TASK-009 Descarga de IMERG Early 2000→hoy (**asignada a JM** dentro de sus 8 h) | 3 |
+| 2 | TASK-028 Early a la tabla diaria y al modelo (JE; entra cuando TASK-009 esté lista y haya holgura) | 1 |
 | 3 | TASK-029 Evaluación con y sin EST-B | 1 |
 | 4 | TASK-030 Pulido del mapa | 2 |
 | 5 | TASK-033 Contraste Early↔Final | 2 |
@@ -43,7 +43,7 @@ Con la propuesta, JE compromete **32 h**; JM, **5 h**.
 | lun 2 | TASK-016, 017, 018, 019 | 8 | Web móvil con aviso y demo reproducible; **congelamiento al cierre** |
 | **Total** | | **32** | |
 
-JM: TASK-020 (vie 30, 12:00) y TASK-002 (sáb 31, después de TASK-004) = 5 h.
+JM: TASK-020 (vie 30, 12:00), TASK-002 (sáb 31, después de TASK-004) y TASK-009 (cuando JM tenga tiempo; no depende de JE) = 8 h.
 
 Dentro de cada día, **el orden es el de la lista** (hay dependencias intradía: 012 → 013 → 014 y 013 → 022 el domingo; 016 → 017 → 018 y 017 → 019 el lunes). **dom 1:** decisión de D-03 (plan B de datos, TASK-035).
 
@@ -149,14 +149,15 @@ Dentro de cada día, **el orden es el de la lista** (hay dependencias intradía:
 
 ## Contingente (D-03)
 ### TASK-035 — Plan B de datos sin estaciones
-- **Estimación:** 1,5 h · **MoSCoW:** Must **solo si** D-03 no se autoriza antes del 2026-11-01 · **Responsable:** JE · **Depende de:** TASK-005, TASK-008
+- **Estimación:** 1,5 h · **MoSCoW:** Must **solo si** D-03 no está cerrado el 2026-11-01 (contingencia **aprobada** el 2026-10-29) · **Responsable:** JE · **Depende de:** TASK-005, TASK-008
 - `DATA_PLAN=plan_b_datos`: objetivo y variables sobre CHIRPS e IMERG Early, sin estaciones; la demo se reproduce sobre CHIRPS.
-- Si se activa, consume 1,5 h de las 2 h que hay entre el límite de G3 (32 h) y el foco declarado (34 h). Pasar del 80 % requiere un visto bueno explícito del equipo.
+- Si se activa, consume 1,5 h de las 2 h que hay entre el límite de G3 (32 h) y el foco declarado (34 h). El equipo aprobó el 2026-10-29 pasar del 80 % en ese caso.
 - **Hecho cuando:** un test verifica que con `plan_b_datos` ninguna serie `EST-*` entra al modelo.
 
 ## Should (en orden de entrada)
 ### TASK-009 — Descarga de IMERG Early V07 2000→hoy
-- **Estimación:** 3 h · **MoSCoW:** Should (Must si se aprueba sin la propuesta) · **Responsable:** JE · **Depende de:** TASK-001
+- **Estimación:** 3 h · **MoSCoW:** Should, **comprometida para JM** dentro de sus 8 h · **Responsable:** JM · **Depende de:** TASK-001
+- Código nuevo dentro del repo (`src/climapp/data/imerg_early.py`), con test. **Prohibido reutilizar o adaptar código de los notebooks previos al evento.**
 - Descarga con Earthdata (`EARTHDATA_TOKEN`) de `GPM_3IMERGDE` para la celda de la cuenca, con caché en `DATA_DIR/raw/imerg_early/`, hash y reintentos. Mide la latencia real de los últimos días (SP-9).
 - **Hecho cuando:** un test con un servidor falso cubre el reintento y la caché, y la serie real queda completa o con los faltantes listados.
 - Primer paso (15 min, incluido): estimar el volumen y la velocidad de descarga. Si el total supera 4 h, la tarea se parte **antes de empezar** en TASK-009a (2000-2012) y TASK-009b (2013→hoy). La descarga desatendida corre en segundo plano y no cuenta como horas de JE.
@@ -219,3 +220,4 @@ Sequía e incendios · audio · cuentas · notificaciones · app nativa · plata
 ## Cambios
 - 2026-10-29: IMERG Early pasa a ser la serie principal. La antigua tarea de "variante operativa" (el ID 010) se elimina porque el modelo principal ya es operativo; **el ID 010 no se reutiliza**. Se agregan TASK-028 a TASK-035. Capacidad real y línea de corte propuesta.
 - 2026-10-29: se atiende la revisión de Muse Code (`docs/reviews/spec-gate.md`).
+- 2026-10-29: **el equipo aprueba la línea de corte.** TASK-029, TASK-009 y TASK-028 pasan a Should y el sprint arranca en `plan_b_earthdata`. TASK-009 se asigna a JM (5 + 3 = 8 h, SUPUESTO hasta su confirmación del 30-oct a las 12:00; excepción al 80 % de G3). TASK-028 (JE) entra cuando TASK-009 esté lista y haya holgura. TASK-035 queda aprobada como contingencia si D-03 no está cerrado el 2026-11-01, usando la holgura entre 32 y 34 h.
