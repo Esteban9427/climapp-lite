@@ -7,7 +7,7 @@
 | Campo | Tipo | Regla |
 |-------|------|-------|
 | `date` | date | Día local |
-| `series_id` | str | `EST-A`…`EST-D`, `IMERG_F`, `IMERG_E`, `CHIRPS_598`…`CHIRPS_600` |
+| `series_id` | str | `EST-A`…`EST-D`, `IMERG_E` (serie principal), `IMERG_F` (solo contraste), `CHIRPS_598`…`CHIRPS_600` |
 | `precip_mm` | float \| null | null si el día no es válido |
 | `n_readings` | int \| null | Solo estaciones (máx. 144) |
 | `valid` | bool | Estaciones: `n_readings ≥ 100` (SUPUESTO) |
@@ -25,7 +25,7 @@
 | `target_rule` | enum `any_station` \| `basin_mean` \| `reference_station` | ADR-001; por defecto `basin_mean` |
 | `accum_3d_mm` | float \| null | Suma de los últimos 3 días válidos |
 | `accum_3d_level` | enum `normal` \| `elevado` | `elevado` si ≥ `ACCUM3_THRESHOLD_MM` (100, SUPUESTO) |
-| `model_variant` | enum `full` \| `operational` | ADR-001 §4 |
+| `data_plan` | enum `principal` \| `plan_b_earthdata` \| `plan_b_datos` | Plan de datos activo (ADR-001 §5, ADR-004 §5) |
 | `model_version` | str | Hash de datos y parámetros |
 | `explanation` | str \| null | Texto de Muse Spark **verificado**; null si no pasó la compuerta |
 | `inputs_available` | list[str] | Series con dato para el día de emisión |
@@ -87,9 +87,12 @@
 | Campo | Tipo |
 |-------|------|
 | `test_period` | {`start`, `end`} |
-| `target_rule` | enum |
-| `models` | list[{`name`: `rf_full` \| `rf_operational` \| `climatology` \| `persistence`, `pod`, `far`, `csi`, `brier`, `auc`, `reliability`: list[{`bin`, `forecast`, `observed`, `n`}]}] |
-| `target_rule_frequencies` | {regla: frecuencia} |
-| `imerg_final_vs_early` | {`period`, `bias_mm`, `pearson_r`, `n_days`} \| null |
+| `target_rule` | enum (principal: `basin_mean`) |
+| `threshold_mm` | float (20, SUPUESTO) |
+| `data_plan` | enum |
+| `scenarios` | {`con_est_b`, `sin_est_b`}: cada uno list[ModelMetrics] |
+| ModelMetrics | {`name`: `rf` \| `climatology` \| `persistence`, `pod`, `far`, `csi`, `brier`, `auc`, `reliability`: list[{`bin`, `forecast`, `observed`, `n`}]} |
+| `sensitivity` | **[Should]** list[{`threshold_mm` ∈ {10, 20, 50}, `target_rule`, `event_frequency`, `rf_auc`, `rf_brier`, `climatology_brier`}] \| null |
+| `imerg_final_vs_early` | **[Should]** {`period`, `bias_mm`, `pearson_r`, `n_days`} \| null |
 | `daily` | list[{`date`, `prob`, `observed`: bool \| null, `outcome`: `acierto` \| `falsa_alarma` \| `fallo` \| `correcto_negativo`}] (para el mapa) |
 | `excluded_imputed_days` | int |
