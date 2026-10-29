@@ -8,8 +8,9 @@ data/
 *.nc4
 *.h5
 
-# Secretos
+# Secretos y términos que no se publican (DoD §7)
 .env
+.forbidden-terms
 
 # Excepción: fixtures pequeños de tests
 !tests/fixtures/**
