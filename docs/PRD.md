@@ -24,14 +24,14 @@ En la cuenca, entre el 6 % y el 13 % de los días registran ≥20 mm en alguna e
 
 ## Funcionalidades
 ### IN (v1)
-1. **Pronóstico diario**: probabilidad de ≥20 mm mañana en la cuenca (`GET /forecast`). El umbral de 20 mm es SUPUESTO: [OMM] pág. PDF 15 lista ≥5, 10, 50, 100 y 150 mm, pero no 20.
+1. **Pronóstico diario**: probabilidad de ≥20 mm mañana en la cuenca (`GET /forecast`), con un modelo entrenado sobre la misma serie satelital que existe en operación (IMERG Early, ADR-001). El umbral de 20 mm es SUPUESTO: [OMM] pág. PDF 15 lista ≥5, 10, 50, 100 y 150 mm, pero no 20.
 2. **Indicador de acumulado de 3 días** como señal de riesgo de derrumbe. Umbral de 100 mm: SUPUESTO, sin fuente; ocurre en el 1,0 % de los días con la media de la cuenca y en el 2,8 % con el máximo [INV].
 3. **Reporte ciudadano** con texto o foto, ubicación y hora (`POST /reports`).
 4. **Muse Spark 1.3** (Meta Model API) convierte el reporte en un registro estructurado y explica el pronóstico.
 5. **Compuerta de verificación obligatoria** (ADR-002): comprobaciones deterministas, juez Muse Spark y hasta 3 reintentos; si no pasa, el estado es `requiere_revision_humana`.
 6. **Confianza calculada por código**, nunca por el modelo; las estaciones correlacionadas cuentan como una sola fuente (ADR-002).
-7. **Mapa** con los reportes y el acierto del pronóstico por día (`GET /reports`, `GET /evaluation`).
-8. **Evaluación pública** del modelo contra climatología y persistencia (`GET /evaluation`).
+7. **Lista y mapa mínimo** (marcadores) con los reportes verificados y el acierto del pronóstico por día (`GET /reports`, `GET /evaluation`). Pulido del mapa: Should.
+8. **Evaluación pública** del modelo contra climatología y persistencia, con y sin EST-B (`GET /evaluation`). Sensibilidades de umbral (10 y 50 mm) y de regla de objetivo, y contraste Early↔Final: Should.
 9. **Aviso visible "no es alerta oficial"** y enlace a los canales oficiales en cada vista con pronóstico.
 10. **Demo como reproducción histórica** de un evento documentado, sin depender de datos en vivo. Evento por definir (SUPUESTO).
 
@@ -56,7 +56,7 @@ Sequía e incendios · audio · cuentas de usuario · notificaciones · app nati
 |----|--------|---------|------------|
 | R9 | El producto se interpreta como alerta oficial; un falso negativo puede costar vidas | Crítico | Aviso visible en cada vista, enlace a canales oficiales y texto que comunica la tasa de falsas alarmas; nunca se dice "es seguro ir" |
 | R10 | El jurado no distingue lo construido durante el evento y el proyecto queda descalificado | Alto | Sección "Construido durante el evento" en el README, historial de commits desde el 2026-10-29 y demo solo con funciones nuevas |
-| R11 | Desfase Final→Early: se entrena con IMERG Final y en operación solo hay Early | Alto | Descargar Early y Final de 2025 a hoy, medir sesgo y correlación y publicarlos en `GET /evaluation`. Variante obligatoria "operativa" (estaciones + Early) evaluada aparte |
+| R11 | Latencia real de IMERG Early mayor que la prevista (S5) o falla de Earthdata durante el evento | Alto | Medir la latencia real sobre la cuenca (SP-9). Descargar Early 2000→hoy el primer día del sprint y guardarlo en caché con su hash. Si Earthdata falla: plan B (estaciones + CHIRPS en el modelo; IMERG solo como evidencia en la verificación). `data_plan` visible en la API |
 | R12 | Datos de estaciones sin autorización de publicación | Alto | Repo sin nombres ni coordenadas de estaciones (ADR-004). Plan B: modelo y demo solo con CHIRPS e IMERG |
 | R13 | La API de Muse no responde o se agota la cuota durante la demo | Medio | `DEMO_FALLBACK=1` con respuestas grabadas, marcadas como tales |
 | R14 | Las fotos tienen datos personales (caras, placas, EXIF) | Medio | Se elimina el EXIF; en la demo no se guarda el original |
