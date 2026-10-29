@@ -1,0 +1,271 @@
+openapi: 3.1.0
+info:
+  title: ClimApp Lite API
+  version: 0.1.0
+  description: >
+    Pronóstico de lluvia ≥20 mm para mañana en la cuenca del río Pance y reportes
+    ciudadanos verificados. No es una alerta oficial.
+paths:
+  /forecast:
+    get:
+      summary: Pronóstico vigente para mañana
+      parameters:
+        - name: variant
+          in: query
+          schema: {type: string, enum: [full, operational], default: operational}
+        - name: replay_date
+          in: query
+          description: Fecha de emisión para reproducción histórica (solo demo).
+          schema: {type: string, format: date}
+      responses:
+        "200":
+          description: Pronóstico
+          content:
+            application/json:
+              schema: {$ref: "#/components/schemas/Forecast"}
+        "503":
+          description: No hay pronóstico calculado
+          content:
+            application/json:
+              schema: {$ref: "#/components/schemas/Error"}
+  /reports:
+    post:
+      summary: Enviar un reporte ciudadano (verificación asíncrona)
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema: {$ref: "#/components/schemas/ReportIn"}
+      responses:
+        "202":
+          description: Reporte recibido; estado inicial "verificando"
+          content:
+            application/json:
+              schema: {$ref: "#/components/schemas/Report"}
+        "422":
+          description: Entrada inválida (sin texto ni foto, foto > 5 MB, tipo no permitido)
+          content:
+            application/json:
+              schema: {$ref: "#/components/schemas/Error"}
+    get:
+      summary: Listar reportes (para el mapa)
+      parameters:
+        - name: status
+          in: query
+          schema: {$ref: "#/components/schemas/ReportStatus"}
+        - name: from
+          in: query
+          schema: {type: string, format: date}
+        - name: to
+          in: query
+          schema: {type: string, format: date}
+        - name: limit
+          in: query
+          schema: {type: integer, minimum: 1, maximum: 500, default: 100}
+      responses:
+        "200":
+          description: Reportes
+          content:
+            application/json:
+              schema:
+                type: array
+                items: {$ref: "#/components/schemas/Report"}
+  /reports/{id}:
+    get:
+      summary: Estado de un reporte
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: {type: string, format: uuid}
+      responses:
+        "200":
+          description: Reporte
+          content:
+            application/json:
+              schema: {$ref: "#/components/schemas/Report"}
+        "404":
+          description: No existe
+          content:
+            application/json:
+              schema: {$ref: "#/components/schemas/Error"}
+  /evaluation:
+    get:
+      summary: Evaluación del modelo frente a las líneas base en el periodo apartado
+      parameters:
+        - name: target_rule
+          in: query
+          schema: {$ref: "#/components/schemas/TargetRule"}
+      responses:
+        "200":
+          description: Métricas
+          content:
+            application/json:
+              schema: {$ref: "#/components/schemas/EvaluationReport"}
+components:
+  schemas:
+    Error:
+      type: object
+      required: [code, message]
+      properties:
+        code: {type: string}
+        message: {type: string}
+    TargetRule:
+      type: string
+      enum: [any_station, basin_mean, reference_station]
+      default: basin_mean
+    ReportStatus:
+      type: string
+      enum: [verificando, verificado, rechazado, requiere_revision_humana]
+    Forecast:
+      type: object
+      required: [issued_at, target_date, prob_ge_threshold, threshold_mm, target_rule, model_variant, model_version, stale, replay, disclaimer, official_channels_url]
+      properties:
+        issued_at: {type: string, format: date-time}
+        target_date: {type: string, format: date}
+        prob_ge_threshold: {type: number, minimum: 0, maximum: 1}
+        threshold_mm: {type: number}
+        target_rule: {$ref: "#/components/schemas/TargetRule"}
+        accum_3d_mm: {type: [number, "null"]}
+        accum_3d_level: {type: string, enum: [normal, elevado]}
+        model_variant: {type: string, enum: [full, operational]}
+        model_version: {type: string}
+        explanation: {type: [string, "null"]}
+        inputs_available:
+          type: array
+          items: {type: string}
+        stale: {type: boolean}
+        replay: {type: boolean}
+        disclaimer: {type: string}
+        official_channels_url: {type: string, format: uri}
+    ReportIn:
+      type: object
+      required: [lat, lon]
+      properties:
+        text: {type: string, minLength: 1, maxLength: 1000}
+        photo: {type: string, format: binary}
+        lat: {type: number}
+        lon: {type: number}
+        observed_at: {type: string, format: date-time}
+    ReportStructured:
+      type: object
+      required: [event_type, intensity, observed_at, claims, numbers_cited]
+      properties:
+        event_type: {type: string, enum: [lluvia, crecida, deslizamiento, granizo, sin_lluvia, otro]}
+        intensity: {type: string, enum: [ninguna, debil, moderada, fuerte]}
+        observed_at: {type: string, format: date-time}
+        claims:
+          type: array
+          items: {type: string}
+        numbers_cited:
+          type: array
+          items: {type: number}
+    VerificationAttempt:
+      type: object
+      required: [n, passed, reasons, finish_reason, tokens_in, tokens_out, latency_ms]
+      properties:
+        n: {type: integer, minimum: 1, maximum: 3}
+        passed: {type: boolean}
+        reasons:
+          type: array
+          items:
+            type: string
+            enum: [respuesta_incompleta, respuesta_vacia, esquema_invalido, cifra_no_coincide, herramienta_no_permitida, afirmacion_sin_evidencia]
+        finish_reason: {type: string}
+        tokens_in: {type: integer}
+        tokens_out: {type: integer}
+        latency_ms: {type: integer}
+    ConfidenceSource:
+      type: object
+      required: [source_id, kind, members, agrees, weight]
+      properties:
+        source_id: {type: string}
+        kind: {type: string, enum: [station_group, satellite, forecast]}
+        members:
+          type: array
+          items: {type: string}
+        agrees: {type: boolean}
+        weight: {type: number}
+    Confidence:
+      type: object
+      required: [score, sources, independent_sources]
+      properties:
+        score: {type: number, minimum: 0, maximum: 1}
+        sources:
+          type: array
+          items: {$ref: "#/components/schemas/ConfidenceSource"}
+        independent_sources: {type: integer}
+    Report:
+      type: object
+      required: [id, received_at, lat, lon, status, attempts, fallback]
+      properties:
+        id: {type: string, format: uuid}
+        received_at: {type: string, format: date-time}
+        lat: {type: number}
+        lon: {type: number}
+        status: {$ref: "#/components/schemas/ReportStatus"}
+        reject_reason: {type: [string, "null"], enum: [fuera_de_cuenca, entrada_invalida, null]}
+        structured:
+          oneOf:
+            - {$ref: "#/components/schemas/ReportStructured"}
+            - {type: "null"}
+        confidence:
+          oneOf:
+            - {$ref: "#/components/schemas/Confidence"}
+            - {type: "null"}
+        attempts:
+          type: array
+          items: {$ref: "#/components/schemas/VerificationAttempt"}
+        fallback: {type: boolean}
+    ModelMetrics:
+      type: object
+      required: [name, pod, far, csi, brier, auc]
+      properties:
+        name: {type: string, enum: [rf_full, rf_operational, climatology, persistence]}
+        pod: {type: number}
+        far: {type: number}
+        csi: {type: number}
+        brier: {type: number}
+        auc: {type: number}
+        reliability:
+          type: array
+          items:
+            type: object
+            properties:
+              bin: {type: string}
+              forecast: {type: number}
+              observed: {type: number}
+              n: {type: integer}
+    EvaluationReport:
+      type: object
+      required: [test_period, target_rule, models, daily, excluded_imputed_days]
+      properties:
+        test_period:
+          type: object
+          properties:
+            start: {type: string, format: date}
+            end: {type: string, format: date}
+        target_rule: {$ref: "#/components/schemas/TargetRule"}
+        models:
+          type: array
+          items: {$ref: "#/components/schemas/ModelMetrics"}
+        target_rule_frequencies:
+          type: object
+          additionalProperties: {type: number}
+        imerg_final_vs_early:
+          type: [object, "null"]
+          properties:
+            period: {type: string}
+            bias_mm: {type: number}
+            pearson_r: {type: number}
+            n_days: {type: integer}
+        daily:
+          type: array
+          items:
+            type: object
+            properties:
+              date: {type: string, format: date}
+              prob: {type: number}
+              observed: {type: [boolean, "null"]}
+              outcome: {type: string, enum: [acierto, falsa_alarma, fallo, correcto_negativo]}
+        excluded_imputed_days: {type: integer}
