@@ -1,131 +1,199 @@
 # Backlog — ClimApp Lite
 
-> MoSCoW. Ninguna tarea dura más de 4 h. Responsables: **JE** (desarrollo) y **JM** (validación científica). Cada tarea se hace con TDD y cierra con commit y una línea en el README (DoD).
+> MoSCoW. Ninguna tarea dura más de 4 h. Las estimaciones suponen trabajo asistido por Claude Code. Responsables: **JE** (desarrollo) y **JM** (validación científica). Cada tarea se hace con TDD y se cierra con commit y una línea en el README (DoD).
+> Regla de velocidad: si el viernes la velocidad real supera la estimada, se suben tareas Should al sprint en el orden de la tabla de abajo. Nunca al revés.
 
-## Sprint 1: 2026-10-30 → 2026-11-02 (congelamiento el 2026-11-02)
-**Capacidad (SUPUESTO, por confirmar):** JE 12 h/día × 4 = 48 h → 80 % = **38,4 h**; JM 4 h/día × 4 = 16 h → 80 % = **12,8 h**.
+## Capacidad del Sprint 1 (2026-10-30 → 2026-11-02)
+| Persona | vie 30 | sáb 31 | dom 1 | lun 2 (festivo) | Total | Foco declarado (85 %) | Límite FORGE G3 (80 %) |
+|---------|--------|--------|-------|-----------------|-------|-----------------------|------------------------|
+| JE | 6 h (trabaja en su empleo) | 12 h | 12 h | 10 h | **40 h** | 34 h | **32 h** |
+| JM | — | — | — | — | **8 h** (SUPUESTO; se confirma el 30-oct, 12:00) | 6,8 h | **6,4 h** |
 
-| Compromiso | JE | JM |
-|------------|----|----|
-| Comprometido (línea de corte) | TASK-001, 003, 004, 005, 007, 008, 011, 012, 013, 014, 015, 016, 017 = **36 h** | TASK-002, 006, 020, 021 = **10 h** |
-| Must sobre la línea de corte (sin capacidad) | TASK-009, 010, 018, 019, 022 = **14 h** | — |
+Se compromete el valor menor de los dos (**JE 32 h, JM 6,4 h**), así que se cumplen la regla de foco y la de G3. El congelamiento (`SCOPE_FREEZE_DATE=2026-11-02`) se aplica **al cierre** del lunes 2-nov.
 
-> ⚠️ Los **Must suman 50 h para JE** frente a 38,4 h de capacidad. Para no pasar del 80 %, las cinco tareas Must sobre la línea de corte entran solo si la capacidad real es mayor o si se reasignan. Decisión pendiente del equipo.
+## Línea de corte — PROPUESTA pendiente de confirmación del equipo
+Todos los Must suman **37,5 h para JE**: no caben en 32 h. Ni siquiera cabían aplicando el orden de sacrificio acordado (sensibilidades → contraste Early↔Final → pulido del mapa), porque esas tres tareas ya eran Should. Sin tocar los innegociables (aviso de no alerta oficial, compuerta de verificación, explicación con Muse Spark y reproducción de la demo), se proponen además estos recortes:
 
-Orden del sprint: 30-oct datos → 31-oct modelo y verificación → 1-nov API y web → 2-nov cierre y congelamiento.
+| # | Baja a Should | Ahorro | Efecto |
+|---|---------------|--------|--------|
+| 4 | TASK-029 Evaluación sin EST-B | 1 h | El modelo sigue siendo robusto a la pérdida de EST-B por diseño (agregados con las estaciones disponibles); lo que se pierde es el informe comparativo |
+| 5 | TASK-009 + TASK-028 IMERG Early 2000→hoy | 4 h | El sprint arranca con el **plan B de Earthdata** (estaciones + CHIRPS; IMERG solo como evidencia). Early es el **primer** Should en entrar si el viernes va por delante |
+| — | TASK-001 se reestima de 1,5 a 1 h | 0,5 h | Con Claude Code, el esqueleto es configuración |
+
+Con la propuesta, JE compromete **32 h**; JM, **5 h**.
+
+| Orden de entrada si sobra capacidad | Tarea | Horas |
+|-------------------------------------|-------|-------|
+| 1 | TASK-009 Descarga de IMERG Early 2000→hoy | 3 |
+| 2 | TASK-028 Early a la tabla diaria y al modelo | 1 |
+| 3 | TASK-029 Evaluación con y sin EST-B | 1 |
+| 4 | TASK-030 Pulido del mapa | 2 |
+| 5 | TASK-033 Contraste Early↔Final | 2 |
+| 6 | TASK-031 Sensibilidad del umbral (10 y 50 mm) | 2 |
+| 7 | TASK-032 Sensibilidad de la regla de objetivo | 1 |
+| 8 | TASK-034 Comparación con estaciones individuales | 1,5 |
+| — | TASK-021 Set de evaluación de reportes (JM) | 3 |
+
+## Plan por día (JE, comprometido)
+| Día | Tareas | Horas | Salida verificable |
+|-----|--------|-------|--------------------|
+| vie 30 | TASK-001, 003, 005 | 4,5 | Lectura limpia con tests en verde |
+| sáb 31 | TASK-004, 006, 007, 008, 015 | 10 | Tabla diaria, RF y `GET /evaluation` |
+| dom 1 | TASK-011, 012, 013, 014, 022 | 9,5 | Compuerta y explicación con tests |
+| lun 2 | TASK-016, 017, 018, 019 | 8 | Web móvil con aviso y demo reproducible; **congelamiento al cierre** |
+| **Total** | | **32** | |
+
+JM: TASK-020 (vie 30, 12:00) y TASK-002 (sáb 31, después de TASK-004) = 5 h.
+
+Dentro de cada día, **el orden es el de la lista** (hay dependencias intradía: 012 → 013 → 014 y 013 → 022 el domingo; 016 → 017 → 018 y 017 → 019 el lunes). **dom 1:** decisión de D-03 (plan B de datos, TASK-035).
 
 ---
 
+## Must comprometidas
 ### TASK-001 — Esqueleto del proyecto
-- **Estimación:** 2 h · **MoSCoW:** Must · **Responsable:** JE · **Depende de:** —
-- `pyproject.toml` con uv, pytest, pytest-cov, ruff, mypy strict, structlog y pydantic-settings; `src/climapp/` según CLAUDE.md; `Settings` que lee `.env.example`.
+- **Estimación:** 1 h · **MoSCoW:** Must · **Responsable:** JE · **Depende de:** —
+- `pyproject.toml` con uv, pytest, pytest-cov, ruff, mypy strict, structlog y pydantic-settings; `src/climapp/` según CLAUDE.md; `Settings` que lee las claves de `.env.example`.
 - **Hecho cuando:** `uv run pytest` corre un test de `Settings` en verde y `ruff` y `mypy` pasan.
 
 ### TASK-002 — Inventario de estaciones
-- **Estimación:** 3 h · **MoSCoW:** Must · **Responsable:** JM (con JE) · **Depende de:** TASK-004
-- Comando que reporta, por estación, el periodo, los días válidos, la correlación por pares y los posibles duplicados (r ≥ 0,99 o días idénticos), con salida en `DATA_DIR/derived/inventory.json`.
+- **Estimación:** 3 h · **MoSCoW:** Must · **Responsable:** JM · **Depende de:** TASK-004
+- Comando que reporta, por estación, el periodo, los días válidos, la correlación por pares y los posibles duplicados (r ≥ 0,99 o días idénticos), con salida en `DATA_DIR/derived/inventory.json`; también calcula los grupos con r ≥ `STATION_GROUP_MIN_R` (0,8 por defecto, SUPUESTO; ADR-002).
+- Orden del sábado: JE cierra TASK-004 por la mañana; JM empieza TASK-002 al terminar.
 - **Hecho cuando:** tests con fixtures sintéticos detectan un duplicado plantado, y el informe real coincide con ADR-004.
 
 ### TASK-003 — Lectura del contador y limpieza
-- **Estimación:** 3 h · **MoSCoW:** Must · **Responsable:** JE · **Depende de:** TASK-001
-- Lector de las dos exportaciones (xls y csv con coma decimal ambigua) y cálculo de incrementos, ignorando descensos y aumentos > 40 mm en 10 min.
+- **Estimación:** 2,5 h · **MoSCoW:** Must · **Responsable:** JE · **Depende de:** TASK-001
+- Lector de las dos exportaciones (xls, y csv con coma decimal ambigua) y cálculo de incrementos, ignorando descensos y aumentos > 40 mm en 10 min.
 - **Hecho cuando:** hay tests de reinicio, pico, coma decimal y valor vacío.
 
 ### TASK-004 — Tabla diaria de estaciones
-- **Estimación:** 3 h · **MoSCoW:** Must · **Responsable:** JE · **Depende de:** TASK-003
+- **Estimación:** 2,5 h · **MoSCoW:** Must · **Responsable:** JE · **Depende de:** TASK-003
 - `DailyPrecip` por día local, con `valid` (≥ 100/144), `imputed=false` y `source_hash`; une las dos exportaciones sin duplicar.
 - **Hecho cuando:** los tests cubren el borde de 99/100 lecturas, el cambio de día local y la unión de exportaciones idénticas.
 
-### TASK-005 — Lectores satelitales
-- **Estimación:** 2 h · **MoSCoW:** Must · **Responsable:** JE · **Depende de:** TASK-001
-- CHIRPS en hoja de cálculo (descarta MIN, PROM, MAX y columnas sin celda) e IMERG Final en CSV (3 puntos → una sola serie).
-- **Hecho cuando:** los tests verifican el descarte de filas resumen y la deduplicación de puntos.
+### TASK-005 — Lector de CHIRPS
+- **Estimación:** 1 h · **MoSCoW:** Must · **Responsable:** JE · **Depende de:** TASK-001
+- Hojas de cálculo de CHIRPS: descarta las filas MIN, PROM y MAX y las columnas sin celda.
+- **Hecho cuando:** los tests verifican el descarte de las filas resumen.
 
-### TASK-006 — Objetivo de cuenca
-- **Estimación:** 2 h · **MoSCoW:** Must · **Responsable:** JM (con JE) · **Depende de:** TASK-004
-- Tres reglas (`any_station`, `basin_mean`, `reference_station`) y sus frecuencias.
-- **Hecho cuando:** hay tests por regla con días incompletos, y las frecuencias coinciden con ADR-001 (16,0 / 10,2 / 9,6 %).
+### TASK-006 — Objetivo de cuenca (regla principal)
+- **Estimación:** 1 h · **MoSCoW:** Must · **Responsable:** JE · **Depende de:** TASK-004
+- `TARGET_RULE=basin_mean` (SUPUESTO hasta JM) sobre las estaciones válidas de cada día.
+- **Hecho cuando:** hay tests sintéticos con días de 1, 2 y 4 estaciones disponibles, y aparte, el comando sobre los datos reales reproduce la frecuencia de ADR-001 (10,2 %; verificación manual, no test unitario).
 
 ### TASK-007 — Líneas base y métricas
-- **Estimación:** 3 h · **MoSCoW:** Must · **Responsable:** JE · **Depende de:** TASK-006
+- **Estimación:** 2,5 h · **MoSCoW:** Must · **Responsable:** JE · **Depende de:** TASK-006
 - Climatología (día del año ±15) y persistencia; POD, FAR, CSI, Brier, AUC y calibración; exclusión de días imputados.
 - **Hecho cuando:** hay tests con casos calculados a mano y un test de que lo imputado no entra.
 
 ### TASK-008 — Variables y random forest
-- **Estimación:** 4 h · **MoSCoW:** Must · **Responsable:** JE · **Depende de:** TASK-005, TASK-007
-- Agregados de la cuenca (media, máx. y desviación en t, t-1, t-2), acumulado de 3 días, satélite y estacionalidad; partición temporal; calibración isotónica; comparación con estaciones individuales.
-- **Hecho cuando:** un test de fuga verifica que ninguna fecha de prueba aparece en entrenamiento, y las métricas quedan en `DATA_DIR/derived/evaluation.json`.
-
-### TASK-009 — IMERG Early y Final de 2025 a hoy (R11)
-- **Estimación:** 3 h · **MoSCoW:** Must · **Responsable:** JE · **Depende de:** TASK-005
-- Descarga con Earthdata (`EARTHDATA_TOKEN`) de `GPM_3IMERGDE` y `GPM_3IMERGDF` para la celda; cálculo de sesgo y correlación.
-- **Hecho cuando:** `evaluation.json` incluye `imerg_final_vs_early`, con tests sobre series sintéticas.
-
-### TASK-010 — Variante operativa (estaciones + Early)
-- **Estimación:** 3 h · **MoSCoW:** Must · **Responsable:** JE · **Depende de:** TASK-008, TASK-009
-- Mismo pipeline, solo con variables disponibles al día siguiente; evaluado aparte (`rf_operational`).
-- **Hecho cuando:** un test verifica que no usa IMERG Final, y la evaluación queda publicada.
+- **Estimación:** 3 h · **MoSCoW:** Must · **Responsable:** JE · **Depende de:** TASK-005, TASK-007
+- Agregados de la cuenca (media, máximo y dispersión en t, t-1 y t-2) **con las estaciones disponibles cada día** y el número de estaciones como variable; acumulado de 3 días; satélite según `data_plan`; estacionalidad; partición temporal; calibración isotónica.
+- **Hecho cuando:** un test de fuga verifica que ninguna fecha de prueba aparece en entrenamiento, un test verifica que los agregados ignoran las estaciones sin dato, y las métricas quedan en `DATA_DIR/derived/evaluation.json`.
 
 ### TASK-011 — Cliente Muse y fallback
-- **Estimación:** 2 h · **MoSCoW:** Must · **Responsable:** JE · **Depende de:** TASK-001
+- **Estimación:** 1,5 h · **MoSCoW:** Must · **Responsable:** JE · **Depende de:** TASK-001
 - SDK `openai` con `base_url`, modelo y esfuerzo desde `Settings`; respuestas grabadas con `DEMO_FALLBACK=1`.
-- **Hecho cuando:** los tests con un cliente falso cubren los parámetros enviados y el fallback.
+- **Hecho cuando:** los tests con un cliente falso cubren los parámetros enviados (`reasoning_effort` por tarea y `max_tokens = MUSE_MAX_TOKENS`, que vale 2000; la configuración rechaza valores < 2000) y el fallback.
 
 ### TASK-012 — Comprobaciones deterministas
-- **Estimación:** 3 h · **MoSCoW:** Must · **Responsable:** JE · **Depende de:** TASK-011
-- Esquema, cifras iguales, herramientas permitidas, `finish_reason == "stop"` y contenido no vacío (ADR-002).
-- **Hecho cuando:** hay un test por motivo de rechazo.
+- **Estimación:** 2,5 h · **MoSCoW:** Must · **Responsable:** JE · **Depende de:** TASK-011
+- En el orden de ADR-002 §3: `finish_reason == "stop"` → contenido no vacío → esquema → cifras iguales → herramientas permitidas. Se reportan todos los motivos que fallen, en ese orden.
+- **Hecho cuando:** hay un test por motivo de rechazo y uno del orden de los motivos.
 
 ### TASK-013 — Juez y bucle de 3 intentos
-- **Estimación:** 3 h · **MoSCoW:** Must · **Responsable:** JE · **Depende de:** TASK-012
+- **Estimación:** 2,5 h · **MoSCoW:** Must · **Responsable:** JE · **Depende de:** TASK-012
 - Juez con `reasoning_effort=medium`; reintentos con los motivos anteriores; `requiere_revision_humana` tras el tercer fallo.
 - **Hecho cuando:** los tests cubren aprobación al primer intento, al tercero y el paso a revisión humana.
 
 ### TASK-014 — Confianza por código
-- **Estimación:** 2 h · **MoSCoW:** Must · **Responsable:** JE · **Depende de:** TASK-002
-- Grupos de estaciones con r ≥ `STATION_GROUP_MIN_R`, que cuentan como una fuente; puntaje con desglose.
+- **Estimación:** 1,5 h · **MoSCoW:** Must · **Responsable:** JE · **Depende de:** TASK-002, TASK-012
+- Grupos de estaciones (de TASK-002) que cuentan como una fuente; puntaje con desglose; pesos fijos SUPUESTO desde la configuración (la calibración es Should, TASK-021).
 - **Hecho cuando:** un test de propiedades verifica que duplicar una estación correlacionada no sube la confianza, y la función es pura.
 
 ### TASK-015 — API de pronóstico y evaluación
-- **Estimación:** 2 h · **MoSCoW:** Must · **Responsable:** JE · **Depende de:** TASK-008
-- `GET /forecast` y `GET /evaluation` según `openapi.yaml`, sobre artefactos precalculados.
+- **Estimación:** 1 h · **MoSCoW:** Must · **Responsable:** JE · **Depende de:** TASK-008
+- `GET /forecast` y `GET /evaluation` según `openapi.yaml`, sobre artefactos precalculados, con `data_plan`.
 - **Hecho cuando:** hay tests de contrato contra el esquema OpenAPI, de los casos 503 y `stale`, y de que el aviso siempre está presente.
 
 ### TASK-016 — API de reportes
-- **Estimación:** 3 h · **MoSCoW:** Must · **Responsable:** JE · **Depende de:** TASK-013, TASK-014
+- **Estimación:** 2 h · **MoSCoW:** Must · **Responsable:** JE · **Depende de:** TASK-013, TASK-014
 - `POST /reports` (202 asíncrono, EXIF eliminado, polígono de la cuenca), `GET /reports` y `GET /reports/{id}`.
 - **Hecho cuando:** hay tests de contrato, fuera de cuenca, foto > 5 MB y EXIF eliminado.
 
-### TASK-017 — Vista de pronóstico y formulario
-- **Estimación:** 4 h · **MoSCoW:** Must · **Responsable:** JE · **Depende de:** TASK-015, TASK-016
-- Jinja2 + HTMX, mobile-first; aviso "no es alerta oficial" con enlace; formulario con sondeo de estado.
-- **Hecho cuando:** hay tests HTTP del HTML (aviso presente y estados) y una revisión manual en 360 px.
+### TASK-017 — Vista de pronóstico, formulario y lista de reportes
+- **Estimación:** 3 h · **MoSCoW:** Must · **Responsable:** JE · **Depende de:** TASK-015, TASK-016, TASK-022
+- Jinja2 + HTMX, mobile-first; aviso "no es alerta oficial" con enlace; explicación verificada; formulario con sondeo de estado; lista simple de reportes verificados.
+- **Hecho cuando:** hay tests HTTP del HTML (aviso presente, explicación nula y estados) y una revisión manual en 360 px.
 
-### TASK-018 — Mapa con reportes y acierto
-- **Estimación:** 3 h · **MoSCoW:** Must · **Responsable:** JE · **Depende de:** TASK-017
-- Leaflet con OSM (atribución ODbL), reportes verificados y resultado diario.
-- **Hecho cuando:** un test verifica que el HTML incluye la atribución y los datos del día.
+### TASK-018 — Mapa mínimo (marcadores)
+- **Estimación:** 1 h · **MoSCoW:** Must · **Responsable:** JE · **Depende de:** TASK-017
+- Leaflet con OSM (atribución ODbL), un marcador por reporte verificado y el resultado del día en la leyenda.
+- **Hecho cuando:** un test verifica que el HTML incluye la atribución y los marcadores del día.
 
 ### TASK-019 — Reproducción histórica para la demo
-- **Estimación:** 3 h · **MoSCoW:** Must · **Responsable:** JE · **Depende de:** TASK-017, TASK-020 (evento elegido)
+- **Estimación:** 2 h · **MoSCoW:** Must · **Responsable:** JE · **Depende de:** TASK-017, TASK-020 (evento elegido)
 - `replay_date` de punta a punta con `DEMO_FALLBACK=1`, con el indicador "reproducción histórica".
 - **Hecho cuando:** la demo corre sin red, con un test end-to-end.
 
 ### TASK-020 — Validación de SUPUESTOS
 - **Estimación:** 2 h · **MoSCoW:** Must · **Responsable:** JM · **Depende de:** — (2026-10-30, 12:00)
-- Confirmar o corregir SP-1 a SP-8 (PRD), la regla del objetivo, el umbral de agrupación y el evento de la demo.
+- Confirmar o corregir SP-1 a SP-8 (PRD), la regla principal del objetivo, el umbral de agrupación, el evento de la demo y las 8 h de capacidad de JM.
+- **Si JM no responde antes del 30-oct a las 18:00:** los SUPUESTOS siguen vigentes tal cual y JE elige el evento de la demo: el día con mayor media de la cuenca en el periodo apartado que tenga datos de al menos 2 estaciones. Queda anotado como SUPUESTO.
 - **Hecho cuando:** el PRD y los ADR están actualizados, sin SUPUESTOS resueltos que sigan marcados.
+
+### TASK-022 — Explicación verificada del pronóstico
+- **Estimación:** 1,5 h · **MoSCoW:** Must · **Responsable:** JE · **Depende de:** TASK-013
+- Muse Spark explica el pronóstico; la compuerta exige que las cifras coincidan.
+- **Hecho cuando:** un test verifica que una cifra alterada se rechaza y que `explanation=null` si no pasa.
+
+## Contingente (D-03)
+### TASK-035 — Plan B de datos sin estaciones
+- **Estimación:** 1,5 h · **MoSCoW:** Must **solo si** D-03 no se autoriza antes del 2026-11-01 · **Responsable:** JE · **Depende de:** TASK-005, TASK-008
+- `DATA_PLAN=plan_b_datos`: objetivo y variables sobre CHIRPS e IMERG Early, sin estaciones; la demo se reproduce sobre CHIRPS.
+- Si se activa, consume 1,5 h de las 2 h que hay entre el límite de G3 (32 h) y el foco declarado (34 h). Pasar del 80 % requiere un visto bueno explícito del equipo.
+- **Hecho cuando:** un test verifica que con `plan_b_datos` ninguna serie `EST-*` entra al modelo.
+
+## Should (en orden de entrada)
+### TASK-009 — Descarga de IMERG Early V07 2000→hoy
+- **Estimación:** 3 h · **MoSCoW:** Should (Must si se aprueba sin la propuesta) · **Responsable:** JE · **Depende de:** TASK-001
+- Descarga con Earthdata (`EARTHDATA_TOKEN`) de `GPM_3IMERGDE` para la celda de la cuenca, con caché en `DATA_DIR/raw/imerg_early/`, hash y reintentos. Mide la latencia real de los últimos días (SP-9).
+- **Hecho cuando:** un test con un servidor falso cubre el reintento y la caché, y la serie real queda completa o con los faltantes listados.
+- Primer paso (15 min, incluido): estimar el volumen y la velocidad de descarga. Si el total supera 4 h, la tarea se parte **antes de empezar** en TASK-009a (2000-2012) y TASK-009b (2013→hoy). La descarga desatendida corre en segundo plano y no cuenta como horas de JE.
+
+### TASK-028 — IMERG Early a la tabla diaria y al modelo
+- **Estimación:** 1 h · **MoSCoW:** Should · **Responsable:** JE · **Depende de:** TASK-009, TASK-008
+- Serie `IMERG_E` en `DailyPrecip`; `data_plan=principal`; se reentrena y reevalúa.
+- **Hecho cuando:** un test verifica que el modelo usa `IMERG_E` y nunca `IMERG_F`.
+
+### TASK-029 — Evaluación con y sin EST-B
+- **Estimación:** 1 h · **MoSCoW:** Should · **Responsable:** JE · **Depende de:** TASK-008
+- `scenarios.sin_est_b` en la evaluación, tratando EST-B como no disponible en todo el periodo de prueba.
+- **Hecho cuando:** un test verifica que, en el escenario sin EST-B, ningún agregado usa sus datos.
+
+### TASK-030 — Pulido del mapa
+- **Estimación:** 2 h · **MoSCoW:** Should · **Responsable:** JE · **Depende de:** TASK-018
+- Colores por resultado diario, ventana emergente con la confianza y selector de fecha.
+
+### TASK-033 — Contraste Early↔Final
+- **Estimación:** 2 h · **MoSCoW:** Should · **Responsable:** JE · **Depende de:** TASK-028
+- Lector del CSV de IMERG Final (3 puntos → una serie); sesgo y correlación en `imerg_final_vs_early`.
+
+### TASK-031 — Sensibilidad del umbral (10 y 50 mm)
+- **Estimación:** 2 h · **MoSCoW:** Should · **Responsable:** JE · **Depende de:** TASK-008
+
+### TASK-032 — Sensibilidad de la regla de objetivo
+- **Estimación:** 1 h · **MoSCoW:** Should · **Responsable:** JE · **Depende de:** TASK-006
+- Reglas `any_station` y `reference_station` como sensibilidad.
+
+### TASK-034 — Comparación con estaciones individuales
+- **Estimación:** 1,5 h · **MoSCoW:** Should · **Responsable:** JE · **Depende de:** TASK-008
 
 ### TASK-021 — Set de evaluación de reportes
 - **Estimación:** 3 h · **MoSCoW:** Should · **Responsable:** JM · **Depende de:** TASK-012
-- Al menos 30 reportes sintéticos etiquetados (válidos, con cifras falsas, sin evidencia, fuera de cuenca); tasa de aprobación y costo por reporte (NFR-3).
-- **Hecho cuando:** el informe reproducible queda en `eval-harness/`.
+- Al menos 30 reportes sintéticos etiquetados; tasa de aprobación y costo por reporte (NFR-3) en `eval-harness/`.
 
-### TASK-022 — Explicación verificada del pronóstico
-- **Estimación:** 2 h · **MoSCoW:** Must · **Responsable:** JE · **Depende de:** TASK-013
-- Muse explica el pronóstico; la compuerta exige que las cifras coincidan.
-- **Hecho cuando:** un test verifica que una cifra alterada se rechaza y que `explanation=null` si no pasa.
-
+## Could
 ### TASK-023 — Día local desde IMERG cada media hora
 - **Estimación:** 4 h · **MoSCoW:** Could · **Responsable:** JE · **Depende de:** TASK-009
 
@@ -134,7 +202,7 @@ Orden del sprint: 30-oct datos → 31-oct modelo y verificación → 1-nov API y
 
 ## Después del congelamiento (2026-11-03 → 2026-11-04)
 ### TASK-025 — QA hacia el gate 4
-- **Estimación:** 4 h · **MoSCoW:** Must · **Responsable:** JE · **Depende de:** sprint cerrado
+- **Estimación:** 4 h · **MoSCoW:** Must · **Responsable:** JE · **Depende de:** todas las Must comprometidas (TASK-001 a TASK-022 de la línea de corte)
 - Cobertura (≥ 85 % en el núcleo, ≥ 70 % global), SAST, gitleaks y 0 bugs CRITICAL/HIGH.
 
 ### TASK-026 — Video de demo de 3 min
@@ -147,3 +215,7 @@ Orden del sprint: 30-oct datos → 31-oct modelo y verificación → 1-nov API y
 
 ## Won't (v1)
 Sequía e incendios · audio · cuentas · notificaciones · app nativa · plataforma histórica · investigadores · reentrenamiento automático.
+
+## Cambios
+- 2026-10-29: IMERG Early pasa a ser la serie principal. La antigua tarea de "variante operativa" (el ID 010) se elimina porque el modelo principal ya es operativo; **el ID 010 no se reutiliza**. Se agregan TASK-028 a TASK-035. Capacidad real y línea de corte propuesta.
+- 2026-10-29: se atiende la revisión de Muse Code (`docs/reviews/spec-gate.md`).
