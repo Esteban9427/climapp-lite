@@ -1,0 +1,13 @@
+# Fuentes de datos
+
+> Ningún dato crudo se versiona en este repositorio (`.gitignore`). Lo que no está verificado figura como **pendiente**.
+> Latencias: valor **nominal** según la documentación del proveedor (consultada el 2026-10-29); la latencia **real** observada sobre la cuenca está pendiente de medir.
+
+| Fuente | URL | Licencia o términos | Autorización (quién, cuándo, por qué medio) | Resolución espacial y temporal | Latencia | Uso en el producto |
+|--------|-----|---------------------|---------------------------------------------|-------------------------------|----------|--------------------|
+| Estaciones pluviométricas de una autoridad ambiental regional, cuenca de un río andino | pendiente (D-03) | pendiente (D-03) | pendiente (D-03) | Puntual; registros cada 10 min | pendiente | Verdad de terreno para evaluar el pronóstico, solo si se autoriza su uso. Plan B: no se usa |
+| GPM IMERG Early Run V07 (NASA) | https://gpm.nasa.gov/data/imerg · diario: https://registry.opendata.aws/nasa-gpm3imergde/ | Datos libres; se debe reconocer y citar la fuente ([política de datos GPM](https://gpm.nasa.gov/data/policy)) | No requiere autorización individual; descarga con cuenta NASA Earthdata/PPS | 0,1°; media hora (agregado diario: GPM_3IMERGDE) | Nominal ~4 h; real: pendiente | Entrada del pronóstico de mañana en tiempo casi real |
+| GPM IMERG Late Run V07 (NASA) | https://gpm.nasa.gov/data/imerg | Igual que Early Run | Igual que Early Run | 0,1°; media hora (agregado diario) | Nominal ~14 h (la NASA reporta ~12 h en datos recientes); real: pendiente | Corrección del acumulado de 3 días |
+| GPM IMERG Final Run V07 (NASA) | https://gpm.nasa.gov/data/imerg | Igual que Early Run | Igual que Early Run | 0,1°; media hora (agregado diario) | Nominal ~2,5-3,5 meses (la fuente no es consistente) | Histórico para entrenar y evaluar el modelo (no sirve en tiempo real) |
+| CHIRPS v2.0 (UCSB Climate Hazards Center) | https://www.chc.ucsb.edu/data/chirps · datos: https://data.chc.ucsb.edu/products/CHIRPS-2.0/ | Dominio público (renuncia de derechos registrada en Creative Commons) | No requiere autorización | 0,05°; diario y por péntada; 1981 → presente | Preliminar: ~2 días tras cada péntada; final: después de mediados del mes siguiente; real: pendiente | Climatología de referencia (línea base) e histórico de entrenamiento. Nota: la producción de v2 termina tras diciembre de 2026; evaluar CHIRPS v3 |
+| Producto en malla diario 1981 → (celdas de la cuenca) | pendiente | pendiente (producto y versión por confirmar; posiblemente CHIRPS) | pendiente | Diario; resolución pendiente | No aplica (histórico) | Histórico para entrenar y evaluar, una vez confirmado el producto |

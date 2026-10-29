@@ -1,0 +1,15 @@
+# Datos: nunca se versionan
+data/
+*.xls
+*.xlsx
+*.csv
+*.parquet
+*.nc
+*.nc4
+*.h5
+
+# Secretos
+.env
+
+# Excepción: fixtures pequeños de tests
+!tests/fixtures/**
