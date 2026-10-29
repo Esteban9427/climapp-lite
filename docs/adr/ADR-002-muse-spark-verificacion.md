@@ -33,7 +33,7 @@ La verificación sigue el taller de Meta: comprobaciones deterministas, juez y r
 4. **La confianza la calcula código** (`verification/confidence.py`, función pura y determinista), nunca el modelo:
    - Fuentes de evidencia: (a) grupos de estaciones, (b) IMERG Early en la celda del reporte y (c) el pronóstico vigente.
    - **Las estaciones correlacionadas cuentan como UNA sola fuente.** Se agrupan las que tienen r ≥ 0,8 en el entrenamiento (SUPUESTO; hoy, un grupo de 2 con r = 0,88 [INV]). Cada grupo aporta una señal, igual que cada estación no agrupada, con un peso reducido (SUPUESTO) porque r entre 0,49 y 0,75 sigue siendo dependencia.
-   - Puntaje entre 0 y 1 con su desglose por fuente. Los pesos son SUPUESTO y se calibran en el eval-harness.
+   - Puntaje entre 0 y 1 con su desglose por fuente. En v1 los pesos son **SUPUESTO fijos en configuración** (Must). Su calibración con el set de evaluación de reportes es **[Should]** (TASK-021).
 5. **Fallback:** con `DEMO_FALLBACK=1` se usan respuestas grabadas que pasan por la misma compuerta y se marcan `fallback=true`.
 
 ## Consecuencias
