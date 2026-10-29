@@ -13,7 +13,12 @@ ClimApp Lite publica cada día la probabilidad de que mañana caiga lluvia de 20
 ## Construido durante el evento (26 oct a 4 nov 2026)
 Todo lo que está en este repositorio se construyó durante el evento. La lista se llena a medida que se cierra cada función:
 
-- [ ] _(pendiente)_
+- [x] 2026-10-29: repositorio, licencia y fuentes de datos con su licencia y autorización (`docs/data-sources.md`).
+- [x] 2026-10-29: especificación: PRD con IN/OUT, métricas y supuestos (`docs/PRD.md`), historias de usuario en Gherkin, ADR-001 a ADR-005, modelo de datos, contrato OpenAPI, backlog, alcance del MVP y DoD.
+- [ ] Tabla diaria de precipitación con limpieza reproducible (TDD).
+- [ ] Pronóstico (random forest) evaluado contra climatología y persistencia.
+- [ ] Compuerta de verificación de reportes con Muse Spark.
+- [ ] Web móvil con pronóstico, reportes y mapa.
 
 ## Herramientas previas al evento, no parte del entregable
 Las usamos para trabajar, pero no forman parte de lo que se juzga y ningún archivo suyo está en este repositorio:
@@ -25,6 +30,9 @@ Las usamos para trabajar, pero no forman parte de lo que se juzga y ningún arch
 ## Equipo
 - Juan Esteban Gallego
 - Juan Manuel Nogales
+
+## Documentación
+- [PRD](docs/PRD.md) · [Historias de usuario](docs/user-stories.md) · [Decisiones (ADR)](docs/adr/) · [Modelo de datos](docs/data-model.md) · [API (OpenAPI)](docs/openapi.yaml) · [Backlog](docs/backlog.md) · [MVP](docs/mvp-scope.md) · [DoD](docs/dod.md)
 
 ## Fuentes de datos
 Ver [docs/data-sources.md](docs/data-sources.md). Los datos crudos no se versionan.
