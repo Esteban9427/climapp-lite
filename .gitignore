@@ -14,3 +14,11 @@ data/
 
 # Excepción: fixtures pequeños de tests
 !tests/fixtures/**
+
+# Entorno y cachés de herramientas
+.venv/
+__pycache__/
+.coverage
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/

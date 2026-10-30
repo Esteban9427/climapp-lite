@@ -15,6 +15,7 @@ Todo lo que está en este repositorio se construyó durante el evento. La lista 
 
 - [x] 2026-10-29: repositorio, licencia y fuentes de datos con su licencia y autorización (`docs/data-sources.md`).
 - [x] 2026-10-29: especificación: PRD con IN/OUT, métricas y supuestos (`docs/PRD.md`), historias de usuario en Gherkin, ADR-001 a ADR-005, modelo de datos, contrato OpenAPI, backlog, alcance del MVP y DoD.
+- [x] 2026-10-30: esqueleto del proyecto con uv (Python 3.12), pytest, ruff, mypy estricto, structlog y `Settings` que exige todas las claves de `.env.example` (TASK-001, TDD).
 - [ ] Tabla diaria de precipitación con limpieza reproducible (TDD).
 - [ ] Pronóstico (random forest) evaluado contra climatología y persistencia.
 - [ ] Compuerta de verificación de reportes con Muse Spark.
