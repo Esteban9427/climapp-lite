@@ -65,6 +65,7 @@ def test_cleaning_settings_are_typed(env_file: Path) -> None:
     settings = Settings(_env_file=env_file)
     assert settings.counter_sensors == ["P", "PRECIP"]
     assert settings.max_step_mm == 40.0
+    assert settings.max_gap_min == 20
     assert settings.suspect_step_mm == 30.0
     assert settings.suspect_quiet_min == 60
     assert settings.suspect_quiet_max_mm == 0.0

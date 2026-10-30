@@ -55,9 +55,7 @@ def test_step_equal_to_max_step_is_kept() -> None:
 
 
 def test_max_step_is_configurable() -> None:
-    params = CleaningParams(
-        max_step_mm=5.0, suspect_step_mm=4.0, suspect_quiet=timedelta(0), suspect_quiet_max_mm=0.0
-    )
+    params = replace(PARAMS, max_step_mm=5.0, suspect_step_mm=4.0, suspect_quiet=timedelta(0))
     assert _mm([0.0, 6.0, 7.0], params) == pytest.approx([0.0, 1.0])
 
 
@@ -144,3 +142,47 @@ def test_quiet_tolerance_applies_to_each_window_separately() -> None:
     before = [5.0, 5.0, 5.0, 6.0, 6.5, 7.6, 7.6]  # 2,6 mm en la hora previa
     incs = compute_increments(_series(*before, 46.2, *([46.2] * 6)), params)
     assert incs[6].flag is StepFlag.OK
+
+
+# Huecos: un paso entre lecturas separadas por más de max_gap no es lluvia atribuible
+
+
+def _at(*points: tuple[datetime, float]) -> list[Reading]:
+    return [Reading("raw-a", "P", ts, v) for ts, v in points]
+
+
+def test_step_across_a_long_gap_is_not_rain() -> None:
+    incs = compute_increments(_at((T0, 10.0), (T0 + timedelta(days=3), 35.0)), PARAMS)
+    assert [(i.mm, i.flag) for i in incs] == [(0.0, StepFlag.GAP)]
+
+
+def test_step_across_a_gap_within_the_limit_is_rain() -> None:
+    incs = compute_increments(_at((T0, 10.0), (T0 + timedelta(minutes=20), 10.4)), PARAMS)
+    assert [(i.mm, i.flag) for i in incs] == [(pytest.approx(0.4), StepFlag.OK)]
+
+
+def test_step_just_over_the_limit_is_a_gap() -> None:
+    incs = compute_increments(_at((T0, 10.0), (T0 + timedelta(minutes=30), 10.4)), PARAMS)
+    assert incs[0].flag is StepFlag.GAP
+
+
+def test_reset_after_a_gap_is_a_gap_and_counting_restarts() -> None:
+    later = T0 + timedelta(days=2)
+    incs = compute_increments(_at((T0, 500.0), (later, 0.0), (later + STEP, 0.4)), PARAMS)
+    assert [(i.mm, i.flag) for i in incs] == [
+        (0.0, StepFlag.GAP),
+        (pytest.approx(0.4), StepFlag.OK),
+    ]
+
+
+def test_max_gap_is_configurable() -> None:
+    params = replace(PARAMS, max_gap=timedelta(hours=2))
+    incs = compute_increments(_at((T0, 10.0), (T0 + timedelta(minutes=90), 11.0)), params)
+    assert incs[0].flag is StepFlag.OK
+
+
+def test_gap_inside_a_quiet_window_prevents_suspect() -> None:
+    before = [Reading("raw-a", "P", T0 + i * STEP, 5.0) for i in (0, 1, 4, 5, 6)]  # hueco 30 min
+    jump = [Reading("raw-a", "P", T0 + i * STEP, 43.6) for i in range(7, 14)]
+    incs = compute_increments(before + jump, PARAMS)
+    assert next(i for i in incs if i.mm > 30).flag is StepFlag.OK

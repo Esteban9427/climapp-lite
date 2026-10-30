@@ -25,7 +25,11 @@ from climapp.data.models import DailyPrecip, Reading
 TZ = ZoneInfo("America/Bogota")
 STEP = timedelta(minutes=10)
 PARAMS = CleaningParams(
-    max_step_mm=40.0, suspect_step_mm=30.0, suspect_quiet=timedelta(hours=1), suspect_quiet_max_mm=0
+    max_step_mm=40.0,
+    suspect_step_mm=30.0,
+    suspect_quiet=timedelta(hours=1),
+    suspect_quiet_max_mm=0,
+    max_gap=timedelta(minutes=20),
 )
 CONFIG = DailyConfig(sensors=("P",), tz=TZ, cleaning=PARAMS, min_readings=100)
 DAY = date(2024, 12, 31)
@@ -231,3 +235,15 @@ def test_write_daily_csv_round_trips_the_rows(tmp_path: Path) -> None:
     assert float(record["precip_mm"]) == pytest.approx(10.0)
     assert record["valid"] == "true"
     assert record["imputed"] == "false"
+
+
+def test_multi_day_gap_resuming_at_0010_does_not_add_accumulated_rain() -> None:
+    before_gap = Reading("raw-a", "P", datetime(2024, 12, 27, 12, 0, tzinfo=TZ), 100.0)
+    resumed = [
+        Reading("raw-a", "P", MIDNIGHT + (i + 1) * STEP, 125.0 + 0.1 * i) for i in range(110)
+    ]
+    rows = daily_for_station("EST-A", [(r, "h1") for r in [before_gap, *resumed]], PARAMS, 100)
+    row = next(r for r in rows if r.date == DAY)
+    assert row.precip_mm == pytest.approx(10.9)  # sin los 25 mm acumulados durante el hueco
+    assert row.n_gap == 1
+    assert row.valid is True
