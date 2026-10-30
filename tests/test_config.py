@@ -114,6 +114,7 @@ def test_evaluation_settings_are_typed(env_file: Path) -> None:
 def test_model_settings_are_typed(env_file: Path) -> None:
     settings = Settings(_env_file=env_file)
     assert settings.train_start == date(2013, 10, 1)
+    assert settings.calibration_start == date(2020, 1, 1)
     assert settings.test_end == date(2026, 10, 31)
     assert settings.rf_n_estimators == 500
     assert len(settings.chirps_files) == 4
@@ -121,6 +122,6 @@ def test_model_settings_are_typed(env_file: Path) -> None:
 
 
 def test_periods_must_be_chronological(env_file: Path) -> None:
-    rewrite_env(env_file, VALID_END="2021-06-30")
-    with pytest.raises(ValidationError, match="TRAIN_END"):
+    rewrite_env(env_file, VALID_END="2019-06-30")
+    with pytest.raises(ValidationError, match="CALIBRATION_START"):
         Settings(_env_file=env_file)

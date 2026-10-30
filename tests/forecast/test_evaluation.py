@@ -26,14 +26,28 @@ def _report() -> EvaluationReport:
     return run_evaluation(samples, CONFIG).report
 
 
-def test_report_compares_rf_with_both_baselines_on_the_test_period() -> None:
+def test_report_compares_both_rf_variants_with_both_baselines() -> None:
     report = _report()
-    names = [m.name for m in report.scenarios.con_est_b]
-    assert names == ["rf", "climatology", "persistence"]
+    rows = [(m.name, m.variant, m.calibrated) for m in report.scenarios.con_est_b]
+    assert rows == [
+        ("rf", "operativa", True),
+        ("rf", "operativa", False),
+        ("rf", "historica", True),
+        ("rf", "historica", False),
+        ("climatology", None, None),
+        ("persistence", None, None),
+    ]
     assert report.test_period.start == date(2023, 1, 1)
     assert report.scenarios.sin_est_b == []  # TASK-029 (Should)
     assert report.sensitivity is None
     assert report.imerg_final_vs_early is None
+
+
+def test_historical_variant_is_labelled_not_available_live() -> None:
+    by_variant = {m.variant: m for m in _report().scenarios.con_est_b if m.calibrated}
+    assert by_variant["historica"].available_live is False
+    assert "retraso" in (by_variant["historica"].note or "")
+    assert by_variant["operativa"].available_live is True
 
 
 def test_all_models_are_evaluated_on_the_same_days() -> None:
@@ -42,7 +56,8 @@ def test_all_models_are_evaluated_on_the_same_days() -> None:
 
 
 def test_rf_beats_climatology_on_a_persistent_synthetic_series() -> None:
-    rf, clim, _ = _report().scenarios.con_est_b
+    metrics = _report().scenarios.con_est_b
+    rf, clim = metrics[0], metrics[4]
     assert rf.auc > clim.auc
     assert rf.brier < clim.brier
 
@@ -60,6 +75,7 @@ def test_daily_outcomes_follow_the_validation_threshold() -> None:
         }[(alert, bool(day.observed))]
         assert day.outcome == expected
     assert len(report.daily) == rf.n_days
+    assert report.daily_variant == "operativa"
 
 
 def test_daily_entries_are_only_test_days() -> None:

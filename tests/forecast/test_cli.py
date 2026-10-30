@@ -44,12 +44,15 @@ def test_writes_evaluation_and_forecasts(env_file: Path) -> None:
     report = json.loads(evaluation_path.read_text(encoding="utf-8"))
     assert [m["name"] for m in report["scenarios"]["con_est_b"]] == [
         "rf",
+        "rf",
+        "rf",
+        "rf",
         "climatology",
         "persistence",
     ]
     assert report["data_plan"] == "plan_b_earthdata"
     forecasts = json.loads(forecasts_path.read_text(encoding="utf-8"))
-    latest = forecasts[-1]
+    latest = [f for f in forecasts if f["variant"] == "operativa"][-1]
     assert latest["target_date"] == "2026-11-01"
     assert 0.0 <= latest["prob_ge_threshold"] <= 1.0
     assert latest["model_version"]
@@ -65,9 +68,18 @@ def test_forecasts_cover_the_test_period_for_replay(env_file: Path) -> None:
 
 def test_chirps_counts_as_input_when_available(env_file: Path) -> None:
     _, forecasts_path = train_and_publish(_settings(env_file))
-    by_issue = {f["issue_date"]: f for f in json.loads(forecasts_path.read_text())}
-    assert "CHIRPS" in by_issue["2024-12-31"]["inputs_available"]
-    assert "CHIRPS" not in by_issue["2025-01-01"]["inputs_available"]
+    by_key = {(f["variant"], f["issue_date"]): f for f in json.loads(forecasts_path.read_text())}
+    assert "CHIRPS" in by_key["historica", "2024-12-31"]["inputs_available"]
+    assert "CHIRPS" not in by_key["historica", "2025-01-01"]["inputs_available"]
+    assert "CHIRPS" not in by_key["operativa", "2024-12-31"]["inputs_available"]
+
+
+def test_both_variants_are_published_for_every_issue_date(env_file: Path) -> None:
+    _, forecasts_path = train_and_publish(_settings(env_file))
+    forecasts = json.loads(forecasts_path.read_text())
+    operational = {f["issue_date"] for f in forecasts if f["variant"] == "operativa"}
+    historical = {f["issue_date"] for f in forecasts if f["variant"] == "historica"}
+    assert operational == historical
 
 
 def test_accum_3d_level_uses_the_configured_threshold(env_file: Path) -> None:

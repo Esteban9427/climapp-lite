@@ -7,7 +7,12 @@ import pytest
 
 from climapp.data.chirps_reader import ChirpsValue
 from climapp.data.models import DailyPrecip
-from climapp.forecast.features import FEATURE_NAMES, chirps_daily_mean, feature_row
+from climapp.forecast.features import (
+    FEATURE_NAMES,
+    chirps_daily_mean,
+    feature_row,
+    variant_columns,
+)
 from climapp.forecast.target import basin_days
 from tests.forecast.synthetic import _row, synthetic_rows
 
@@ -83,3 +88,10 @@ def test_features_never_use_data_after_the_issue_date() -> None:
     full = feature_row(issue, basin_days(rows), {})
     past_only = feature_row(issue, basin_days(truncated), {})
     assert full.values == pytest.approx(past_only.values, nan_ok=True)
+
+
+def test_operational_variant_uses_only_next_day_data() -> None:
+    names = [FEATURE_NAMES[i] for i in variant_columns("operativa")]
+    assert names
+    assert not [n for n in names if n.startswith("chirps")]
+    assert variant_columns("historica") == tuple(range(len(FEATURE_NAMES)))
