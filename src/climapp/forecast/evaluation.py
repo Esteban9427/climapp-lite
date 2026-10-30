@@ -131,7 +131,7 @@ def _baselines(
 
     `history` es todo lo previo a la prueba (≤ `VALID_END`), igual que el bosque final
     (ADR-001 §1). El umbral de la climatología se fija con la validación, que está dentro
-    de ese ajuste (hallazgo de la revisión del día 1b, pendiente de decisión del equipo).
+    de ese ajuste: limitación conocida (ADR-001 §Consecuencias); solo afecta POD, FAR y CSI.
     """
     observed = {s.target_date: s.observed for s in history}
     clim = [

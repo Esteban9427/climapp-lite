@@ -54,6 +54,7 @@ Se necesita la probabilidad de que mañana caiga ≥20 mm en la cuenca del río 
     - Se calcula con las lecturas limpias de ADR-004 §2; si la estación no tiene ventanas completas ese día, el indicador queda vacío.
 
 ## Consecuencias
+- **Limitación conocida (revisión de Muse del día 1b, 2026-10-30; decisión del equipo: no se recalcula, por la condición de §1):** la climatología se ajusta con todo lo previo a la prueba (≤ 2022), y su umbral de decisión se fijó con la validación 2020-2022, que forma parte de ese mismo ajuste. Solo afecta el POD, el FAR y el CSI de la climatología; su AUC y su Brier no dependen del umbral y no cambian. El RF fija su umbral con predicciones fuera de muestra. Ver `docs/reviews/dia-1b.md`.
 - Positivas: el modelo es simple, explicable y comparable con líneas base honestas. Al entrenarse con Early, la evaluación ya es la del modelo operativo: no hace falta una variante aparte.
 - Negativas: con un 79 % de falsas alarmas [PREV], el producto se comunica como informativo (R9). Las series cortas (EST-C y EST-D) limitan la regla A en los años anteriores a 2023.
 - Si el RF no supera a la climatología en el periodo apartado, se publica igual y el pitch lo dice (NFR-5).

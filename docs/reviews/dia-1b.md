@@ -39,7 +39,7 @@ Sin repo git aquí: TDD rojo→verde, commits en español y revisión pre-merge 
 |---|----------|----------|
 | 1 | Reportes y compuerta sin implementar | Esperado: TASK-011 a TASK-014 (domingo) y TASK-016 (lunes) |
 | 2 | `DEMO_FALLBACK` sin efecto | Esperado: TASK-011 (domingo) y TASK-019 (lunes). Hoy la demo no depende del LLM: `GET /forecast?replay_date=2024-12-31` funciona sin red |
-| 3 | Las líneas base se ajustan con la validación, que luego fija el umbral de la climatología | **Pendiente de decisión del equipo.** Solo afecta POD, FAR y CSI de la climatología (no su AUC ni su Brier, que salen del ajuste ≤ 2022 sobre la prueba). Recalcular sería otro ajuste tras ver la prueba, que la condición de ADR-001 §1 excluye; se corrigió el docstring, que decía "solo con entrenamiento" |
+| 3 | Las líneas base se ajustan con la validación, que luego fija el umbral de la climatología | **Decidido (2026-10-30): no se recalcula** (condición de ADR-001 §1); queda como limitación conocida en ADR-001 §Consecuencias. Solo afecta POD, FAR y CSI de la climatología (no su AUC ni su Brier, que salen del ajuste ≤ 2022 sobre la prueba). Recalcular sería otro ajuste tras ver la prueba, que la condición de ADR-001 §1 excluye; se corrigió el docstring, que decía "solo con entrenamiento" |
 | 4 | `climatology_probs` de 31 líneas | **Atendido**: se extrajo el conteo por día del año. El chequeo local de la DoD ahora cuenta también el docstring |
 | 5 | Artefacto corrupto → 500 | **Atendido** con test: 503 `artefacto_invalido` |
 | 6 | Prueba vacía o sin emisiones | **Atendido** con test: `ValueError` claro si no hay días de prueba; sin esa condición siempre hay emisiones, así que `records[-1]` no puede fallar |
