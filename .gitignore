@@ -1,5 +1,5 @@
 # Datos: nunca se versionan
-data/
+/data/
 *.xls
 *.xlsx
 *.csv
