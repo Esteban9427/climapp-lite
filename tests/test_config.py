@@ -88,3 +88,17 @@ def test_validation_errors_do_not_echo_secret_input(env_file: Path) -> None:
     with pytest.raises(ValidationError) as err:
         Settings(_env_file=env_file)
     assert "qzx" not in str(err.value)  # pydantic trunca la entrada, pero muestra el prefijo
+
+
+def test_daily_table_settings_are_typed(env_file: Path) -> None:
+    settings = Settings(_env_file=env_file)
+    assert settings.min_readings == 100
+    assert settings.station_map_file == Path("station_map.json")
+    assert settings.daily_stations_file == Path("derived/daily_stations.csv")
+    assert [p.suffix for p in settings.station_exports] == [".xls", ".csv"]
+
+
+def test_min_readings_cannot_exceed_readings_per_day(env_file: Path) -> None:
+    rewrite_env(env_file, MIN_READINGS="145")
+    with pytest.raises(ValidationError):
+        Settings(_env_file=env_file)
