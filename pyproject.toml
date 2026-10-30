@@ -17,6 +17,7 @@ dependencies = [
 
 [project.scripts]
 climapp-daily = "climapp.data.cli:main"
+climapp-train = "climapp.forecast.cli:main"
 
 [dependency-groups]
 dev = [

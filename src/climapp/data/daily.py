@@ -29,6 +29,7 @@ log = get_logger(__name__)
 PUBLIC_ID = re.compile(r"^EST-[A-Z]$")
 PRECIP_DECIMALS = 3  # el pluviómetro mide en décimas: 3 decimales solo quitan ruido flotante
 HASH_CHUNK_BYTES = 1 << 20
+NULLABLE_COLUMNS = frozenset({"precip_mm", "n_readings"})
 READERS = {".csv": read_csv_export, ".xls": read_xls_export}
 
 
@@ -266,3 +267,23 @@ def write_daily_csv(rows: Iterable[DailyPrecip], path: Path) -> Path:
             counts[row.series_id] += 1
     log.info("daily.written", path=str(path), rows=dict(counts))
     return path
+
+
+def _parse_cell(column: str, text: str) -> object:
+    """Valor de una celda del csv según la columna (inverso de `_csv_cell`)."""
+    if column in {"valid", "imputed"}:
+        return text == "true"
+    return None if text == "" and column in NULLABLE_COLUMNS else text
+
+
+def read_daily_csv(path: Path) -> list[DailyPrecip]:
+    """Lee la tabla diaria escrita por `write_daily_csv`.
+
+    Raises:
+        pydantic.ValidationError: si una fila no cumple el modelo `DailyPrecip`.
+    """
+    with path.open(encoding="utf-8", newline="") as handle:
+        return [
+            DailyPrecip.model_validate({k: _parse_cell(k, v) for k, v in record.items()})
+            for record in csv.DictReader(handle)
+        ]

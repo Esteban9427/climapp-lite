@@ -1,5 +1,6 @@
 """Líneas base del pronóstico: climatología y persistencia (ADR-001 §8)."""
 
+from collections import Counter
 from collections.abc import Iterable, Mapping
 from dataclasses import dataclass
 from datetime import date, timedelta
@@ -7,9 +8,14 @@ from datetime import date, timedelta
 DAYS_PER_YEAR = 365  # distancia circular entre días del año (el 29-feb queda a 1 día)
 
 
-def _doy_distance(a: date, b: date) -> int:
-    """Distancia circular entre los días del año de dos fechas."""
-    diff = abs(a.timetuple().tm_yday - b.timetuple().tm_yday)
+def _doy(day: date) -> int:
+    """Día del año (1-366)."""
+    return day.timetuple().tm_yday
+
+
+def _doy_distance(a: int, b: int) -> int:
+    """Distancia circular entre dos días del año."""
+    diff = abs(a - b)
     return min(diff, DAYS_PER_YEAR - diff)
 
 
@@ -29,14 +35,20 @@ def climatology_probs(
     Raises:
         ValueError: si no hay días de entrenamiento con dato en la ventana.
     """
-    observed = [(day, event) for day, event in train.items() if event is not None]
+    counts: Counter[int] = Counter()
+    events: Counter[int] = Counter()
+    for day, event in train.items():
+        if event is not None:
+            counts[_doy(day)] += 1
+            events[_doy(day)] += event
     probs: list[float] = []
     for target in targets:
-        window = [event for day, event in observed if _doy_distance(day, target) <= window_days]
-        if not window:
+        near = [d for d in counts if _doy_distance(d, _doy(target)) <= window_days]
+        total = sum(counts[d] for d in near)
+        if not total:
             msg = f"sin días de entrenamiento en la ventana de {target}"
             raise ValueError(msg)
-        probs.append(sum(window) / len(window))
+        probs.append(sum(events[d] for d in near) / total)
     return probs
 
 

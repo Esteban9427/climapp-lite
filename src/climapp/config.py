@@ -67,6 +67,17 @@ class Settings(BaseSettings):
     climatology_window_days: int = Field(ge=1)
     reliability_bins: int = Field(ge=2)
 
+    chirps_files: list[Path] = Field(min_length=1)
+    train_start: date
+    train_end: date
+    valid_end: date
+    test_end: date
+    rf_n_estimators: int = Field(ge=1)
+    rf_min_samples_leaf: int = Field(ge=1)
+    rf_random_state: int
+    evaluation_file: Path
+    forecasts_file: Path
+
     official_channels_url: str
     demo_fallback: bool
     scope_freeze_date: date
@@ -85,5 +96,13 @@ class Settings(BaseSettings):
         """Exige `SUSPECT_STEP_MM` < `MAX_STEP_MM`: un salto sobre el máximo ya es un pico."""
         if self.suspect_step_mm >= self.max_step_mm:
             msg = "SUSPECT_STEP_MM debe ser menor que MAX_STEP_MM (SP-12)"
+            raise ValueError(msg)
+        return self
+
+    @model_validator(mode="after")
+    def _periods_chronological(self) -> Self:
+        """Exige TRAIN_START < TRAIN_END < VALID_END < TEST_END (ADR-001 §9)."""
+        if not self.train_start < self.train_end < self.valid_end < self.test_end:
+            msg = "TRAIN_START < TRAIN_END < VALID_END < TEST_END no se cumple"
             raise ValueError(msg)
         return self
