@@ -1,0 +1,135 @@
+"""API de ClimApp Lite (`docs/openapi.yaml`). No es una alerta oficial.
+
+Uso: `uv run uvicorn climapp.api.main:app`.
+"""
+
+from datetime import UTC, date, datetime, timedelta
+from functools import cache
+from typing import Annotated
+
+from fastapi import Depends, FastAPI, Query, Request
+from fastapi.exceptions import RequestValidationError
+from fastapi.responses import JSONResponse
+
+from climapp.api.artifacts import ArtifactMissingError, find_forecast, load_evaluation
+from climapp.api.schemas import Error, Forecast
+from climapp.config import Settings, TargetRule
+from climapp.forecast.evaluation import EvaluationReport
+from climapp.forecast.features import Variant
+from climapp.forecast.publish import ForecastRecord
+from climapp.logging import get_logger
+
+log = get_logger(__name__)
+DISCLAIMER = (
+    "No es una alerta oficial. ClimApp Lite es un pronóstico experimental e informativo: "
+    "ante cualquier riesgo, sigue las indicaciones de los organismos oficiales."
+)
+STALE_AFTER = timedelta(hours=24)
+ERROR_RESPONSES: dict[int | str, dict[str, object]] = {
+    422: {"model": Error},
+    503: {"model": Error},
+}
+
+
+class ApiError(Exception):
+    """Error de negocio que se responde como `{code, message}`."""
+
+    def __init__(self, status: int, code: str, message: str) -> None:
+        """Guarda el código HTTP y el error del contrato."""
+        super().__init__(message)
+        self.status, self.code, self.message = status, code, message
+
+
+@cache
+def get_settings() -> Settings:
+    """Configuración leída una vez de `.env` (se reemplaza en los tests)."""
+    return Settings()
+
+
+def get_now() -> datetime:
+    """Instante actual con zona (se reemplaza en los tests)."""
+    return datetime.now(UTC)
+
+
+SettingsDep = Annotated[Settings, Depends(get_settings)]
+NowDep = Annotated[datetime, Depends(get_now)]
+
+
+def _to_forecast(
+    record: ForecastRecord, settings: Settings, now: datetime, replay: bool
+) -> Forecast:
+    """Respuesta del contrato a partir del artefacto, con el aviso siempre presente."""
+    return Forecast(
+        **record.model_dump(include={"issued_at", "target_date", "prob_ge_threshold"}),
+        **record.model_dump(include={"accum_3d_mm", "accum_3d_level", "variant"}),
+        **record.model_dump(include={"model_version", "inputs_available"}),
+        threshold_mm=settings.forecast_threshold_mm,
+        target_rule=settings.target_rule,
+        data_plan=settings.data_plan,
+        explanation=None,  # TASK-022: solo si pasa la compuerta de verificación
+        stale=now - record.issued_at > STALE_AFTER,
+        replay=replay,
+        disclaimer=DISCLAIMER,
+        official_channels_url=settings.official_channels_url,
+    )
+
+
+def forecast(
+    settings: SettingsDep,
+    now: NowDep,
+    replay_date: date | None = None,
+    variant: Annotated[Variant | None, Query()] = None,
+) -> Forecast:
+    """`GET /forecast`: vigente (`operativa`) o reproducción histórica (`historica`)."""
+    chosen: Variant = variant or ("historica" if replay_date else "operativa")
+    if chosen == "historica" and replay_date is None:
+        raise ApiError(
+            422, "variante_no_disponible", "la variante histórica solo existe en reproducción"
+        )
+    try:
+        record = find_forecast(settings.data_dir / settings.forecasts_file, chosen, replay_date)
+    except ArtifactMissingError as err:
+        raise ApiError(503, "sin_pronostico", str(err)) from err
+    return _to_forecast(record, settings, now, replay=replay_date is not None)
+
+
+def evaluation(settings: SettingsDep, target_rule: TargetRule | None = None) -> EvaluationReport:
+    """`GET /evaluation`: métricas del RF y de las líneas base en el periodo apartado."""
+    try:
+        report = load_evaluation(settings.data_dir / settings.evaluation_file)
+    except ArtifactMissingError as err:
+        raise ApiError(503, "sin_evaluacion", str(err)) from err
+    if (target_rule or settings.target_rule) != report.target_rule:
+        raise ApiError(422, "regla_no_evaluada", f"solo se evaluó {report.target_rule}")
+    return report
+
+
+async def _api_error(_: Request, exc: Exception) -> JSONResponse:
+    """Respuesta `{code, message}` de un `ApiError`."""
+    if not isinstance(exc, ApiError):
+        raise exc
+    log.info("api.error", status=exc.status, code=exc.code)
+    return JSONResponse(Error(code=exc.code, message=exc.message).model_dump(), exc.status)
+
+
+async def _validation_error(_: Request, exc: Exception) -> JSONResponse:
+    """Parámetros inválidos: 422 con el formato del contrato, sin trazas."""
+    if not isinstance(exc, RequestValidationError):
+        raise exc
+    fields = ", ".join(str(e["loc"][-1]) for e in exc.errors())
+    return JSONResponse(
+        Error(code="entrada_invalida", message=f"revisa: {fields}").model_dump(), 422
+    )
+
+
+def create_app() -> FastAPI:
+    """Crea la aplicación con sus rutas y manejadores de error."""
+    app = FastAPI(title="ClimApp Lite API", description=DISCLAIMER, version="0.1.0")
+    app.add_api_route("/forecast", forecast, methods=["GET"], responses=ERROR_RESPONSES)
+    app.add_api_route("/evaluation", evaluation, methods=["GET"], responses=ERROR_RESPONSES)
+    app.add_exception_handler(ApiError, _api_error)
+    app.add_exception_handler(RequestValidationError, _validation_error)
+    return app
+
+
+app = create_app()
