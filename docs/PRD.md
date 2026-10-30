@@ -33,7 +33,7 @@ En la cuenca, entre el 6 % y el 13 % de los días registran ≥20 mm en alguna e
 7. **Lista y mapa mínimo** (marcadores) con los reportes verificados y el acierto del pronóstico por día (`GET /reports`, `GET /evaluation`). Pulido del mapa: Should.
 8. **Evaluación pública** del modelo contra climatología y persistencia, con y sin EST-B (`GET /evaluation`). Sensibilidades de umbral (10 y 50 mm) y de regla de objetivo, y contraste Early↔Final: Should.
 9. **Aviso visible "no es alerta oficial"** y enlace a los canales oficiales en cada vista con pronóstico.
-10. **Demo como reproducción histórica** de un evento documentado, sin depender de datos en vivo. Evento recomendado: 2025-01-01 (SP-5, §Eventos documentados).
+10. **Demo como reproducción histórica** de un evento documentado, sin depender de datos en vivo. Evento aprobado: E1, 2025-01-01 (SP-5, §Eventos documentados).
 
 ### OUT (v1)
 Sequía e incendios · audio · cuentas de usuario · notificaciones · app nativa · plataforma de consulta histórica · usuarios investigadores · reentrenamiento automático.
@@ -69,14 +69,14 @@ Sequía e incendios · audio · cuentas de usuario · notificaciones · app nati
 | SP-2 | Día con lluvia = ≥1 mm | Con fuente: [OMM] pág. PDF 14 ("cantidad de días con precipitación ≥1 mm") |
 | SP-3 | Categorías de intensidad del IDEAM | **Horarias, no diarias** [JM]: ligera < 2 mm/h, moderada 2-15, fuerte 15-30, muy fuerte o torrencial > 30. Fuente: página del IDEAM, **URL pendiente** (se pide a JM). No se comparan con el umbral diario de 20 mm; se usan solo en el indicador descriptivo de intensidad horaria (ADR-001 §12, TASK-037). [IDEAM] GDI-I001 pág. 12 solo da rangos mensuales |
 | SP-4 | Regla de 3 días ≥100 mm | SUPUESTO, sin fuente |
-| SP-5 | Evento histórico de la demo | Candidatos de JM: 2025-01-01 y 2022-02-27 (fechas corregidas con la prensa). **Recomendado: 2025-01-01** (único en el periodo de prueba). Pendiente de aprobación del equipo |
+| SP-5 | Evento histórico de la demo | **Cerrado (2026-10-30): E1, 2025-01-01**, aprobado por el equipo (JE). Candidatos de JM: 2025-01-01 y 2022-02-27 (fechas corregidas con la prensa); E1 es el único en el periodo de prueba. E2 queda como ejemplo de lluvia de varios días, marcado como periodo de validación |
 | SP-6 | Regla del objetivo de cuenca (al menos una estación / media / estación de referencia) | SUPUESTO (JM no respondió); sigue `basin_mean` y se comparan las tres (ADR-001) |
 | SP-7 | Estaciones con r ≥ 0,8 agrupadas como una sola fuente | SUPUESTO (JM no respondió; ADR-002) |
 | SP-8 | Día válido con ≥ 100 de 144 lecturas | SUPUESTO; [OMM] (pág. PDF 18) e [IDEAM] (pág. 3) solo dan criterios mensuales (11/5 días faltantes; 80 % del mes) |
 | SP-9 | La latencia real de IMERG Early sobre la cuenca permite publicar el pronóstico a la hora prevista | Pendiente de medir |
 | SP-10 | Umbral del objetivo: 20 mm/día | Confirmado por JM (promedio empírico en días de desbordamiento), **pendiente de segunda revisión** |
 | SP-11 | Capacidad de JM en el Sprint 1: 8 h | Declarada por JM, **por confirmar** |
-| SP-12 | El filtro de picos (> 40 mm en 10 min) basta para descartar artefactos del contador | **En duda** [EVT]: un salto aislado de 38,6 mm en una sola lectura de 10 min, con la hora anterior y la posterior en 0, pasa el filtro y fabrica un día de 52,6 mm y una hora "torrencial". Pregunta abierta para JM |
+| SP-12 | El filtro de picos (> 40 mm en 10 min) basta para descartar artefactos del contador | **En duda** [EVT]: un salto aislado de 38,6 mm en una sola lectura de 10 min, con la hora anterior y la posterior en 0, pasa el filtro y fabrica un día de 52,6 mm y una hora "torrencial". Pregunta abierta para JM. **Precisión (TASK-003, 2026-10-30):** la hora anterior al salto (EST-A, 2024-12-31 23:50) está en 0, pero la posterior no: hay 1,8 mm entre las 00:30 y las 00:50. La limpieza marca `suspect` (sin borrar) un salto ≥ `SUSPECT_STEP_MM` (30 mm, SUPUESTO) con `SUSPECT_QUIET_MIN` (60 min) de calma antes y después, tolerando hasta `SUSPECT_QUIET_MAX_MM` en cada ventana. Con 0 mm (regla literal, valor actual) este salto **no** se marca; con 2 mm sí. Saltos marcados en la exportación csv, por estación: 0 mm → 2, 0, 2, 0; 2 mm → 5, 1, 3, 7. Preguntas para JM: ¿tolerancia de calma? ¿los `suspect` se excluyen del total diario o solo se señalan? |
 | SP-13 | El criterio de día válido (≥ 100/144 lecturas) detecta un sensor que no registra | **No lo detecta** [EVT]: EST-B suma ≈ 6 mm entre el 2022-01-01 y el 2022-03-01 con días completos de lecturas, mientras EST-A registra días de 40-52 mm. Pregunta abierta para JM |
 
 ## Eventos documentados
