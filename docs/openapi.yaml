@@ -14,12 +14,24 @@ paths:
           in: query
           description: Fecha de emisión para reproducción histórica (solo demo).
           schema: {type: string, format: date}
+        - name: variant
+          in: query
+          description: >
+            Variante del modelo (ADR-001 §3). Por defecto, `operativa` sin `replay_date` e
+            `historica` con `replay_date`. `historica` solo existe en reproducción: sin
+            `replay_date` responde 422.
+          schema: {$ref: "#/components/schemas/Variant"}
       responses:
         "200":
           description: Pronóstico
           content:
             application/json:
               schema: {$ref: "#/components/schemas/Forecast"}
+        "422":
+          description: Variante histórica pedida fuera de la reproducción, o parámetros inválidos
+          content:
+            application/json:
+              schema: {$ref: "#/components/schemas/Error"}
         "503":
           description: No hay pronóstico calculado
           content:
@@ -111,6 +123,13 @@ components:
       type: string
       enum: [any_station, basin_mean, reference_station]
       default: basin_mean
+    Variant:
+      type: string
+      description: >
+        operativa = solo variables disponibles al día siguiente (estaciones; IMERG Early con
+        TASK-028), la que se publica en vivo; historica = agrega CHIRPS (semanas de retraso),
+        solo para la reproducción histórica.
+      enum: [operativa, historica]
     DataPlan:
       type: string
       description: principal = estaciones + IMERG Early + CHIRPS; plan_b_earthdata = sin IMERG en el modelo; plan_b_datos = sin estaciones (D-03).
@@ -120,7 +139,7 @@ components:
       enum: [verificando, verificado, rechazado, requiere_revision_humana]
     Forecast:
       type: object
-      required: [issued_at, target_date, prob_ge_threshold, threshold_mm, target_rule, data_plan, model_version, stale, replay, disclaimer, official_channels_url]
+      required: [issued_at, target_date, prob_ge_threshold, threshold_mm, target_rule, data_plan, variant, model_version, stale, replay, disclaimer, official_channels_url]
       properties:
         issued_at: {type: string, format: date-time}
         target_date: {type: string, format: date}
@@ -130,6 +149,7 @@ components:
         accum_3d_mm: {type: [number, "null"]}
         accum_3d_level: {type: string, enum: [normal, elevado]}
         data_plan: {$ref: "#/components/schemas/DataPlan"}
+        variant: {$ref: "#/components/schemas/Variant"}
         model_version: {type: string}
         explanation: {type: [string, "null"]}
         inputs_available:
@@ -223,6 +243,17 @@ components:
       required: [name, pod, far, csi, brier, auc]
       properties:
         name: {type: string, enum: [rf, climatology, persistence]}
+        variant:
+          description: Solo para rf.
+          oneOf:
+            - {$ref: "#/components/schemas/Variant"}
+            - {type: "null"}
+        calibrated: {type: [boolean, "null"], description: "Solo para rf: isotónica fuera de muestra (ADR-001 §1)."}
+        available_live: {type: [boolean, "null"], description: "Solo para rf: false si usa datos con retraso."}
+        note: {type: [string, "null"]}
+        threshold: {type: number, description: Umbral de decisión fijado fuera de la prueba.}
+        n_days: {type: integer}
+        excluded_imputed_days: {type: integer}
         pod: {type: number}
         far: {type: number}
         csi: {type: number}
@@ -289,4 +320,7 @@ components:
               prob: {type: number}
               observed: {type: [boolean, "null"]}
               outcome: {type: string, enum: [acierto, falsa_alarma, fallo, correcto_negativo]}
+        daily_variant:
+          description: Variante del RF (calibrado) con la que se calcula `daily`.
+          allOf: [{$ref: "#/components/schemas/Variant"}]
         excluded_imputed_days: {type: integer}

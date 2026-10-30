@@ -45,7 +45,7 @@ Sequía e incendios · audio · cuentas de usuario · notificaciones · app nati
 | NFR-2 | Latencia de `POST /reports` con verificación completa | p95 ≤ 30 s con ≤ 3 intentos; la respuesta es asíncrona (`202` + estado) | SUPUESTO; se mide en el eval-harness |
 | NFR-3 | Costo por reporte (estructuración + juez, todos los intentos) | ≤ US$0,03 por reporte (p95) | Precios $1,25/M de entrada y $4,25/M de salida [API]; tokens por intento: SUPUESTO (~1,5 k de entrada y ~0,4 k de salida al estructurar, ~2,5 k y ~0,8 k en el juez ≈ US$0,01 por intento) |
 | NFR-4 | Cobertura de tests | ≥ 85 % en el núcleo (`core-paths.txt`: forecast, verification) y ≥ 70 % global | Perfil hackathon de FORGE |
-| NFR-5 | El modelo supera a las líneas base | AUC y Brier del RF mejores que climatología y persistencia en el periodo apartado | Previo: AUC 0,75 / 0,66 / 0,57 [PREV]; se regenera |
+| NFR-5 | El modelo supera a las líneas base | AUC y Brier del RF mejores que climatología y persistencia en el periodo apartado | **Cumple (TASK-008, 2026-10-30)**, ver §Resultados del modelo. Previo: AUC 0,75 / 0,66 / 0,57 [PREV], con otra partición |
 | NFR-6 | Confianza reproducible | El mismo reporte con la misma evidencia da la misma confianza (función pura, con test) | ADR-002 |
 | NFR-7 | Seguridad | Sin secretos en git (gitleaks limpio), SAST sin hallazgos altos y EXIF eliminado de las fotos | Perfil hackathon |
 | NFR-8 | Accesibilidad | Contraste WCAG AA y uso desde 360 px de ancho | SUPUESTO |
@@ -61,6 +61,7 @@ Sequía e incendios · audio · cuentas de usuario · notificaciones · app nati
 | R13 | La API de Muse no responde o se agota la cuota durante la demo | Medio | `DEMO_FALLBACK=1` con respuestas grabadas, marcadas como tales |
 | R14 | Las fotos tienen datos personales (caras, placas, EXIF) | Medio | Se elimina el EXIF; en la demo no se guarda el original |
 | R15 | Pocos eventos de 3 días ≥100 mm (1 %) | Medio | El indicador se presenta como señal descriptiva, no como predicción evaluada |
+| R16 | Las estaciones y CHIRPS no llegan en tiempo real; el pronóstico vigente depende de IMERG Early y de un flujo de estaciones que v1 no tiene | Alto | La variante `operativa` solo usa variables disponibles al día siguiente y es la única que publica `GET /forecast` en vivo; en v1 se emite con el último día de estaciones y queda `stale`. La variante `historica` (con CHIRPS) solo se usa en la reproducción (ADR-001 §3 y §5) |
 
 ## Supuestos (revisados en TASK-020 con las respuestas de JM del 2026-10-29)
 | ID | Supuesto | Estado |
@@ -79,6 +80,22 @@ Sequía e incendios · audio · cuentas de usuario · notificaciones · app nati
 | SP-12 | El filtro de picos (> 40 mm en 10 min) basta para descartar artefactos del contador | **En duda** [EVT]: un salto aislado de 38,6 mm en una sola lectura de 10 min, con la hora anterior y la posterior en 0, pasa el filtro y fabrica un día de 52,6 mm y una hora "torrencial". Pregunta abierta para JM. **Precisión (TASK-003, 2026-10-30):** la hora anterior al salto (EST-A, 2024-12-31 23:50) está en 0, pero la posterior no: hay 1,8 mm entre las 00:30 y las 00:50. La limpieza marca `suspect` (sin borrar) un salto ≥ `SUSPECT_STEP_MM` (30 mm, SUPUESTO) con `SUSPECT_QUIET_MIN` (60 min) de calma antes y después, tolerando hasta `SUSPECT_QUIET_MAX_MM` en cada ventana. Con 0 mm (regla literal, valor actual) este salto **no** se marca; con 2 mm sí. Saltos marcados en la exportación csv, por estación: 0 mm → 2, 0, 2, 0; 2 mm → 5, 1, 3, 7. Preguntas para JM: ¿tolerancia de calma? ¿los `suspect` se excluyen del total diario o solo se señalan? |
 | SP-13 | El criterio de día válido (≥ 100/144 lecturas) detecta un sensor que no registra | **No lo detecta** [EVT]: EST-B suma ≈ 6 mm entre el 2022-01-01 y el 2022-03-01 con días completos de lecturas, mientras EST-A registra días de 40-52 mm. Pregunta abierta para JM |
 | SP-14 | Un paso del contador sobre un hueco > 20 min (`MAX_GAP_MIN`) que cruza el día local no es lluvia atribuible; dentro del mismo día sí | SUPUESTO (2026-10-30, ADR-004 §2). Los huecos de 1-3 h dentro del día son frecuentes en EST-C (854, con 1 103 mm). Preguntas para JM: ¿esos huecos son cortes de transmisión con el contador sumando? ¿20 min es el límite adecuado? ¿un día con un hueco largo, aunque tenga ≥ 100 lecturas, debe ser válido? |
+
+## Resultados del modelo (TASK-008, 2026-10-30)
+Periodo apartado de prueba 2023-01-01 → 2026-10-31: 1 388 días evaluables (objetivo observado y dato el día de emisión), 157 eventos (11,3 %). Regla `basin_mean`, umbral 20 mm, `DATA_PLAN=plan_b_earthdata`. Calibración isotónica fuera de muestra 2020-2022 (ADR-001 §1). Todos los modelos se evalúan sobre los mismos días; el umbral de decisión de cada uno se fija fuera de la prueba.
+
+| Modelo | Disponible en vivo | AUC | Brier | POD | FAR | CSI |
+|--------|--------------------|-----|-------|-----|-----|-----|
+| RF `operativa`, calibrado (publica `GET /forecast`) | Sí | 0,664 | 0,0975 | 0,68 | 0,83 | 0,16 |
+| RF `operativa`, sin calibrar | Sí | 0,670 | 0,0972 | 0,61 | 0,82 | 0,16 |
+| RF `historica`, calibrado (solo reproducción) | No: CHIRPS llega con semanas de retraso | 0,707 | 0,0962 | 0,42 | 0,79 | 0,16 |
+| RF `historica`, sin calibrar | No | 0,716 | 0,0949 | 0,42 | 0,79 | 0,16 |
+| Climatología (±15 días) | Sí | 0,626 | 0,0987 | 0,74 | 0,85 | 0,15 |
+| Persistencia | Sí | 0,580 | 0,0983 | 0,25 | 0,75 | 0,15 |
+
+- **Antes del cambio de calibración** (isotónica solo en 2022, ADR-001 §1): RF con CHIRPS AUC 0,691 y Brier 0,1009, peor en Brier que la climatología (0,0989) y la persistencia (0,0981). El cambio se decidió después de ver ese resultado; es el único y no se ajusta nada más con la prueba.
+- La mejora del RF operativo sobre las líneas base es pequeña en Brier (0,0975 frente a 0,0983) y clara en AUC (0,664 frente a 0,626 y 0,580). Con un 83 % de falsas alarmas, el producto se comunica como informativo (R9).
+- Frente a [PREV] (AUC 0,75 / 0,66 / 0,57): el orden RF > climatología > persistencia se mantiene; el AUC es menor con una partición distinta (prueba 2023-2026 en vez de 2015-2026), la regla `basin_mean` y sin IMERG.
 
 ## Eventos documentados
 Crecidas citadas por JM como candidatas para la demo. Solo se citan hechos verificados en la fuente; no se publican cifras de víctimas.

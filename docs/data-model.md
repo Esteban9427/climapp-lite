@@ -28,6 +28,7 @@
 | `accum_3d_mm` | float \| null | Suma de los últimos 3 días válidos |
 | `accum_3d_level` | enum `normal` \| `elevado` | `elevado` si ≥ `ACCUM3_THRESHOLD_MM` (100, SUPUESTO) |
 | `data_plan` | enum `principal` \| `plan_b_earthdata` \| `plan_b_datos` | Plan de datos activo (ADR-001 §5, ADR-004 §5) |
+| `variant` | enum `operativa` \| `historica` | `operativa` en vivo; `historica` (con CHIRPS, semanas de retraso) solo en reproducción (ADR-001 §3) |
 | `model_version` | str | Hash de datos y parámetros |
 | `explanation` | str \| null | Texto de Muse Spark **verificado**; null si no pasó la compuerta |
 | `inputs_available` | list[str] | Series con dato para el día de emisión |
@@ -93,8 +94,9 @@
 | `threshold_mm` | float (20, SUPUESTO) |
 | `data_plan` | enum |
 | `scenarios` | {`con_est_b`, `sin_est_b`}: cada uno list[ModelMetrics] |
-| ModelMetrics | {`name`: `rf` \| `climatology` \| `persistence`, `pod`, `far`, `csi`, `brier`, `auc`, `reliability`: list[{`bin`, `forecast`, `observed`, `n`}]} |
+| ModelMetrics | {`name`: `rf` \| `climatology` \| `persistence`, `variant`, `calibrated`, `available_live`, `note` (solo rf), `pod`, `far`, `csi`, `brier`, `auc`, `threshold`, `n_days`, `reliability`: list[{`bin`, `forecast`, `observed`, `n`}]} |
 | `sensitivity` | **[Should]** list[{`threshold_mm` ∈ {10, 20, 50}, `target_rule`, `event_frequency`, `rf_auc`, `rf_brier`, `climatology_brier`}] \| null |
 | `imerg_final_vs_early` | **[Should]** {`period`, `bias_mm`, `pearson_r`, `n_days`} \| null |
 | `daily` | list[{`date`, `prob`, `observed`: bool \| null, `outcome`: `acierto` \| `falsa_alarma` \| `fallo` \| `correcto_negativo`}] (para el mapa) |
+| `daily_variant` | enum: variante del RF calibrado con la que se calcula `daily` (`operativa`) |
 | `excluded_imputed_days` | int |
