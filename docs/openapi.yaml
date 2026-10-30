@@ -111,6 +111,16 @@ paths:
           content:
             application/json:
               schema: {$ref: "#/components/schemas/EvaluationReport"}
+        "422":
+          description: Regla de objetivo no evaluada (las alternativas son Should, TASK-032)
+          content:
+            application/json:
+              schema: {$ref: "#/components/schemas/Error"}
+        "503":
+          description: No hay evaluación calculada
+          content:
+            application/json:
+              schema: {$ref: "#/components/schemas/Error"}
 components:
   schemas:
     Error:
