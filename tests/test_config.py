@@ -59,3 +59,24 @@ def test_out_of_domain_values_are_rejected(env_file: Path, key: str, value: str)
     rewrite_env(env_file, **{key: value})
     with pytest.raises(ValidationError):
         Settings(_env_file=env_file)
+
+
+def test_cleaning_settings_are_typed(env_file: Path) -> None:
+    settings = Settings(_env_file=env_file)
+    assert settings.counter_sensors == ["P", "PRECIP"]
+    assert settings.max_step_mm == 40.0
+    assert settings.suspect_step_mm == 30.0
+    assert settings.suspect_quiet_min == 60
+    assert str(settings.local_timezone) == "America/Bogota"
+
+
+def test_suspect_step_must_be_below_max_step(env_file: Path) -> None:
+    rewrite_env(env_file, SUSPECT_STEP_MM="45")
+    with pytest.raises(ValidationError, match="SUSPECT_STEP_MM"):
+        Settings(_env_file=env_file)
+
+
+def test_unknown_timezone_is_rejected(env_file: Path) -> None:
+    rewrite_env(env_file, LOCAL_TIMEZONE="Marte/Olimpo")
+    with pytest.raises(ValidationError):
+        Settings(_env_file=env_file)
