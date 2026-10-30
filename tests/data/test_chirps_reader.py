@@ -100,3 +100,13 @@ def test_missing_date_header_is_rejected(tmp_path: Path) -> None:
 def test_values_before_summary_block_are_kept_after_blank_row(tmp_path: Path) -> None:
     rows: list[Row] = [("FECHA", 598), ("1981.01.01", 1.0), *[(r[0], r[1]) for r in SUMMARY]]
     assert [v.precip_mm for v in read_chirps_xlsx(_book(tmp_path, rows))] == [1.0]
+
+
+def test_empty_value_is_kept_as_none(tmp_path: Path) -> None:
+    rows: list[Row] = [("FECHA", 598, 599), ("1981.01.01", None, 1.0)]
+    assert [v.precip_mm for v in read_chirps_xlsx(_book(tmp_path, rows))] == [None, 1.0]
+
+
+def test_accepts_plain_date_cells(tmp_path: Path) -> None:
+    rows: list[Row] = [("FECHA", 598), (date(2004, 1, 2), 1.0)]
+    assert read_chirps_xlsx(_book(tmp_path, rows))[0].day == date(2004, 1, 2)
