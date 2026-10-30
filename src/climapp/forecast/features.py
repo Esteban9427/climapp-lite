@@ -16,7 +16,7 @@ from climapp.data.chirps_reader import ChirpsValue
 from climapp.forecast.target import BasinDay
 
 LAGS = (0, 1, 2)
-DAYS_PER_YEAR = 365.25
+TROPICAL_YEAR_DAYS = 365.25  # periodo de la estacionalidad (seno y coseno)
 NAN = math.nan
 FEATURE_NAMES: tuple[str, ...] = (
     *(f"{stat}_t{lag}" for lag in LAGS for stat in ("mean", "max", "std")),
@@ -81,7 +81,7 @@ def _basin_stats(day: BasinDay | None) -> tuple[float, float, float]:
 
 def _seasonality(target: date) -> tuple[float, float]:
     """Seno y coseno del día del año objetivo."""
-    angle = 2 * math.pi * target.timetuple().tm_yday / DAYS_PER_YEAR
+    angle = 2 * math.pi * target.timetuple().tm_yday / TROPICAL_YEAR_DAYS
     return math.sin(angle), math.cos(angle)
 
 

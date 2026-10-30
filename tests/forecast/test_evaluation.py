@@ -3,6 +3,8 @@
 from datetime import date
 from functools import cache
 
+import pytest
+
 from climapp.forecast.dataset import build_samples
 from climapp.forecast.evaluation import EvalConfig, EvaluationReport, run_evaluation
 from climapp.forecast.target import basin_days

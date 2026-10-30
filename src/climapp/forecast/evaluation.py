@@ -125,10 +125,15 @@ def _model_metrics(
 
 
 def _baselines(
-    train: Sequence[Sample], valid: list[Sample], test: list[Sample], config: EvalConfig
+    history: Sequence[Sample], valid: list[Sample], test: list[Sample], config: EvalConfig
 ) -> list[ModelMetrics]:
-    """Métricas de climatología y persistencia ajustadas solo con entrenamiento."""
-    observed = {s.target_date: s.observed for s in train}
+    """Métricas de climatología y persistencia ajustadas con `history`.
+
+    `history` es todo lo previo a la prueba (≤ `VALID_END`), igual que el bosque final
+    (ADR-001 §1). El umbral de la climatología se fija con la validación, que está dentro
+    de ese ajuste (hallazgo de la revisión del día 1b, pendiente de decisión del equipo).
+    """
+    observed = {s.target_date: s.observed for s in history}
     clim = [
         climatology_probs(observed, [s.target_date for s in part], config.window_days)
         for part in (valid, test)
@@ -172,28 +177,39 @@ def _rf_metrics(
     ]
 
 
+def _report(
+    config: EvalConfig, test_start: date, metrics: list[ModelMetrics], daily: list[DailyOutcome]
+) -> EvaluationReport:
+    """Informe del contrato; `daily` es del RF operativo calibrado (`metrics[0]`)."""
+    return EvaluationReport(
+        test_period=TestPeriod(start=test_start, end=config.periods.test_end),
+        target_rule=config.rule,
+        threshold_mm=config.threshold_mm,
+        data_plan=config.data_plan,
+        scenarios=Scenarios(con_est_b=metrics, sin_est_b=[]),
+        daily=daily,
+        daily_variant="operativa",
+        excluded_imputed_days=metrics[0].excluded_imputed_days,
+    )
+
+
 def run_evaluation(samples: Sequence[Sample], config: EvalConfig) -> EvaluationResult:
-    """Ajusta el RF de cada variante, evalúa frente a las líneas base y arma el informe."""
+    """Ajusta el RF de cada variante, evalúa frente a las líneas base y arma el informe.
+
+    Raises:
+        ValueError: si no hay días en el periodo de prueba o faltan datos para ajustar.
+    """
     parts = split_samples(samples, config.periods)
+    if not parts["test"]:
+        msg = "no hay días en el periodo de prueba"
+        raise ValueError(msg)
     valid, test = _comparable(parts["valid"]), _comparable(parts["test"])
     models = {
         v: fit_forest(parts["train"], parts["valid"], config.rf, variant_columns(v))
         for v in VARIANTS
     }
     rf = [m for v in VARIANTS for m in _rf_metrics(models[v], v, valid, test, config.n_bins)]
-    report = EvaluationReport(
-        test_period=TestPeriod(
-            start=min(s.target_date for s in parts["test"]), end=config.periods.test_end
-        ),
-        target_rule=config.rule,
-        threshold_mm=config.threshold_mm,
-        data_plan=config.data_plan,
-        scenarios=Scenarios(
-            con_est_b=[*rf, *_baselines(parts["train"] + parts["valid"], valid, test, config)],
-            sin_est_b=[],
-        ),
-        daily=_daily(test, models["operativa"].predict(test), rf[0].threshold),
-        daily_variant="operativa",
-        excluded_imputed_days=rf[0].excluded_imputed_days,
-    )
-    return EvaluationResult(report, models)
+    baselines = _baselines(parts["train"] + parts["valid"], valid, test, config)
+    daily = _daily(test, models["operativa"].predict(test), rf[0].threshold)
+    test_start = min(s.target_date for s in parts["test"])
+    return EvaluationResult(_report(config, test_start, [*rf, *baselines], daily), models)

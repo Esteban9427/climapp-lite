@@ -4,7 +4,7 @@ import json
 from datetime import date
 from pathlib import Path
 
-from pydantic import TypeAdapter
+from pydantic import TypeAdapter, ValidationError
 
 from climapp.forecast.evaluation import EvaluationReport
 from climapp.forecast.features import Variant
@@ -15,6 +15,10 @@ _RECORDS = TypeAdapter(list[ForecastRecord])
 
 class ArtifactMissingError(LookupError):
     """No existe el artefacto o el pronóstico pedido."""
+
+
+class ArtifactInvalidError(ValueError):
+    """El artefacto existe pero no es JSON válido o no cumple su modelo."""
 
 
 def _read(path: Path) -> str:
@@ -31,8 +35,13 @@ def find_forecast(path: Path, variant: Variant, issue_date: date | None) -> Fore
 
     Raises:
         ArtifactMissingError: si no hay artefacto o no hay pronóstico para esa fecha.
+        ArtifactInvalidError: si el artefacto está corrupto.
     """
-    records = [r for r in _RECORDS.validate_json(_read(path)) if r.variant == variant]
+    try:
+        loaded = _RECORDS.validate_json(_read(path))
+    except ValidationError as err:
+        raise ArtifactInvalidError(f"{path.name} no es válido") from err
+    records = [r for r in loaded if r.variant == variant]
     if issue_date is not None:
         records = [r for r in records if r.issue_date == issue_date]
     if not records:
@@ -46,5 +55,9 @@ def load_evaluation(path: Path) -> EvaluationReport:
 
     Raises:
         ArtifactMissingError: si no existe.
+        ArtifactInvalidError: si está corrupto.
     """
-    return EvaluationReport.model_validate(json.loads(_read(path)))
+    try:
+        return EvaluationReport.model_validate(json.loads(_read(path)))
+    except (json.JSONDecodeError, ValidationError) as err:
+        raise ArtifactInvalidError(f"{path.name} no es válido") from err

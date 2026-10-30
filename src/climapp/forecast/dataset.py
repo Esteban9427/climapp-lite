@@ -80,6 +80,7 @@ def build_samples(
     """
 
     def event(day: date) -> bool | None:
+        """Evento observado del día; `None` sin agregados."""
         found = basin.get(day)
         return None if found is None else observed_event(found, rule, threshold_mm)
 

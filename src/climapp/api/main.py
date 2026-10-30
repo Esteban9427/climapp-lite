@@ -11,7 +11,12 @@ from fastapi import Depends, FastAPI, Query, Request
 from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
 
-from climapp.api.artifacts import ArtifactMissingError, find_forecast, load_evaluation
+from climapp.api.artifacts import (
+    ArtifactInvalidError,
+    ArtifactMissingError,
+    find_forecast,
+    load_evaluation,
+)
 from climapp.api.schemas import Error, Forecast
 from climapp.config import Settings, TargetRule
 from climapp.forecast.evaluation import EvaluationReport
@@ -24,7 +29,7 @@ DISCLAIMER = (
     "No es una alerta oficial. ClimApp Lite es un pronóstico experimental e informativo: "
     "ante cualquier riesgo, sigue las indicaciones de los organismos oficiales."
 )
-STALE_AFTER = timedelta(hours=24)
+STALE_AFTER = timedelta(hours=24)  # contrato: stale si issued_at tiene más de 24 h
 ERROR_RESPONSES: dict[int | str, dict[str, object]] = {
     422: {"model": Error},
     503: {"model": Error},
@@ -80,7 +85,20 @@ def forecast(
     replay_date: date | None = None,
     variant: Annotated[Variant | None, Query()] = None,
 ) -> Forecast:
-    """`GET /forecast`: vigente (`operativa`) o reproducción histórica (`historica`)."""
+    """`GET /forecast`: vigente (`operativa`) o reproducción histórica (`historica`).
+
+    Args:
+        settings: configuración (dependencia).
+        now: instante actual (dependencia), para `stale`.
+        replay_date: fecha de emisión a reproducir (solo demo).
+        variant: variante pedida; por defecto según `replay_date` (ADR-001 §3).
+
+    Returns:
+        El pronóstico con el aviso y el enlace oficial.
+
+    Raises:
+        ApiError: 422 si se pide `historica` sin `replay_date`; 503 sin pronóstico.
+    """
     chosen: Variant = variant or ("historica" if replay_date else "operativa")
     if chosen == "historica" and replay_date is None:
         raise ApiError(
@@ -90,15 +108,30 @@ def forecast(
         record = find_forecast(settings.data_dir / settings.forecasts_file, chosen, replay_date)
     except ArtifactMissingError as err:
         raise ApiError(503, "sin_pronostico", str(err)) from err
+    except ArtifactInvalidError as err:
+        raise ApiError(503, "artefacto_invalido", str(err)) from err
     return _to_forecast(record, settings, now, replay=replay_date is not None)
 
 
 def evaluation(settings: SettingsDep, target_rule: TargetRule | None = None) -> EvaluationReport:
-    """`GET /evaluation`: métricas del RF y de las líneas base en el periodo apartado."""
+    """`GET /evaluation`: métricas del RF y de las líneas base en el periodo apartado.
+
+    Args:
+        settings: configuración (dependencia).
+        target_rule: regla pedida; por defecto `TARGET_RULE`.
+
+    Returns:
+        El informe precalculado por `climapp-train`.
+
+    Raises:
+        ApiError: 503 sin informe válido; 422 si la regla pedida no se evaluó.
+    """
     try:
         report = load_evaluation(settings.data_dir / settings.evaluation_file)
     except ArtifactMissingError as err:
         raise ApiError(503, "sin_evaluacion", str(err)) from err
+    except ArtifactInvalidError as err:
+        raise ApiError(503, "artefacto_invalido", str(err)) from err
     if (target_rule or settings.target_rule) != report.target_rule:
         raise ApiError(422, "regla_no_evaluada", f"solo se evaluó {report.target_rule}")
     return report

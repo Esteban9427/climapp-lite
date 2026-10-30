@@ -5,7 +5,7 @@ from collections.abc import Iterable, Mapping
 from dataclasses import dataclass
 from datetime import date, timedelta
 
-DAYS_PER_YEAR = 365  # distancia circular entre días del año (el 29-feb queda a 1 día)
+DOY_CYCLE = 365  # ciclo para la distancia circular entre días del año (29-feb a 1 día)
 
 
 def _doy(day: date) -> int:
@@ -16,7 +16,18 @@ def _doy(day: date) -> int:
 def _doy_distance(a: int, b: int) -> int:
     """Distancia circular entre dos días del año."""
     diff = abs(a - b)
-    return min(diff, DAYS_PER_YEAR - diff)
+    return min(diff, DOY_CYCLE - diff)
+
+
+def _doy_counts(train: Mapping[date, bool | None]) -> tuple[Counter[int], Counter[int]]:
+    """Días con dato y días con evento por día del año."""
+    counts: Counter[int] = Counter()
+    events: Counter[int] = Counter()
+    for day, event in train.items():
+        if event is not None:
+            counts[_doy(day)] += 1
+            events[_doy(day)] += event
+    return counts, events
 
 
 def climatology_probs(
@@ -35,12 +46,7 @@ def climatology_probs(
     Raises:
         ValueError: si no hay días de entrenamiento con dato en la ventana.
     """
-    counts: Counter[int] = Counter()
-    events: Counter[int] = Counter()
-    for day, event in train.items():
-        if event is not None:
-            counts[_doy(day)] += 1
-            events[_doy(day)] += event
+    counts, events = _doy_counts(train)
     probs: list[float] = []
     for target in targets:
         near = [d for d in counts if _doy_distance(d, _doy(target)) <= window_days]
