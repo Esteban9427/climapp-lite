@@ -263,3 +263,12 @@ def test_read_daily_csv_is_the_inverse_of_write(tmp_path: Path) -> None:
     invalid = _one_day(_with_opening(_day_readings(99)))
     path = write_daily_csv([valid, invalid], tmp_path / "daily.csv")
     assert read_daily_csv(path) == [valid, invalid]
+
+
+def test_read_daily_csv_keeps_empty_source_hash_of_days_without_readings(tmp_path: Path) -> None:
+    readings = [
+        Reading("raw-a", "P", datetime(2024, 12, 30, 12, 0, tzinfo=TZ), 1.0),
+        Reading("raw-a", "P", datetime(2025, 1, 1, 12, 0, tzinfo=TZ), 1.0),
+    ]
+    rows = daily_for_station("EST-A", [(r, "h1") for r in readings], PARAMS, min_readings=1)
+    assert read_daily_csv(write_daily_csv(rows, tmp_path / "d.csv")) == rows
