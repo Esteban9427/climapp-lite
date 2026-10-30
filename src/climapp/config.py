@@ -54,6 +54,7 @@ class Settings(BaseSettings):
     local_timezone: ZoneInfo
     counter_sensors: list[str] = Field(min_length=1)
     max_step_mm: float = Field(gt=0)
+    max_gap_min: int = Field(ge=1)
     suspect_step_mm: float = Field(gt=0)
     suspect_quiet_min: int = Field(ge=0)
     suspect_quiet_max_mm: float = Field(ge=0)

@@ -12,6 +12,7 @@ from dataclasses import dataclass, replace
 from datetime import datetime, timedelta
 from itertools import pairwise
 
+from climapp.data.days import step_crosses_day
 from climapp.data.models import Increment, Reading, StepFlag
 
 # Los valores del contador traen ruido de coma flotante (p. ej. 821.20000000000005);
@@ -29,12 +30,16 @@ class CleaningParams:
         suspect_quiet: tiempo sin lluvia exigido antes y después (`SUSPECT_QUIET_MIN`).
         suspect_quiet_max_mm: lluvia máxima tolerada en cada ventana de calma
             (`SUSPECT_QUIET_MAX_MM`; 0 es la regla literal de SP-12).
+        max_gap: separación máxima entre lecturas sin marca de hueco (`MAX_GAP_MIN`,
+            SUPUESTO); un paso más largo es `GAP` (0 mm) si cruza el día local y
+            `GAP_INTRADAY` (conserva la lluvia) si no.
     """
 
     max_step_mm: float
     suspect_step_mm: float
     suspect_quiet: timedelta
     suspect_quiet_max_mm: float
+    max_gap: timedelta
 
 
 def _classify(diff: float, max_step_mm: float) -> tuple[float, StepFlag]:
@@ -51,13 +56,27 @@ def _valued_points(readings: Sequence[Reading]) -> list[tuple[datetime, float]]:
     return sorted((r.ts, r.value) for r in readings if r.value is not None)
 
 
-def _raw_increments(points: Sequence[tuple[datetime, float]], max_step: float) -> list[Increment]:
+def _step(prev_ts: datetime, ts: datetime, diff: float, params: CleaningParams) -> Increment:
+    """Clasifica un paso del contador, teniendo en cuenta los huecos (ADR-004 §2).
+
+    Un hueco que cruza el día local es `GAP`: no se sabe a qué día atribuir la lluvia.
+    Dentro del mismo día el contador acumulado sí la atribuye bien, así que se conserva
+    como `GAP_INTRADAY` salvo que el paso sea un reinicio o un pico.
+    """
+    long_gap = ts - prev_ts > params.max_gap
+    if long_gap and step_crosses_day(prev_ts, ts):
+        return Increment(ts=ts, mm=0.0, flag=StepFlag.GAP)
+    mm, flag = _classify(diff, params.max_step_mm)
+    if long_gap and flag is StepFlag.OK:
+        flag = StepFlag.GAP_INTRADAY
+    return Increment(ts=ts, mm=mm, flag=flag)
+
+
+def _raw_increments(
+    points: Sequence[tuple[datetime, float]], params: CleaningParams
+) -> list[Increment]:
     """Incrementos clasificados entre puntos consecutivos."""
-    increments: list[Increment] = []
-    for (_, prev), (ts, cur) in pairwise(points):
-        mm, flag = _classify(cur - prev, max_step)
-        increments.append(Increment(ts=ts, mm=mm, flag=flag))
-    return increments
+    return [_step(t0, t1, v1 - v0, params) for (t0, v0), (t1, v1) in pairwise(points)]
 
 
 def _is_isolated(
@@ -68,12 +87,15 @@ def _is_isolated(
     Un incremento con instante `t` es lluvia caída hasta `t`, así que la lluvia de la
     hora previa son los incrementos en `(ts - quiet, ts)` y la de la posterior, los de
     `(ts, ts + quiet]`. Cada ventana se compara por separado con `suspect_quiet_max_mm`.
+    Un hueco (`GAP`) dentro de una ventana impide afirmar que no llovió.
     """
     ts, quiet = incs[i].ts, params.suspect_quiet
     limit = params.suspect_quiet_max_mm + FLOAT_TOLERANCE_MM
-    before = sum(inc.mm for inc in incs[bisect_right(times, ts - quiet) : i])
-    after = sum(inc.mm for inc in incs[i + 1 : bisect_right(times, ts + quiet)])
-    return before <= limit and after <= limit
+    before = incs[bisect_right(times, ts - quiet) : i]
+    after = incs[i + 1 : bisect_right(times, ts + quiet)]
+    if any(inc.flag is StepFlag.GAP for inc in (*before, *after)):
+        return False
+    return sum(inc.mm for inc in before) <= limit and sum(inc.mm for inc in after) <= limit
 
 
 def _flag_suspects(
@@ -113,7 +135,7 @@ def compute_increments(readings: Sequence[Reading], params: CleaningParams) -> l
         msg = "compute_increments espera lecturas de una sola estación"
         raise ValueError(msg)
     points = _valued_points(readings)
-    incs = _raw_increments(points, params.max_step_mm)
+    incs = _raw_increments(points, params)
     if not incs:
         return incs
     return _flag_suspects(incs, (points[0][0], points[-1][0]), params)

@@ -13,13 +13,14 @@ import re
 from collections import Counter, defaultdict
 from collections.abc import Collection, Iterable, Mapping, Sequence
 from dataclasses import dataclass, field
-from datetime import date, datetime, time, timedelta
+from datetime import date, datetime, timedelta
 from pathlib import Path
 from zoneinfo import ZoneInfo
 
 from climapp.config import Settings
 from climapp.data.cleaning import CleaningParams, compute_increments
-from climapp.data.models import DailyPrecip, Increment, Reading, StepFlag
+from climapp.data.days import local_day
+from climapp.data.models import GAP_FLAGS, DailyPrecip, Increment, Reading, StepFlag
 from climapp.data.station_reader import read_csv_export, read_xls_export
 from climapp.logging import get_logger
 
@@ -55,6 +56,7 @@ class DailyConfig:
             suspect_step_mm=settings.suspect_step_mm,
             suspect_quiet=timedelta(minutes=settings.suspect_quiet_min),
             suspect_quiet_max_mm=settings.suspect_quiet_max_mm,
+            max_gap=timedelta(minutes=settings.max_gap_min),
         )
         return cls(
             settings.counter_sensors, settings.local_timezone, cleaning, settings.min_readings
@@ -80,22 +82,6 @@ class MergedReadings:
 
     readings_by_station: dict[str, list[tuple[Reading, str]]] = field(default_factory=dict)
     conflicts: int = 0
-
-
-def local_day(ts: datetime, tz: ZoneInfo | None = None) -> date:
-    """Día local al que pertenece una lectura (la de las 00:00 cierra el día anterior).
-
-    Args:
-        ts: instante de la lectura, con zona horaria.
-        tz: zona local; si es `None` se usa la zona de `ts`.
-
-    Returns:
-        La fecha local del paso que cierra la lectura.
-    """
-    local = ts.astimezone(tz) if tz else ts
-    if local.timetz().replace(tzinfo=None) == time(0, 0):
-        return local.date() - timedelta(days=1)
-    return local.date()
 
 
 def merge_sources(sources: Iterable[SourcedReadings]) -> MergedReadings:
@@ -129,12 +115,13 @@ class _DayTally:
     hashes: set[str] = field(default_factory=set)
     mm: float = 0.0
     n_suspect: int = 0
+    n_gap: int = 0
 
 
 def _tally(
     pairs: Sequence[tuple[Reading, str]], incs: Sequence[Increment]
 ) -> dict[date, _DayTally]:
-    """Cuenta lecturas, hashes, lluvia y saltos `suspect` por día local."""
+    """Cuenta lecturas, hashes, lluvia, saltos `suspect` y huecos por día local."""
     days: defaultdict[date, _DayTally] = defaultdict(_DayTally)
     for reading, digest in pairs:
         if reading.value is not None:
@@ -145,6 +132,7 @@ def _tally(
         day = days[local_day(inc.ts)]
         day.mm += inc.mm
         day.n_suspect += inc.flag is StepFlag.SUSPECT
+        day.n_gap += inc.flag in GAP_FLAGS
     return days
 
 
@@ -160,6 +148,7 @@ def _row(series_id: str, day: date, tally: _DayTally, min_readings: int) -> Dail
         imputed=False,
         source_hash=",".join(sorted(tally.hashes)),
         n_suspect=tally.n_suspect,
+        n_gap=tally.n_gap,
     )
 
 

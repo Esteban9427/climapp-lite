@@ -31,6 +31,11 @@ class StepFlag(StrEnum):
     RESET = "reset"
     SPIKE = "spike"
     SUSPECT = "suspect"
+    GAP = "gap"
+    GAP_INTRADAY = "gap_intraday"
+
+
+GAP_FLAGS = frozenset({StepFlag.GAP, StepFlag.GAP_INTRADAY})
 
 
 @dataclass(frozen=True, slots=True)
@@ -39,8 +44,10 @@ class Increment:
 
     Attributes:
         ts: instante de la lectura que cierra el paso.
-        mm: lluvia del paso; 0 si el paso se ignoró (`RESET` o `SPIKE`).
-        flag: motivo de limpieza; `SUSPECT` conserva `mm` (SP-12).
+        mm: lluvia del paso; 0 si el paso se ignoró (`RESET`, `SPIKE` o `GAP`).
+        flag: motivo de limpieza; `SUSPECT` conserva `mm` (SP-12). Un paso entre
+            lecturas separadas por más de `MAX_GAP_MIN` es `GAP` (0 mm) si cruza el día
+            local y `GAP_INTRADAY` (conserva `mm`) si queda dentro del mismo día.
     """
 
     ts: datetime
@@ -60,6 +67,8 @@ class DailyPrecip(BaseModel):
         imputed: `True` si se rellenó con vecinas; nunca entra a la evaluación.
         source_hash: SHA-256 de los archivos crudos de origen, separados por coma.
         n_suspect: saltos `suspect` (SP-12) incluidos en `precip_mm`.
+        n_gap: pasos sobre huecos mayores a `MAX_GAP_MIN`; solo los que cruzan el día
+            (`GAP`) se anulan, los del mismo día (`GAP_INTRADAY`) conservan su lluvia.
     """
 
     model_config = ConfigDict(frozen=True)
@@ -72,3 +81,4 @@ class DailyPrecip(BaseModel):
     imputed: bool
     source_hash: str
     n_suspect: int = Field(ge=0)
+    n_gap: int = Field(ge=0)
