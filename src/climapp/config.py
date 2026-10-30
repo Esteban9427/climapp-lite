@@ -64,6 +64,9 @@ class Settings(BaseSettings):
     daily_stations_file: Path
     min_readings: int = Field(ge=1, le=READINGS_PER_DAY)
 
+    climatology_window_days: int = Field(ge=1)
+    reliability_bins: int = Field(ge=2)
+
     official_channels_url: str
     demo_fallback: bool
     scope_freeze_date: date
