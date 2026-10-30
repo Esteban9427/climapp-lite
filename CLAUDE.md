@@ -34,7 +34,7 @@ uv run uvicorn climapp.api.main:app --reload
 9. **Datos**: nunca versionar datos crudos ni derivados (`data/`, `*.xls`, `*.csv`, etc.). Los fixtures de `tests/fixtures/` son sintéticos.
 10. **Sin nombres ni coordenadas de estaciones** en código, tests, docs ni commits: usar `EST-A`…`EST-D` (ADR-004).
 11. **Secretos** solo en `.env`; `.env.example` sin valores secretos.
-12. **Commits** convencionales en español, uno por tarea; nunca `git add -A` ni `--no-verify`.
+12. **Commits** convencionales en español, dos por tarea: `test(task-NNN)` con el test en rojo y luego `feat(task-NNN)` (o `fix`) con el código en verde, como evidencia de TDD (DoD §1) y del trabajo durante el evento (R10). Cada commit lleva solo las rutas de su tarea; nunca `git add -A` ni `--no-verify`.
 13. **Revisión**: antes de un merge que toque el núcleo o el contrato de la API, revisión en solo lectura con `muse exec --model muse-spark-1.3 --contributor-mode off` (ADR-003).
 14. **Contribuciones**: al cerrar una tarea, agregar una línea a "Construido durante el evento" en el README.
 15. **Contenedores**: Podman, nunca Docker.
