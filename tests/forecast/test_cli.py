@@ -92,3 +92,4 @@ def test_accum_3d_level_uses_the_configured_threshold(env_file: Path) -> None:
 def test_plans_not_implemented_yet_are_rejected(env_file: Path, plan: str) -> None:
     with pytest.raises(ValueError, match="TASK-0"):
         train_and_publish(_settings(env_file, DATA_PLAN=plan))
+

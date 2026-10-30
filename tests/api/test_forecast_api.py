@@ -213,3 +213,20 @@ def test_default_settings_dependency_reads_environment(
     assert get_settings().official_channels_url == OFFICIAL
     get_settings.cache_clear()
     assert get_now().tzinfo is not None
+
+
+@pytest.mark.parametrize("content", ["{no es json", '[{"variant": "operativa"}]'])
+def test_corrupt_forecast_artifact_is_503_not_500(
+    client: TestClient, settings: Settings, content: str
+) -> None:
+    (settings.data_dir / settings.forecasts_file).write_text(content, encoding="utf-8")
+    response = client.get("/forecast")
+    assert response.status_code == 503
+    assert response.json()["code"] == "artefacto_invalido"
+
+
+def test_corrupt_evaluation_artifact_is_503_not_500(client: TestClient, settings: Settings) -> None:
+    (settings.data_dir / settings.evaluation_file).write_text('{"daily": 1}', encoding="utf-8")
+    response = client.get("/evaluation")
+    assert response.status_code == 503
+    assert_matches(response.json(), "Error")

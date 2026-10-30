@@ -90,3 +90,10 @@ def test_report_carries_rule_threshold_and_data_plan() -> None:
         "plan_b_earthdata",
     )
     assert report.excluded_imputed_days == 0
+
+
+def test_evaluation_without_test_days_fails_with_a_clear_message() -> None:
+    rows = [r for r in synthetic_rows() if r.date < date(2022, 12, 1)]
+    samples = build_samples(basin_days(rows), {}, threshold_mm=20.0, rule="basin_mean")
+    with pytest.raises(ValueError, match="periodo de prueba"):
+        run_evaluation(samples, CONFIG)
