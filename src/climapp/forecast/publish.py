@@ -14,7 +14,7 @@ from zoneinfo import ZoneInfo
 from pydantic import BaseModel
 
 from climapp.forecast.dataset import Sample
-from climapp.forecast.features import FEATURE_NAMES
+from climapp.forecast.features import DELAYED_PREFIXES, FEATURE_NAMES, Variant
 from climapp.forecast.model import CalibratedForest
 
 ACCUM3_INDEX = FEATURE_NAMES.index("accum3_mean")
@@ -23,6 +23,7 @@ ACCUM3_INDEX = FEATURE_NAMES.index("accum3_mean")
 class ForecastRecord(BaseModel):
     """Pronóstico emitido al cierre del día `issue_date` para `target_date`."""
 
+    variant: Variant
     issue_date: date
     target_date: date
     issued_at: datetime
@@ -52,28 +53,40 @@ class PublishContext:
     inputs: Mapping[date, list[str]]
 
 
-def _record(sample: Sample, prob: float, ctx: PublishContext) -> ForecastRecord:
+def _inputs(variant: Variant, series: list[str]) -> list[str]:
+    """Series con dato que usa la variante (la operativa no usa las de retraso)."""
+    if variant == "historica":
+        return series
+    return [s for s in series if not s.lower().startswith(DELAYED_PREFIXES)]
+
+
+def _record(sample: Sample, prob: float, ctx: PublishContext, variant: Variant) -> ForecastRecord:
     """Pronóstico de una emisión."""
     accum = sample.x[ACCUM3_INDEX]
     accum_mm = None if math.isnan(accum) else round(accum, 1)
     elevated = accum_mm is not None and accum_mm >= ctx.accum3_threshold_mm
     return ForecastRecord(
+        variant=variant,
         issue_date=sample.issue_date,
         target_date=sample.target_date,
         issued_at=datetime.combine(sample.issue_date + timedelta(days=1), time(0, 0), ctx.tz),
         prob_ge_threshold=prob,
         accum_3d_mm=accum_mm,
         accum_3d_level="elevado" if elevated else "normal",
-        inputs_available=ctx.inputs.get(sample.issue_date, []),
+        inputs_available=_inputs(variant, ctx.inputs.get(sample.issue_date, [])),
         model_version=ctx.model_version,
     )
 
 
 def forecast_records(
-    samples: Sequence[Sample], model: CalibratedForest, ctx: PublishContext
+    samples: Sequence[Sample], models: Mapping[Variant, CalibratedForest], ctx: PublishContext
 ) -> list[ForecastRecord]:
-    """Emisiones desde `ctx.from_issue`, en orden de fecha."""
+    """Emisiones de cada variante desde `ctx.from_issue`, por variante y fecha."""
     chosen = sorted(
         (s for s in samples if s.issue_date >= ctx.from_issue), key=lambda s: s.issue_date
     )
-    return [_record(s, p, ctx) for s, p in zip(chosen, model.predict(chosen), strict=True)]
+    return [
+        _record(s, p, ctx, variant)
+        for variant, model in models.items()
+        for s, p in zip(chosen, model.predict(chosen), strict=True)
+    ]

@@ -10,6 +10,7 @@ from collections import defaultdict
 from collections.abc import Iterable, Mapping
 from dataclasses import dataclass
 from datetime import date, timedelta
+from typing import Literal
 
 from climapp.data.chirps_reader import ChirpsValue
 from climapp.forecast.target import BasinDay
@@ -26,6 +27,26 @@ FEATURE_NAMES: tuple[str, ...] = (
     "doy_sin",
     "doy_cos",
 )
+
+
+Variant = Literal["operativa", "historica"]
+VARIANTS: tuple[Variant, ...] = ("operativa", "historica")
+# CHIRPS publica con semanas de retraso: solo la variante histórica lo usa (ADR-001 §3)
+DELAYED_PREFIXES = ("chirps",)
+
+
+def variant_columns(variant: Variant) -> tuple[int, ...]:
+    """Índices de `FEATURE_NAMES` que usa cada variante del modelo.
+
+    `operativa` solo usa variables disponibles al día siguiente (estaciones; IMERG
+    Early cuando entre TASK-028). `historica` usa además CHIRPS y solo sirve para la
+    reproducción histórica de la demo.
+    """
+    return tuple(
+        i
+        for i, name in enumerate(FEATURE_NAMES)
+        if variant == "historica" or not name.startswith(DELAYED_PREFIXES)
+    )
 
 
 @dataclass(frozen=True, slots=True)

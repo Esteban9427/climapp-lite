@@ -1,8 +1,10 @@
 """Evaluación del RF frente a climatología y persistencia en el periodo apartado.
 
-Los tres modelos se evalúan sobre los mismos días: objetivo observado y observación del
+Todos los modelos se evalúan sobre los mismos días: objetivo observado y observación del
 día de emisión disponible (la persistencia la necesita). El umbral de decisión de cada
-modelo se fija en validación (ADR-001 §10); los imputados no entran (ADR-004 §3).
+modelo se fija con las predicciones fuera de muestra de validación (ADR-001 §10); los
+imputados no entran (ADR-004 §3). El RF se reporta por variante (operativa e
+histórica) y calibrado y sin calibrar (ADR-001 §1, §3 y §5, revisión del 2026-10-30).
 """
 
 from collections.abc import Sequence
@@ -15,6 +17,7 @@ from pydantic import BaseModel
 from climapp.config import DataPlan, TargetRule
 from climapp.forecast.baselines import climatology_probs, fit_persistence
 from climapp.forecast.dataset import Periods, Sample, split_samples
+from climapp.forecast.features import VARIANTS, Variant, variant_columns
 from climapp.forecast.metrics import EvalRecord, ModelMetrics, best_threshold, evaluate
 from climapp.forecast.model import CalibratedForest, RFParams, fit_forest
 
@@ -24,6 +27,10 @@ OUTCOMES: dict[tuple[bool, bool], Outcome] = {
     (True, False): "falsa_alarma",
     (False, True): "fallo",
     (False, False): "correcto_negativo",
+}
+LIVE_NOTES: dict[Variant, str | None] = {
+    "operativa": None,
+    "historica": "requiere datos con semanas de retraso (CHIRPS); no disponible en vivo",
 }
 
 
@@ -75,6 +82,7 @@ class EvaluationReport(BaseModel):
     sensitivity: None = None
     imerg_final_vs_early: None = None
     daily: list[DailyOutcome]
+    daily_variant: Variant
     excluded_imputed_days: int
 
 
@@ -83,7 +91,7 @@ class EvaluationResult:
     """Informe y modelo ajustado (el modelo se reutiliza para publicar pronósticos)."""
 
     report: EvaluationReport
-    model: CalibratedForest
+    models: dict[Variant, CalibratedForest]
 
 
 def _comparable(samples: Sequence[Sample]) -> list[Sample]:
@@ -148,13 +156,31 @@ def _daily(test: Sequence[Sample], probs: Sequence[float], threshold: float) -> 
     ]
 
 
+def _rf_metrics(
+    model: CalibratedForest, variant: Variant, valid: list[Sample], test: list[Sample], n_bins: int
+) -> list[ModelMetrics]:
+    """RF calibrado y sin calibrar de una variante."""
+    labels = {"variant": variant, "available_live": LIVE_NOTES[variant] is None}
+    return [
+        _model_metrics(
+            "rf",
+            (valid, model.validation_probs(valid, calibrated)),
+            (test, model.predict(test, calibrated)),
+            n_bins,
+        ).model_copy(update={**labels, "calibrated": calibrated, "note": LIVE_NOTES[variant]})
+        for calibrated in (True, False)
+    ]
+
+
 def run_evaluation(samples: Sequence[Sample], config: EvalConfig) -> EvaluationResult:
-    """Ajusta el RF, evalúa las tres alternativas y arma el informe."""
+    """Ajusta el RF de cada variante, evalúa frente a las líneas base y arma el informe."""
     parts = split_samples(samples, config.periods)
-    model = fit_forest(parts["train"], parts["valid"], config.rf)
     valid, test = _comparable(parts["valid"]), _comparable(parts["test"])
-    rf_valid, rf_test = model.predict(valid), model.predict(test)
-    rf = _model_metrics("rf", (valid, rf_valid), (test, rf_test), config.n_bins)
+    models = {
+        v: fit_forest(parts["train"], parts["valid"], config.rf, variant_columns(v))
+        for v in VARIANTS
+    }
+    rf = [m for v in VARIANTS for m in _rf_metrics(models[v], v, valid, test, config.n_bins)]
     report = EvaluationReport(
         test_period=TestPeriod(
             start=min(s.target_date for s in parts["test"]), end=config.periods.test_end
@@ -163,9 +189,11 @@ def run_evaluation(samples: Sequence[Sample], config: EvalConfig) -> EvaluationR
         threshold_mm=config.threshold_mm,
         data_plan=config.data_plan,
         scenarios=Scenarios(
-            con_est_b=[rf, *_baselines(parts["train"], valid, test, config)], sin_est_b=[]
+            con_est_b=[*rf, *_baselines(parts["train"] + parts["valid"], valid, test, config)],
+            sin_est_b=[],
         ),
-        daily=_daily(test, rf_test, rf.threshold),
-        excluded_imputed_days=rf.excluded_imputed_days,
+        daily=_daily(test, models["operativa"].predict(test), rf[0].threshold),
+        daily_variant="operativa",
+        excluded_imputed_days=rf[0].excluded_imputed_days,
     )
-    return EvaluationResult(report, model)
+    return EvaluationResult(report, models)

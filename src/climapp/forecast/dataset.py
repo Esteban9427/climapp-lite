@@ -30,10 +30,14 @@ class Sample:
 
 @dataclass(frozen=True, slots=True)
 class Periods:
-    """Límites de la partición temporal (fechas objetivo, inclusivas)."""
+    """Límites de la partición temporal por fecha objetivo (ADR-001 §9).
+
+    Entrenamiento desde `train_start`; calibración y validación fuera de muestra, por
+    años, de `calibration_start` a `valid_end`; prueba hasta `test_end`.
+    """
 
     train_start: date
-    train_end: date
+    calibration_start: date
     valid_end: date
     test_end: date
 
@@ -43,16 +47,16 @@ class Periods:
         Raises:
             ValueError: si los periodos no son cronológicos.
         """
-        if not self.train_start < self.train_end < self.valid_end < self.test_end:
+        if not self.train_start < self.calibration_start < self.valid_end < self.test_end:
             msg = "los periodos deben ser cronológicos y sin solaparse"
             raise ValueError(msg)
 
     def part(self, target: date) -> Part | None:
         """Periodo de una fecha objetivo; `None` si queda fuera de todos."""
-        if self.train_start <= target <= self.train_end:
-            return "train"
-        if target <= self.train_end:
+        if target < self.train_start:
             return None
+        if target < self.calibration_start:
+            return "train"
         if target <= self.valid_end:
             return "valid"
         return "test" if target <= self.test_end else None

@@ -36,7 +36,7 @@ def eval_config(settings: Settings) -> EvalConfig:
     """Configuración de evaluación a partir de `Settings`."""
     return EvalConfig(
         periods=Periods(
-            settings.train_start, settings.train_end, settings.valid_end, settings.test_end
+            settings.train_start, settings.calibration_start, settings.valid_end, settings.test_end
         ),
         rf=RFParams(
             settings.rf_n_estimators, settings.rf_min_samples_leaf, settings.rf_random_state
@@ -104,7 +104,7 @@ def train_and_publish(settings: Settings) -> tuple[Path, Path]:
         model_version=_model_version([daily_path, *chirps_paths], config),
         inputs=_inputs(rows, chirps),
     )
-    records = forecast_records(samples, result.model, ctx)
+    records = forecast_records(samples, result.models, ctx)
     return _publish(settings, result.report.model_dump(mode="json"), records)
 
 

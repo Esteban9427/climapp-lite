@@ -31,9 +31,16 @@ class ReliabilityBin(BaseModel):
 
 
 class ModelMetrics(BaseModel):
-    """Métricas de un modelo (`ModelMetrics` de `docs/openapi.yaml`, más conteos)."""
+    """Métricas de un modelo (`ModelMetrics` de `docs/openapi.yaml`).
+
+    `variant`, `calibrated`, `available_live` y `note` solo aplican al RF.
+    """
 
     name: str
+    variant: str | None = None
+    calibrated: bool | None = None
+    available_live: bool | None = None
+    note: str | None = None
     pod: float
     far: float
     csi: float

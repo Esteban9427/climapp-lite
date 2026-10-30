@@ -69,7 +69,7 @@ class Settings(BaseSettings):
 
     chirps_files: list[Path] = Field(min_length=1)
     train_start: date
-    train_end: date
+    calibration_start: date
     valid_end: date
     test_end: date
     rf_n_estimators: int = Field(ge=1)
@@ -101,8 +101,8 @@ class Settings(BaseSettings):
 
     @model_validator(mode="after")
     def _periods_chronological(self) -> Self:
-        """Exige TRAIN_START < TRAIN_END < VALID_END < TEST_END (ADR-001 §9)."""
-        if not self.train_start < self.train_end < self.valid_end < self.test_end:
-            msg = "TRAIN_START < TRAIN_END < VALID_END < TEST_END no se cumple"
+        """Exige TRAIN_START < CALIBRATION_START < VALID_END < TEST_END (ADR-001 §9)."""
+        if not self.train_start < self.calibration_start < self.valid_end < self.test_end:
+            msg = "TRAIN_START < CALIBRATION_START < VALID_END < TEST_END no se cumple"
             raise ValueError(msg)
         return self
