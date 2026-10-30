@@ -1,5 +1,6 @@
 """Tests de la limpieza del contador acumulado (TASK-003, ADR-004 §2). Datos sintéticos."""
 
+from dataclasses import replace
 from datetime import datetime, timedelta
 from zoneinfo import ZoneInfo
 
@@ -11,7 +12,12 @@ from climapp.data.models import Reading, StepFlag
 TZ = ZoneInfo("America/Bogota")
 T0 = datetime(2024, 12, 31, 20, 0, tzinfo=TZ)
 STEP = timedelta(minutes=10)
-PARAMS = CleaningParams(max_step_mm=40.0, suspect_step_mm=30.0, suspect_quiet=timedelta(hours=1))
+PARAMS = CleaningParams(
+    max_step_mm=40.0,
+    suspect_step_mm=30.0,
+    suspect_quiet=timedelta(hours=1),
+    suspect_quiet_max_mm=0.0,
+)
 
 
 def _series(*values: float | None, station: str = "EST-A") -> list[Reading]:
@@ -49,7 +55,9 @@ def test_step_equal_to_max_step_is_kept() -> None:
 
 
 def test_max_step_is_configurable() -> None:
-    params = CleaningParams(max_step_mm=5.0, suspect_step_mm=4.0, suspect_quiet=timedelta(0))
+    params = CleaningParams(
+        max_step_mm=5.0, suspect_step_mm=4.0, suspect_quiet=timedelta(0), suspect_quiet_max_mm=0.0
+    )
     assert _mm([0.0, 6.0, 7.0], params) == pytest.approx([0.0, 1.0])
 
 
@@ -113,3 +121,26 @@ def test_jump_without_readings_after_is_not_suspect() -> None:
 def test_jump_with_incomplete_quiet_hour_is_not_suspect() -> None:
     incs = compute_increments(_series(5.0, 5.0, 43.6, *([43.6] * 6)), PARAMS)
     assert incs[1].flag is StepFlag.OK
+
+
+# Forma del caso real de SP-12: hora previa en cero y 1,8 mm entre 40 y 60 min después
+AFTER_WITH_DRIZZLE = [43.6, 43.6, 43.6, 44.2, 45.2, 45.4, 45.4]
+
+
+def test_literal_rule_does_not_flag_jump_with_drizzle_after() -> None:
+    incs = compute_increments(_series(*QUIET_HOUR, *AFTER_WITH_DRIZZLE), PARAMS)
+    assert incs[6].flag is StepFlag.OK
+
+
+def test_quiet_tolerance_flags_jump_with_drizzle_after() -> None:
+    params = replace(PARAMS, suspect_quiet_max_mm=2.0)
+    incs = compute_increments(_series(*QUIET_HOUR, *AFTER_WITH_DRIZZLE), params)
+    assert incs[6].flag is StepFlag.SUSPECT
+    assert incs[6].mm == pytest.approx(38.6)
+
+
+def test_quiet_tolerance_applies_to_each_window_separately() -> None:
+    params = replace(PARAMS, suspect_quiet_max_mm=2.0)
+    before = [5.0, 5.0, 5.0, 6.0, 6.5, 7.6, 7.6]  # 2,6 mm en la hora previa
+    incs = compute_increments(_series(*before, 46.2, *([46.2] * 6)), params)
+    assert incs[6].flag is StepFlag.OK
