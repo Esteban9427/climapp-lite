@@ -10,6 +10,8 @@ import pytest
 
 from climapp.data.cleaning import CleaningParams
 from climapp.data.daily import (
+    DailyConfig,
+    MergedReadings,
     SourcedReadings,
     build_station_daily,
     daily_for_station,
@@ -25,6 +27,7 @@ STEP = timedelta(minutes=10)
 PARAMS = CleaningParams(
     max_step_mm=40.0, suspect_step_mm=30.0, suspect_quiet=timedelta(hours=1), suspect_quiet_max_mm=0
 )
+CONFIG = DailyConfig(sensors=("P",), tz=TZ, cleaning=PARAMS, min_readings=100)
 DAY = date(2024, 12, 31)
 MIDNIGHT = datetime(2024, 12, 31, 0, 0, tzinfo=TZ)
 
@@ -46,8 +49,14 @@ def _src(readings: list[Reading], digest: str = "h1") -> SourcedReadings:
     return SourcedReadings(source_hash=digest, readings=readings)
 
 
+def _station(merged: MergedReadings) -> list[tuple[Reading, str]]:
+    return merged.readings_by_station["raw-a"]
+
+
 def _one_day(readings: list[Reading], min_readings: int = 100) -> DailyPrecip:
-    rows = daily_for_station("EST-A", merge_sources([_src(readings)]), PARAMS, min_readings)
+    rows = daily_for_station(
+        "EST-A", _station(merge_sources([_src(readings)])), PARAMS, min_readings
+    )
     return next(r for r in rows if r.date == DAY)
 
 
@@ -103,7 +112,9 @@ def test_rain_is_assigned_to_the_local_day_of_the_closing_reading() -> None:
         Reading("raw-a", "P", datetime(2025, 1, 1, 0, 0, tzinfo=TZ), 11.0),  # 31-dic
         Reading("raw-a", "P", datetime(2025, 1, 1, 0, 10, tzinfo=TZ), 13.0),  # 1-ene
     ]
-    rows = daily_for_station("EST-A", merge_sources([_src(readings)]), PARAMS, min_readings=1)
+    rows = daily_for_station(
+        "EST-A", _station(merge_sources([_src(readings)])), PARAMS, min_readings=1
+    )
     by_day = {r.date: r for r in rows}
     assert by_day[DAY].precip_mm == pytest.approx(1.0)
     assert by_day[date(2025, 1, 1)].precip_mm == pytest.approx(2.0)
@@ -114,7 +125,9 @@ def test_days_without_readings_inside_the_period_are_emitted_invalid() -> None:
         Reading("raw-a", "P", datetime(2024, 12, 30, 12, 0, tzinfo=TZ), 1.0),
         Reading("raw-a", "P", datetime(2025, 1, 1, 12, 0, tzinfo=TZ), 1.0),
     ]
-    rows = daily_for_station("EST-A", merge_sources([_src(readings)]), PARAMS, min_readings=1)
+    rows = daily_for_station(
+        "EST-A", _station(merge_sources([_src(readings)])), PARAMS, min_readings=1
+    )
     gap = next(r for r in rows if r.date == DAY)
     assert (gap.n_readings, gap.valid, gap.precip_mm, gap.source_hash) == (0, False, None, "")
 
@@ -137,7 +150,7 @@ def test_suspect_jumps_are_kept_in_the_total_and_counted() -> None:
 def test_identical_exports_are_merged_without_duplicating() -> None:
     readings = _with_opening(_day_readings(100))
     merged = merge_sources([_src(readings, "h1"), _src(list(readings), "h2")])
-    rows = daily_for_station("EST-A", merged, PARAMS, min_readings=100)
+    rows = daily_for_station("EST-A", _station(merged), PARAMS, min_readings=100)
     row = next(r for r in rows if r.date == DAY)
     assert row.n_readings == 100
     assert row.precip_mm == pytest.approx(10.0)
@@ -147,7 +160,9 @@ def test_identical_exports_are_merged_without_duplicating() -> None:
 def test_exports_that_complement_each_other_are_joined() -> None:
     readings = _with_opening(_day_readings(100))
     merged = merge_sources([_src(readings[:60], "h1"), _src(readings[40:], "h2")])
-    row = next(r for r in daily_for_station("EST-A", merged, PARAMS, 100) if r.date == DAY)
+    row = next(
+        r for r in daily_for_station("EST-A", _station(merged), PARAMS, 100) if r.date == DAY
+    )
     assert row.n_readings == 100
     assert row.source_hash == "h1,h2"
 
@@ -188,7 +203,7 @@ def _write_export(path: Path, readings: list[Reading]) -> Path:
 
 def test_build_station_daily_maps_ids_and_hashes_sources(tmp_path: Path) -> None:
     export = _write_export(tmp_path / "e.csv", _with_opening(_day_readings(100)))
-    rows = build_station_daily([export], {"raw-a": "EST-A"}, ("P",), TZ, PARAMS, 100)
+    rows = build_station_daily([export], {"raw-a": "EST-A"}, CONFIG)
     row = next(r for r in rows if r.date == DAY)
     assert row.series_id == "EST-A"
     assert len(row.source_hash) == 64  # SHA-256 del archivo crudo
@@ -197,14 +212,14 @@ def test_build_station_daily_maps_ids_and_hashes_sources(tmp_path: Path) -> None
 def test_unmapped_station_is_rejected(tmp_path: Path) -> None:
     export = _write_export(tmp_path / "e.csv", _with_opening(_day_readings(3)))
     with pytest.raises(ValueError, match="sin correspondencia"):
-        build_station_daily([export], {"otra": "EST-B"}, ("P",), TZ, PARAMS, 100)
+        build_station_daily([export], {"otra": "EST-B"}, CONFIG)
 
 
 def test_unknown_export_format_is_rejected(tmp_path: Path) -> None:
     path = tmp_path / "e.parquet"
     path.write_bytes(b"")
     with pytest.raises(ValueError, match="formato"):
-        build_station_daily([path], {}, ("P",), TZ, PARAMS, 100)
+        build_station_daily([path], {}, CONFIG)
 
 
 def test_write_daily_csv_round_trips_the_rows(tmp_path: Path) -> None:

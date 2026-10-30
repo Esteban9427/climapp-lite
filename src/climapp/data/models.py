@@ -1,8 +1,10 @@
 """Modelos de los datos de estaciones: lecturas del contador e incrementos limpios."""
 
 from dataclasses import dataclass
-from datetime import datetime
+from datetime import date, datetime
 from enum import StrEnum
+
+from pydantic import BaseModel, ConfigDict, Field
 
 
 @dataclass(frozen=True, slots=True)
@@ -44,3 +46,29 @@ class Increment:
     ts: datetime
     mm: float
     flag: StepFlag
+
+
+class DailyPrecip(BaseModel):
+    """Fila de la tabla diaria de precipitación (`docs/data-model.md`).
+
+    Attributes:
+        date: día local (America/Bogota).
+        series_id: `EST-A`…`EST-D` (o una serie satelital).
+        precip_mm: lluvia del día; `None` si el día no es válido.
+        n_readings: lecturas con valor en el día (solo estaciones).
+        valid: `n_readings >= MIN_READINGS` (SUPUESTO, SP-8).
+        imputed: `True` si se rellenó con vecinas; nunca entra a la evaluación.
+        source_hash: SHA-256 de los archivos crudos de origen, separados por coma.
+        n_suspect: saltos `suspect` (SP-12) incluidos en `precip_mm`.
+    """
+
+    model_config = ConfigDict(frozen=True)
+
+    date: date
+    series_id: str
+    precip_mm: float | None
+    n_readings: int | None = Field(ge=0)
+    valid: bool
+    imputed: bool
+    source_hash: str
+    n_suspect: int = Field(ge=0)

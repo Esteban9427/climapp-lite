@@ -18,6 +18,7 @@ DataPlan = Literal["principal", "plan_b_earthdata", "plan_b_datos"]
 TargetRule = Literal["any_station", "basin_mean", "reference_station"]
 
 MIN_MUSE_MAX_TOKENS = 2000  # ADR-002: con menos tokens Muse corta la respuesta
+READINGS_PER_DAY = 144  # una lectura del contador cada 10 min (ADR-004)
 
 
 class Settings(BaseSettings):
@@ -56,6 +57,11 @@ class Settings(BaseSettings):
     suspect_step_mm: float = Field(gt=0)
     suspect_quiet_min: int = Field(ge=0)
     suspect_quiet_max_mm: float = Field(ge=0)
+
+    station_exports: list[Path] = Field(min_length=1)
+    station_map_file: Path
+    daily_stations_file: Path
+    min_readings: int = Field(ge=1, le=READINGS_PER_DAY)
 
     official_channels_url: str
     demo_fallback: bool

@@ -6,13 +6,14 @@
 ### DailyPrecip — tabla diaria regenerada con TDD
 | Campo | Tipo | Regla |
 |-------|------|-------|
-| `date` | date | Día local |
+| `date` | date | Día local. Estaciones: la lectura de las 00:00 cierra el día anterior (cada lectura cierra el paso de 10 min que termina en su instante) |
 | `series_id` | str | `EST-A`…`EST-D`, `IMERG_E` (serie principal), `IMERG_F` (solo contraste), `CHIRPS_598`…`CHIRPS_600` |
 | `precip_mm` | float \| null | null si el día no es válido |
 | `n_readings` | int \| null | Solo estaciones (máx. 144) |
 | `valid` | bool | Estaciones: `n_readings ≥ 100` (SUPUESTO) |
 | `imputed` | bool | `true` si se rellenó con vecinas; **excluido de la evaluación** |
-| `source_hash` | str | SHA-256 del archivo crudo de origen |
+| `source_hash` | str | SHA-256 de los archivos crudos de origen del día, separados por coma (la unión de exportaciones puede aportar dos); vacío si el día no tiene lecturas |
+| `n_suspect` | int | Saltos `suspect` (SP-12) incluidos en `precip_mm`; se señalan, no se borran |
 
 ## Pronóstico
 ### Forecast (`GET /forecast`)
