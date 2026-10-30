@@ -20,6 +20,7 @@ Todo lo que está en este repositorio se construyó durante el evento. La lista 
 - [x] 2026-10-30: lector de CHIRPS diario por celda, sin las filas MIN, PROM y MAX ni las columnas resumen (TASK-005, TDD).
 - [x] 2026-10-30: tabla diaria de estaciones por día local, con `valid` (≥ `MIN_READINGS`), `imputed=false` y `source_hash`, que une las dos exportaciones sin duplicar; se regenera con `uv run climapp-daily` (TASK-004, TDD).
 - [x] 2026-10-30: corrección de huecos del contador: un paso sobre un hueco > `MAX_GAP_MIN` que cruza el día local no suma lluvia; `n_gap` en la tabla diaria (TDD).
+- [x] 2026-10-30: objetivo de cuenca `basin_mean` con las estaciones válidas de cada día; sobre los datos reales da 10,2 % de días ≥ 20 mm, como ADR-001 (TASK-006, TDD).
 - [ ] Pronóstico (random forest) evaluado contra climatología y persistencia.
 - [ ] Compuerta de verificación de reportes con Muse Spark.
 - [ ] Web móvil con pronóstico, reportes y mapa.
