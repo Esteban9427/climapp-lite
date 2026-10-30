@@ -1,15 +1,13 @@
 """Tests del informe de evaluación RF frente a líneas base (TASK-008, ADR-001 §8-§10)."""
 
 from datetime import date
-
-import pytest
+from functools import cache
 
 from climapp.forecast.dataset import build_samples
 from climapp.forecast.evaluation import EvalConfig, EvaluationReport, run_evaluation
 from climapp.forecast.target import basin_days
-from tests.forecast.test_model import PARAMS, PERIODS
 from tests.forecast.synthetic import synthetic_rows
-
+from tests.forecast.test_model import PARAMS, PERIODS
 
 CONFIG = EvalConfig(
     periods=PERIODS,
@@ -22,6 +20,7 @@ CONFIG = EvalConfig(
 )
 
 
+@cache
 def _report() -> EvaluationReport:
     samples = build_samples(basin_days(synthetic_rows()), {}, threshold_mm=20.0, rule="basin_mean")
     return run_evaluation(samples, CONFIG).report

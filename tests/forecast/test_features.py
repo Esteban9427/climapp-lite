@@ -79,6 +79,7 @@ def test_features_never_use_data_after_the_issue_date() -> None:
     rows = synthetic_rows()
     issue = date(2022, 12, 31)
     truncated = [r for r in rows if r.date <= issue]
+    assert len(truncated) < len(rows)
     full = feature_row(issue, basin_days(rows), {})
     past_only = feature_row(issue, basin_days(truncated), {})
     assert full.values == pytest.approx(past_only.values, nan_ok=True)

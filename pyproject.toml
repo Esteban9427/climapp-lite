@@ -52,7 +52,8 @@ select = ["E", "F", "W", "I", "N", "UP", "B", "BLE", "S", "T20", "C90", "SIM", "
 ignore = ["RUF001", "RUF002", "RUF003"]
 
 [tool.ruff.lint.per-file-ignores]
-"tests/**" = ["S101", "PLR2004"]
+# S311: los tests generan series sintéticas con random, no secretos
+"tests/**" = ["S101", "PLR2004", "S311"]
 
 [tool.ruff.lint.mccabe]
 max-complexity = 8
@@ -63,5 +64,5 @@ python_version = "3.12"
 plugins = ["pydantic.mypy"]
 
 [[tool.mypy.overrides]]
-module = ["xlrd", "xlrd.*"]
+module = ["xlrd", "xlrd.*", "sklearn", "sklearn.*"]
 ignore_missing_imports = true

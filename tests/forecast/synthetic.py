@@ -2,6 +2,7 @@
 
 import random
 from datetime import date, timedelta
+from functools import cache
 
 from climapp.data.models import DailyPrecip
 
@@ -9,7 +10,8 @@ START = date(2013, 10, 1)
 END = date(2026, 10, 31)
 
 
-def synthetic_rows(seed: int = 7, start: date = START, end: date = END) -> list[DailyPrecip]:
+@cache
+def synthetic_rows(seed: int = 7, start: date = START, end: date = END) -> tuple[DailyPrecip, ...]:
     """Dos estaciones con lluvia persistente (AR(1)) para que haya señal aprendible."""
     rng = random.Random(seed)
     rows: list[DailyPrecip] = []
@@ -19,9 +21,9 @@ def synthetic_rows(seed: int = 7, start: date = START, end: date = END) -> list[
         wet = 0.7 * wet + rng.expovariate(1 / 6)
         for series, factor in (("EST-A", 1.0), ("EST-B", 1.2)):
             mm = round(wet * factor * rng.uniform(0.6, 1.4), 1)
-            missing = series == "EST-B" and rng.random() < 0.1
+            missing = rng.random() < (0.1 if series == "EST-B" else 0.04)
             rows.append(_row(day, series, None if missing else mm))
-    return rows
+    return tuple(rows)
 
 
 def _row(day: date, series: str, mm: float | None) -> DailyPrecip:

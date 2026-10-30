@@ -1,10 +1,11 @@
 """Tests de la partición, el random forest calibrado y la fuga temporal (TASK-008)."""
 
 from datetime import date
+from functools import cache
 
 import pytest
 
-from climapp.forecast.dataset import Periods, build_samples, split_samples
+from climapp.forecast.dataset import Part, Periods, Sample, build_samples, split_samples
 from climapp.forecast.model import RFParams, fit_forest
 from climapp.forecast.target import basin_days
 from tests.forecast.synthetic import synthetic_rows
@@ -18,7 +19,8 @@ PERIODS = Periods(
 PARAMS = RFParams(n_estimators=50, min_samples_leaf=5, random_state=0)
 
 
-def _split() -> dict[str, list]:  # type: ignore[type-arg]
+@cache
+def _split() -> dict[Part, list[Sample]]:
     samples = build_samples(basin_days(synthetic_rows()), {}, threshold_mm=20.0, rule="basin_mean")
     return split_samples(samples, PERIODS)
 
