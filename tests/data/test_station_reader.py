@@ -70,7 +70,7 @@ def test_csv_wrong_header_is_rejected(tmp_path: Path) -> None:
 
 
 def _xls(tmp_path: Path) -> Path:
-    """Libro como la exportación real: encabezado solo en la primera hoja, fila vacía en las demás."""
+    """Libro como el real: encabezado solo en la 1.ª hoja y fila vacía al inicio de las demás."""
     book = xlwt.Workbook()
     first = book.add_sheet("Export Worksheet")
     for col, name in enumerate(CSV_HEADER.split(",")):
@@ -104,3 +104,14 @@ def test_xls_reads_all_sheets_skipping_header_and_blank_rows(tmp_path: Path) -> 
         ("EST-C", 50, pytest.approx(141.2)),
     ]
     assert all(r.ts.tzinfo == TZ for r in readings)
+
+
+def test_xls_malformed_row_reports_sheet_and_row(tmp_path: Path) -> None:
+    book = xlwt.Workbook()
+    sheet = book.add_sheet("Sheet1")
+    for col, value in enumerate(("EST-A", "P", "31/02/2014 25:00", 1.0)):
+        sheet.write(0, col, value)
+    path = tmp_path / "malo.xls"
+    book.save(str(path))
+    with pytest.raises(ValueError, match="hoja Sheet1, fila 1"):
+        read_xls_export(path, SENSORS, TZ)

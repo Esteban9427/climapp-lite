@@ -7,9 +7,10 @@ Cada clave de `.env.example` es un campo obligatorio: si falta en el entorno o e
 
 from datetime import date
 from pathlib import Path
-from typing import Literal
+from typing import Literal, Self
+from zoneinfo import ZoneInfo
 
-from pydantic import Field, SecretStr, field_validator
+from pydantic import Field, SecretStr, field_validator, model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 Effort = Literal["low", "medium", "high"]
@@ -28,7 +29,9 @@ class Settings(BaseSettings):
         pydantic.ValidationError: si falta una clave o un valor está fuera de dominio.
     """
 
-    model_config = SettingsConfigDict(env_file=".env", env_file_encoding="utf-8", extra="ignore")
+    model_config = SettingsConfigDict(
+        env_file=".env", env_file_encoding="utf-8", extra="ignore", hide_input_in_errors=True
+    )
 
     meta_api_key: SecretStr
     meta_api_base_url: str
@@ -47,6 +50,13 @@ class Settings(BaseSettings):
     target_rule: TargetRule
     station_group_min_r: float = Field(ge=0, le=1)
 
+    local_timezone: ZoneInfo
+    counter_sensors: list[str] = Field(min_length=1)
+    max_step_mm: float = Field(gt=0)
+    suspect_step_mm: float = Field(gt=0)
+    suspect_quiet_min: int = Field(ge=0)
+    suspect_quiet_max_mm: float = Field(ge=0)
+
     official_channels_url: str
     demo_fallback: bool
     scope_freeze_date: date
@@ -59,3 +69,11 @@ class Settings(BaseSettings):
             msg = "DATA_DIR no puede estar vacío: los datos viven fuera de git (ADR-004)"
             raise ValueError(msg)
         return value
+
+    @model_validator(mode="after")
+    def _suspect_below_max_step(self) -> Self:
+        """Exige `SUSPECT_STEP_MM` < `MAX_STEP_MM`: un salto sobre el máximo ya es un pico."""
+        if self.suspect_step_mm >= self.max_step_mm:
+            msg = "SUSPECT_STEP_MM debe ser menor que MAX_STEP_MM (SP-12)"
+            raise ValueError(msg)
+        return self
