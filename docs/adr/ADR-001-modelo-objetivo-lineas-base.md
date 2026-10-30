@@ -1,12 +1,12 @@
 # ADR-001: Modelo de pronóstico, objetivo de cuenca y líneas base
 
-- **Estado:** Aceptado con SUPUESTOS (revisión el 2026-10-30, 12:00)
+- **Estado:** Aceptado con SUPUESTOS (revisado en TASK-020 con las respuestas de JM del 2026-10-29)
 - **Fecha:** 2026-10-29
 - **Relacionados:** ADR-004 (datos), PRD §Funcionalidades 1-2, NFR-5, R11
-- **Revisado:** 2026-10-29 (IMERG Early como serie principal; Final solo como contraste)
+- **Revisado:** 2026-10-29 (IMERG Early como serie principal; Final solo como contraste) · 2026-10-30 (fuente del umbral; §12 intensidad horaria observada)
 
 ## Contexto
-Se necesita la probabilidad de que mañana caiga ≥20 mm en la cuenca del río Pance. La cuenca es corta y tiene cuatro estaciones pluviométricas (parte media y parte alta) con periodos distintos (ADR-004). Las correlaciones diarias por pares van de 0,49 a 0,88 [INV 2026-10-29]. La frecuencia de días ≥20 mm varía entre el 6,3 % y el 13,2 % según la estación [INV]. Una prueba exploratoria previa al evento (RF entrenado hasta 2014 y probado en 2015-2026) obtuvo AUC 0,75 frente a 0,66 de la climatología y 0,57 de la persistencia, detectó el 34 % de los eventos y el 79 % de sus alertas fueron falsas. No se ha reproducido aquí; se regenera con TDD.
+Se necesita la probabilidad de que mañana caiga ≥20 mm en la cuenca del río Pance. La cuenca es corta y tiene cuatro estaciones pluviométricas (alta, media-alta, media y piedemonte) con periodos distintos (ADR-004). Las correlaciones diarias por pares van de 0,49 a 0,88 [INV 2026-10-29]. La frecuencia de días ≥20 mm varía entre el 6,3 % y el 13,2 % según la estación [INV]. Una prueba exploratoria previa al evento (RF entrenado hasta 2014 y probado en 2015-2026) obtuvo AUC 0,75 frente a 0,66 de la climatología y 0,57 de la persistencia, detectó el 34 % de los eventos y el 79 % de sus alertas fueron falsas. No se ha reproducido aquí; se regenera con TDD.
 
 ## Decisión
 1. **Modelo:** random forest de clasificación (scikit-learn), con salida de probabilidad calibrada (isotónica sobre el bloque de validación). No se busca otro algoritmo en v1.
@@ -16,7 +16,8 @@ Se necesita la probabilidad de que mañana caiga ≥20 mm en la cuenca del río 
    | A. Al menos una estación | máx. de las estaciones válidas ≥ 20 mm | 16,0 % |
    | B. Media de la cuenca | media de las estaciones válidas ≥ 20 mm | 10,2 % |
    | C. Estación de referencia | la serie más larga y más reciente (EST-A; elección SUPUESTO) ≥ 20 mm | 9,6 % |
-   **Regla principal:** `TARGET_RULE=basin_mean` (B), SUPUESTO hasta la respuesta del validador científico. Las reglas A y C se reportan como **sensibilidad [Should]**.
+   **Umbral:** 20 mm/día. Fuente: [JM], promedio empírico de la lluvia en los días de desbordamiento del río. Estado: **confirmado por JM, pendiente de segunda revisión** (PRD SP-10).
+   **Regla principal:** `TARGET_RULE=basin_mean` (B), SUPUESTO: el validador científico no se pronunció (respuestas del 2026-10-29). Las reglas A y C se reportan como **sensibilidad [Should]**.
 3. **Variables:**
    - Agregados de la cuenca del día t, t-1 y t-2: media, máximo y dispersión (desviación estándar), **calculados con las estaciones disponibles ese día** (los días válidos de cada una). Se incluye el número de estaciones disponibles como variable, para que el modelo sepa cuántas entran en cada agregado.
    - Acumulado de 3 días de la media de la cuenca.
@@ -37,6 +38,11 @@ Se necesita la probabilidad de que mañana caiga ≥20 mm en la cuenca del río 
    - Nada del periodo de prueba toca el entrenamiento ni la calibración. Los días imputados nunca entran en la evaluación (ADR-004).
 10. **Métricas:** aciertos (POD), falsas alarmas (FAR), CSI, Brier, AUC y curva de calibración. El umbral de decisión para POD, FAR y CSI se fija en validación, nunca en prueba.
 11. **Acumulado de 3 días:** es un indicador descriptivo, no un pronóstico evaluado. El umbral de 100 mm es SUPUESTO y no tiene fuente: [OMM] pág. PDF 15 lista ≥50, 100 y 150 mm como umbrales de recuento diario, no de 3 días. Ocurre en el 1,0 % de los días con la media de la cuenca y en el 2,8 % con el máximo [INV].
+12. **Intensidad horaria observada [Should, TASK-037, JE, 1,5 h]:** indicador **descriptivo** de lo que ya llovió, nunca objetivo del modelo.
+    - Por estación y día: máximo de la suma móvil de 6 lecturas consecutivas de 10 min (solo ventanas sin huecos), con la categoría del IDEAM [JM]: ligera < 2 mm/h, moderada 2-15, fuerte 15-30, muy fuerte o torrencial > 30. Fuente: página del IDEAM, URL pendiente (PRD SP-3).
+    - Son intensidades **horarias**: no se comparan con el umbral diario de 20 mm ni con el acumulado de 3 días.
+    - Junto a la categoría se muestra la lectura máxima de 10 min de la ventana, para que un salto aislado del contador no pase por lluvia torrencial (PRD SP-12: en E1, un solo salto de 38,6 mm convierte una hora sin lluvia en "torrencial").
+    - Se calcula con las lecturas limpias de ADR-004 §2; si la estación no tiene ventanas completas ese día, el indicador queda vacío.
 
 ## Consecuencias
 - Positivas: el modelo es simple, explicable y comparable con líneas base honestas. Al entrenarse con Early, la evaluación ya es la del modelo operativo: no hace falta una variante aparte.

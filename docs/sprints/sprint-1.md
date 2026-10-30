@@ -1,7 +1,7 @@
 # Sprint 1 — 2026-10-30 → 2026-11-02
 
 > Objetivo: la primera rebanada vertical de punta a punta (datos → pronóstico evaluado → reporte verificado y explicado → web con aviso → demo reproducible).
-> Capacidad comprometida: JE 32 h (límite del 80 % de G3; el foco declarado es del 85 %) y JM 8 h (100 %, excepción aprobada; SUPUESTO hasta el 30-oct a las 12:00). Línea de corte aprobada el 2026-10-29: ver [`../backlog.md`](../backlog.md). Arranque en `DATA_PLAN=plan_b_earthdata`. El congelamiento se aplica al cierre del lunes 2-nov (festivo).
+> Capacidad comprometida: JE 32 h (límite del 80 % de G3; el foco declarado es del 85 %) y JM 8 h (100 %, excepción aprobada; declaradas por JM el 2026-10-29, por confirmar). Línea de corte aprobada el 2026-10-29: ver [`../backlog.md`](../backlog.md). Arranque en `DATA_PLAN=plan_b_earthdata`. El congelamiento se aplica al cierre del lunes 2-nov (festivo).
 
 ## Spec Gate: ✅ APROBADO (2026-10-29)
 | Verificación | Resultado | Evidencia |
@@ -16,12 +16,12 @@ Aprobado por: el equipo (decisión del 2026-10-29). Quedan SUPUESTOS abiertos ha
 
 | Día | JE | JM | Salida verificable |
 |-----|----|----|--------------------|
-| vie 30 (6 h; JE trabaja en su empleo) | TASK-001, TASK-003, TASK-005 (4,5 h) | TASK-020 (12:00); TASK-009 (cuando JM tenga tiempo) | Lectura limpia con tests en verde |
+| vie 30 (6 h; JE trabaja en su empleo) | TASK-001, TASK-003, TASK-005 (4,5 h) | TASK-020 (12:00) | Lectura limpia con tests en verde |
 | sáb 31 (12 h) | TASK-004, TASK-006, TASK-007, TASK-008, TASK-015 (10 h) | TASK-002 | Tabla diaria, RF y `GET /evaluation` |
-| dom 1 (12 h) | TASK-011, TASK-012, TASK-013, TASK-014, TASK-022 (9,5 h) | — | Compuerta y explicación con tests |
+| dom 1 (12 h) | TASK-011, TASK-012, TASK-013, TASK-014, TASK-022 (9,5 h) | TASK-021 (cuando TASK-012 esté lista) | Compuerta y explicación con tests |
 | lun 2 (10 h, festivo) | TASK-016, TASK-017, TASK-018, TASK-019 (8 h) | — | Web móvil con aviso y demo reproducible; **congelamiento al cierre** |
 
-TASK-009 (IMERG Early, JM) corre en paralelo. TASK-028 (JE, 1 h) entra cuando TASK-009 esté lista y haya holgura. Si el viernes la velocidad supera la estimada, entran tareas Should en el orden del backlog. TASK-035 (plan B de datos) solo se activa si D-03 no está cerrado el 1-nov.
+TASK-009 (IMERG Early) vuelve a JE el 2026-10-30 como el primer Should en entrar; TASK-028 (JE, 1 h) la sigue si hay holgura. Si el viernes la velocidad supera la estimada, entran tareas Should en el orden del backlog. TASK-035 (plan B de datos) solo se activa si D-03 no está cerrado el 1-nov.
 
 ## Tareas comprometidas
 ### TASK-001 — Esqueleto del proyecto
@@ -60,7 +60,7 @@ TASK-009 (IMERG Early, JM) corre en paralelo. TASK-028 (JE, 1 h) entra cuando TA
 - **Estimación:** 2 h
 ### TASK-020 — Validación de SUPUESTOS (JM)
 - **Estimación:** 2 h
-### TASK-009 — Descarga de IMERG Early V07 2000→hoy (JM)
+### TASK-021 — Set de evaluación de reportes (JM)
 - **Estimación:** 3 h
 ### TASK-022 — Explicación verificada del pronóstico
 - **Estimación:** 1,5 h
