@@ -3,7 +3,7 @@
 - **Estado:** Aceptado con SUPUESTOS
 - **Fecha:** 2026-10-29
 - **Relacionados:** ADR-001, `docs/data-sources.md`, R11, R12
-- **Revisado:** 2026-10-29 (Early como serie principal) · 2026-10-30 (orden altitudinal por posición; hallazgos de calidad de TASK-020)
+- **Revisado:** 2026-10-29 (Early como serie principal) · 2026-10-30 (orden altitudinal por posición; hallazgos de calidad de TASK-020; huecos del contador)
 
 ## Contexto
 Inventario de solo lectura del 2026-10-29 [INV]:
@@ -35,6 +35,7 @@ Inventario de solo lectura del 2026-10-29 [INV]:
 2. **Limpieza de estaciones** (función pura, con tests):
    - Incremento = diferencia entre lecturas consecutivas del contador.
    - Se ignoran los **descensos** (reinicios) y los **aumentos > 40 mm en 10 min** (picos). Umbral: SUPUESTO.
+   - **Huecos** (decisión del equipo, 2026-10-30): un paso entre lecturas separadas por más de `MAX_GAP_MIN` (20 min, SUPUESTO) que **cruza el límite del día local** no se atribuye como lluvia (`GAP`, 0 mm), porque no se sabe en qué día cayó ni si hubo un reinicio en medio. Si el paso queda **dentro del mismo día**, el contador acumulado sí atribuye bien la lluvia: se conserva y se marca `GAP_INTRADAY`. Ambos se cuentan en `n_gap` de la tabla diaria. Se descartó anular todo paso > 20 min: EST-C tiene 342 huecos de 20 min a 6 h dentro del día (cortes de transmisión durante tormentas) con 1 611 mm, y perdía 39 de sus días ≥ 20 mm. Con la regla adoptada cambian 9, 7, 21 y 38 días (EST-A, B, C y D) y dejan de ser ≥ 20 mm 0, 1, 5 y 2. Pregunta para JM en PRD SP-14.
    - Día válido: **≥ 100 de 144 lecturas**; si no, vacío (SUPUESTO). [OMM] pág. PDF 18 e [IDEAM] pág. 3 solo dan criterios mensuales (11 días o 5 consecutivos faltantes; 80 % del mes).
    - Día con lluvia: ≥ 1 mm ([OMM] pág. PDF 14).
    - En el CHIRPS de hoja de cálculo se descartan las filas resumen (MIN, PROM y MAX) y las columnas sin encabezado de celda.
