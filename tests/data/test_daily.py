@@ -18,6 +18,7 @@ from climapp.data.daily import (
     load_station_map,
     local_day,
     merge_sources,
+    read_daily_csv,
     write_daily_csv,
 )
 from climapp.data.models import DailyPrecip, Reading
@@ -255,3 +256,10 @@ def test_intraday_gap_keeps_rain_and_is_counted() -> None:
     row = _one_day([*readings, late])
     assert row.precip_mm == pytest.approx(25.0)
     assert row.n_gap == 1
+
+
+def test_read_daily_csv_is_the_inverse_of_write(tmp_path: Path) -> None:
+    valid = _one_day(_with_opening(_day_readings(100)))
+    invalid = _one_day(_with_opening(_day_readings(99)))
+    path = write_daily_csv([valid, invalid], tmp_path / "daily.csv")
+    assert read_daily_csv(path) == [valid, invalid]
