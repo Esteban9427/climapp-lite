@@ -103,3 +103,9 @@ def test_min_readings_cannot_exceed_readings_per_day(env_file: Path) -> None:
     rewrite_env(env_file, MIN_READINGS="145")
     with pytest.raises(ValidationError):
         Settings(_env_file=env_file)
+
+
+def test_evaluation_settings_are_typed(env_file: Path) -> None:
+    settings = Settings(_env_file=env_file)
+    assert settings.climatology_window_days == 15
+    assert settings.reliability_bins == 10
