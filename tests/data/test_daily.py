@@ -247,3 +247,11 @@ def test_multi_day_gap_resuming_at_0010_does_not_add_accumulated_rain() -> None:
     assert row.precip_mm == pytest.approx(10.9)  # sin los 25 mm acumulados durante el hueco
     assert row.n_gap == 1
     assert row.valid is True
+
+
+def test_intraday_gap_keeps_rain_and_is_counted() -> None:
+    readings = _with_opening(_day_readings(100))
+    late = Reading("raw-a", "P", MIDNIGHT + timedelta(hours=21), 25.0)  # 2 h después, mismo día
+    row = _one_day([*readings, late])
+    assert row.precip_mm == pytest.approx(25.0)
+    assert row.n_gap == 1

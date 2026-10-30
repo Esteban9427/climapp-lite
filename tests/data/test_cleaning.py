@@ -17,6 +17,7 @@ PARAMS = CleaningParams(
     suspect_step_mm=30.0,
     suspect_quiet=timedelta(hours=1),
     suspect_quiet_max_mm=0.0,
+    max_gap=timedelta(minutes=20),
 )
 
 
@@ -161,9 +162,26 @@ def test_step_across_a_gap_within_the_limit_is_rain() -> None:
     assert [(i.mm, i.flag) for i in incs] == [(pytest.approx(0.4), StepFlag.OK)]
 
 
-def test_step_just_over_the_limit_is_a_gap() -> None:
-    incs = compute_increments(_at((T0, 10.0), (T0 + timedelta(minutes=30), 10.4)), PARAMS)
-    assert incs[0].flag is StepFlag.GAP
+def test_long_gap_within_the_same_local_day_keeps_the_rain() -> None:
+    incs = compute_increments(_at((T0, 10.0), (T0 + timedelta(hours=2), 25.0)), PARAMS)
+    assert [(i.mm, i.flag) for i in incs] == [(pytest.approx(15.0), StepFlag.GAP_INTRADAY)]
+
+
+def test_gap_just_over_the_limit_across_midnight_is_not_rain() -> None:
+    before = datetime(2024, 12, 31, 23, 50, tzinfo=TZ)
+    incs = compute_increments(_at((before, 10.0), (before + timedelta(minutes=30), 10.4)), PARAMS)
+    assert [(i.mm, i.flag) for i in incs] == [(0.0, StepFlag.GAP)]
+
+
+def test_long_step_ending_at_midnight_belongs_to_the_same_day() -> None:
+    start = datetime(2024, 12, 31, 22, 0, tzinfo=TZ)
+    incs = compute_increments(_at((start, 10.0), (start + timedelta(hours=2), 12.0)), PARAMS)
+    assert incs[0].flag is StepFlag.GAP_INTRADAY
+
+
+def test_spike_across_an_intraday_gap_is_still_a_spike() -> None:
+    incs = compute_increments(_at((T0, 10.0), (T0 + timedelta(hours=1), 60.0)), PARAMS)
+    assert [(i.mm, i.flag) for i in incs] == [(0.0, StepFlag.SPIKE)]
 
 
 def test_reset_after_a_gap_is_a_gap_and_counting_restarts() -> None:
@@ -181,8 +199,17 @@ def test_max_gap_is_configurable() -> None:
     assert incs[0].flag is StepFlag.OK
 
 
-def test_gap_inside_a_quiet_window_prevents_suspect() -> None:
+def test_intraday_gap_without_counter_change_still_counts_as_quiet() -> None:
     before = [Reading("raw-a", "P", T0 + i * STEP, 5.0) for i in (0, 1, 4, 5, 6)]  # hueco 30 min
     jump = [Reading("raw-a", "P", T0 + i * STEP, 43.6) for i in range(7, 14)]
+    incs = compute_increments(before + jump, PARAMS)
+    assert next(i for i in incs if i.mm > 30).flag is StepFlag.SUSPECT
+
+
+def test_gap_across_midnight_inside_a_quiet_window_prevents_suspect() -> None:
+    start = datetime(2024, 12, 31, 23, 0, tzinfo=TZ)
+    minutes = (0, 10, 20, 70, 80, 90, 100)  # hueco 23:20 → 00:10, cruza el día
+    before = [Reading("raw-a", "P", start + timedelta(minutes=m), 5.0) for m in minutes]
+    jump = [Reading("raw-a", "P", start + timedelta(minutes=110 + 10 * i), 43.6) for i in range(7)]
     incs = compute_increments(before + jump, PARAMS)
     assert next(i for i in incs if i.mm > 30).flag is StepFlag.OK
