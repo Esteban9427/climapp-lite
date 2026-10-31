@@ -11,10 +11,8 @@
 </head>
 <body>
   <div class="aviso" role="note">
-    <strong>No es una alerta oficial.</strong> ClimApp Lite es un pronóstico experimental e informativo.
-    Ante cualquier riesgo, sigue a
-    {% if official_url %}la <a href="{{ official_url }}" rel="noopener">Gestión del Riesgo de Cali ({{ official_url }})</a> y {% endif %}
-    los <a href="{{ ideam_url }}" rel="noopener">pronósticos y alertas del IDEAM ({{ ideam_url }})</a>.
+    <strong>No es una alerta oficial.</strong> Pronóstico experimental. Ante cualquier riesgo, sigue a
+    {% if official_url %}<a href="{{ official_url }}" rel="noopener">Gestión del Riesgo de Cali</a> y {% endif %}<a href="{{ ideam_url }}" rel="noopener">IDEAM: pronósticos y alertas</a>.
   </div>
   {% block body %}{% endblock %}
 </body>
