@@ -1,6 +1,7 @@
 """Tests de la explicación verificada del pronóstico (TASK-022, ADR-002 §2 y §3)."""
 
 import json
+import re
 from collections.abc import Sequence
 from datetime import UTC, date, datetime
 from pathlib import Path
@@ -21,7 +22,8 @@ from climapp.verification.muse import (
     RecordedMuseClient,
     load_recordings,
 )
-from tests.conftest import rewrite_env
+from climapp.verification.schemas import ForecastExplanation
+from tests.conftest import ROOT, env_example_items, rewrite_env
 from tests.verification.fakes import ScriptedMuse, reply
 
 FORECAST = Forecast(
@@ -199,3 +201,18 @@ def test_first_real_run_is_blocked_by_the_gate() -> None:
     recordings = load_recordings(FIXTURES / "e1_rechazada_2026-10-31.json")
     assert [r.task for r in recordings] == [MuseTask.EXPLAIN, MuseTask.JUDGE] * 3
     assert explain_forecast(RecordedMuseClient(recordings), E1, max_attempts=3) is None
+
+
+# --- la probabilidad se escribe con "%" (decisión 2026-10-31) -----------------------
+
+
+def test_explainer_is_told_to_write_the_probability_with_percent_sign() -> None:
+    system = _request(E1).messages[0]["content"]
+    assert "%" in system and "probabilidad" in system
+
+
+def test_recorded_demo_explanation_writes_the_probability_with_percent_sign() -> None:
+    recordings = load_recordings(ROOT / env_example_items()["MUSE_FALLBACK_FILE"])
+    explained = [r for r in recordings if r.task is MuseTask.EXPLAIN]
+    text = ForecastExplanation.model_validate_json(explained[-1].content or "").text
+    assert re.search(r"\b13\s?%", text), text
