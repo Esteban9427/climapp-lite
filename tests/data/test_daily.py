@@ -137,16 +137,34 @@ def test_days_without_readings_inside_the_period_are_emitted_invalid() -> None:
     assert (gap.n_readings, gap.valid, gap.precip_mm, gap.source_hash) == (0, False, None, "")
 
 
-def test_suspect_jumps_are_kept_in_the_total_and_counted() -> None:
+def _day_with_jump() -> DailyPrecip:
     readings = _with_opening(_day_readings(120, rain_per_step=0.0))
     jump_at = 60
     readings = [
         Reading(r.station, r.sensor, r.ts, (r.value or 0.0) + (38.6 if i > jump_at else 0.0))
         for i, r in enumerate(readings)
     ]
-    row = _one_day(readings)
-    assert row.precip_mm == pytest.approx(38.6)
+    return _one_day(readings)
+
+
+def test_suspect_jumps_are_excluded_from_the_total_and_audited() -> None:
+    row = _day_with_jump()  # SP-12 [JM 2026-10-30]: el salto no se suma al total diario
+    assert row.precip_mm == pytest.approx(0.0)
     assert row.n_suspect == 1
+    assert row.suspect_mm == pytest.approx(38.6)
+
+
+def test_day_without_suspects_has_zero_suspect_mm() -> None:
+    row = _one_day(_with_opening(_day_readings(100)))
+    assert row.suspect_mm == 0.0
+
+
+def test_suspect_mm_is_written_and_read_back(tmp_path: Path) -> None:
+    row = _day_with_jump()
+    out = write_daily_csv([row], tmp_path / "d.csv")
+    (record,) = csv.DictReader(out.open(encoding="utf-8"))
+    assert float(record["suspect_mm"]) == pytest.approx(38.6)
+    assert read_daily_csv(out) == [row]
 
 
 # --- unión de exportaciones -------------------------------------------------

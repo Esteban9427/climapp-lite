@@ -68,7 +68,7 @@ def test_cleaning_settings_are_typed(env_file: Path) -> None:
     assert settings.max_gap_min == 20
     assert settings.suspect_step_mm == 30.0
     assert settings.suspect_quiet_min == 60
-    assert settings.suspect_quiet_max_mm == 0.0
+    assert settings.suspect_quiet_max_mm == 2.0  # [JM 2026-10-30]
     assert str(settings.local_timezone) == "America/Bogota"
 
 

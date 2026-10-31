@@ -36,5 +36,6 @@ def _row(day: date, series: str, mm: float | None) -> DailyPrecip:
         imputed=False,
         source_hash="h",
         n_suspect=0,
+        suspect_mm=0.0,
         n_gap=0,
     )

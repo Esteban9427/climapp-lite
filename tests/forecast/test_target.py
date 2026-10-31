@@ -20,6 +20,7 @@ def _row(series: str, mm: float | None, *, day: date = D, imputed: bool = False)
         imputed=imputed,
         source_hash="h",
         n_suspect=0,
+        suspect_mm=0.0,
         n_gap=0,
     )
 

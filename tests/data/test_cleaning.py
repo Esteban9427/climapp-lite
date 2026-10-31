@@ -199,11 +199,34 @@ def test_max_gap_is_configurable() -> None:
     assert incs[0].flag is StepFlag.OK
 
 
-def test_intraday_gap_without_counter_change_still_counts_as_quiet() -> None:
+# SP-12 [JM 2026-10-30]: un salto tras un hueco es lluvia acumulada por falla de
+# transmisión; solo es `suspect` si lo preceden lecturas regulares con el contador quieto.
+
+
+def test_jump_after_an_intraday_gap_in_the_quiet_window_is_not_suspect() -> None:
     before = [Reading("raw-a", "P", T0 + i * STEP, 5.0) for i in (0, 1, 4, 5, 6)]  # hueco 30 min
     jump = [Reading("raw-a", "P", T0 + i * STEP, 43.6) for i in range(7, 14)]
     incs = compute_increments(before + jump, PARAMS)
-    assert next(i for i in incs if i.mm > 30).flag is StepFlag.SUSPECT
+    jump_inc = next(i for i in incs if i.mm > 30)
+    assert jump_inc.flag is StepFlag.OK
+    assert jump_inc.mm == pytest.approx(38.6)
+
+
+def test_jump_closing_an_intraday_gap_is_accumulated_rain() -> None:
+    quiet = [Reading("raw-a", "P", T0 + i * STEP, 5.0) for i in range(7)]
+    after_gap = T0 + 6 * STEP + timedelta(minutes=40)  # 40 min > MAX_GAP_MIN, mismo día
+    jump = [Reading("raw-a", "P", after_gap + i * STEP, 43.6) for i in range(7)]
+    incs = compute_increments(quiet + jump, replace(PARAMS, suspect_quiet_max_mm=2.0))
+    jump_inc = next(i for i in incs if i.mm > 30)
+    assert jump_inc.flag is StepFlag.GAP_INTRADAY
+    assert jump_inc.mm == pytest.approx(38.6)
+
+
+def test_jump_after_regular_quiet_readings_is_suspect_with_jm_tolerance() -> None:
+    params = replace(PARAMS, suspect_quiet_max_mm=2.0)  # SUSPECT_QUIET_MAX_MM [JM 2026-10-30]
+    incs = compute_increments(_series(*QUIET_HOUR, *AFTER_WITH_DRIZZLE), params)
+    assert [i.flag for i in incs].count(StepFlag.SUSPECT) == 1
+    assert incs[6].flag is StepFlag.SUSPECT
 
 
 def test_gap_across_midnight_inside_a_quiet_window_prevents_suspect() -> None:
