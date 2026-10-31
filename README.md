@@ -32,7 +32,8 @@ Todo lo que está en este repositorio se construyó durante el evento. La lista 
 - [x] 2026-10-31: explicación del pronóstico verificada: si una cifra no coincide con el modelo, o el juez la rechaza, `explanation=null` (TASK-022, TDD).
 - [x] 2026-10-31: el juez recibe el significado de cada cifra; con eso la explicación de E1 se verifica con Muse Spark real y una explicación que habla de "alerta de creciente" se rechaza. El aviso nombra a la Gestión del Riesgo de Cali y al IDEAM. Los pesos de confianza quedan como SUPUESTO para JM (TASK-022, TASK-015 y TASK-014, TDD).
 - [x] 2026-10-31: API de reportes ciudadanos. `POST /reports` responde 202 y verifica en segundo plano con la compuerta y la confianza; elimina EXIF y metadatos; rechaza fuera de la cuenca sin llamar al LLM. También `GET /reports` y `GET /reports/{id}`, con SQLite fuera de git (TASK-016, TDD).
-- [ ] Web móvil con pronóstico, reportes y mapa.
+- [x] 2026-10-31: web móvil (Jinja2 + HTMX) con el pronóstico, la explicación verificada, el formulario de reporte con estado en vivo y la lista de reportes verificados, según `docs/design.md`. Contraste AA verificado por test (TASK-017, TDD).
+- [ ] Mapa de reportes y reproducción de E1 de punta a punta.
 
 ## Herramientas previas al evento, no parte del entregable
 Las usamos para trabajar, pero no forman parte de lo que se juzga y ningún archivo suyo está en este repositorio:
