@@ -30,6 +30,21 @@ DISCLAIMER = (
     "No es una alerta oficial. ClimApp Lite es un pronóstico experimental e informativo: "
     "ante cualquier riesgo, sigue las indicaciones de los organismos oficiales."
 )
+
+
+def disclaimer_text(settings: Settings) -> str:
+    """Aviso completo: no es alerta oficial y a qué canales oficiales acudir.
+
+    Canal principal: `OFFICIAL_CHANNELS_URL` (gestión del riesgo de Cali); segundo canal:
+    `IDEAM_ALERTS_URL` (pronósticos y alertas del IDEAM). Decisión del equipo, 2026-10-31.
+    """
+    ideam = f"los pronósticos y alertas del IDEAM ({settings.ideam_alerts_url})"
+    if settings.official_channels_url:
+        local = f"la Gestión del Riesgo de Cali ({settings.official_channels_url})"
+        return f"{DISCLAIMER} Canales oficiales: {local} y {ideam}."
+    return f"{DISCLAIMER} Canal oficial: {ideam}."
+
+
 STALE_AFTER = timedelta(hours=24)  # contrato: stale si issued_at tiene más de 24 h
 ERROR_RESPONSES: dict[int | str, dict[str, object]] = {
     422: {"model": Error},
@@ -92,7 +107,7 @@ def _to_forecast(
         explanation_fallback=False,
         stale=now - record.issued_at > STALE_AFTER,
         replay=replay,
-        disclaimer=DISCLAIMER,
+        disclaimer=disclaimer_text(settings),
         official_channels_url=settings.official_channels_url,
     )
 

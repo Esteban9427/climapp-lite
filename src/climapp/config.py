@@ -89,6 +89,7 @@ class Settings(BaseSettings):
     station_groups_file: Path
 
     official_channels_url: str
+    ideam_alerts_url: str = Field(min_length=1)
     demo_fallback: bool
     scope_freeze_date: date
 
