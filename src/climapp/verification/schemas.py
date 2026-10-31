@@ -37,6 +37,10 @@ class ReportStructured(BaseModel):
         """Cifras que deben coincidir con las del sistema."""
         return list(self.numbers_cited)
 
+    def judged_claims(self) -> list[str]:
+        """Afirmaciones que revisa el juez."""
+        return list(self.claims)
+
 
 class ForecastExplanation(BaseModel):
     """Explicación del pronóstico (tarea `explicar`): texto corto y cifras citadas."""
@@ -49,6 +53,10 @@ class ForecastExplanation(BaseModel):
     def cited_numbers(self) -> list[float]:
         """Cifras declaradas y cifras escritas en el texto: todas deben coincidir."""
         return [*self.numbers_cited, *numbers_in(self.text)]
+
+    def judged_claims(self) -> list[str]:
+        """El texto completo es la afirmación que revisa el juez."""
+        return [self.text]
 
 
 class JudgedClaim(BaseModel):
@@ -67,3 +75,11 @@ class JudgeVerdict(BaseModel):
     model_config = ConfigDict(extra="forbid", frozen=True)
 
     claims: list[JudgedClaim] = Field(min_length=1)
+
+    def cited_numbers(self) -> list[float]:
+        """El juez no cita cifras propias."""
+        return []
+
+    def judged_claims(self) -> list[str]:
+        """El veredicto no se vuelve a juzgar."""
+        return []

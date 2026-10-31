@@ -33,7 +33,7 @@ class Reason(StrEnum):
 
 
 class CitesNumbers(Protocol):
-    """Salida validable: un modelo Pydantic que expone sus cifras citadas."""
+    """Salida validable: modelo Pydantic con sus cifras citadas y sus afirmaciones."""
 
     @classmethod
     def model_validate_json(cls, json_data: str) -> Self:
@@ -42,6 +42,10 @@ class CitesNumbers(Protocol):
 
     def cited_numbers(self) -> list[float]:
         """Cifras que deben coincidir con las del sistema."""
+        ...
+
+    def judged_claims(self) -> list[str]:
+        """Afirmaciones que revisa el juez."""
         ...
 
 
