@@ -4,7 +4,7 @@ import json
 from pathlib import Path
 
 import pytest
-from hypothesis import given
+from hypothesis import example, given
 from hypothesis import strategies as st
 
 from climapp.config import Settings
@@ -66,14 +66,18 @@ def test_forecast_agrees_when_probability_reaches_the_decision_threshold() -> No
     assert [(s.kind, s.agrees) for s in conf.sources] == [("forecast", True)]
 
 
-def test_group_uses_the_mean_of_its_members_with_data() -> None:
-    conf = compute_confidence(
-        _evidence(station_mm={"EST-B": 1.6, "EST-C": 0.0}, satellite_mm=None, forecast_prob=None),
-        GROUPS,
-        WEIGHTS,
-    )
-    (group,) = conf.sources
-    assert (group.members, group.agrees) == (["EST-B", "EST-C"], False)  # media 0,8 < 1
+def test_group_signals_rain_if_any_member_with_data_reached_rain_mm() -> None:
+    def group_agrees(station_mm: dict[str, float]) -> bool:
+        conf = compute_confidence(
+            _evidence(station_mm=station_mm, satellite_mm=None, forecast_prob=None),
+            GROUPS,
+            WEIGHTS,
+        )
+        (group,) = conf.sources
+        return group.agrees
+
+    assert group_agrees({"EST-B": 1.0, "EST-C": 0.0}) is True
+    assert group_agrees({"EST-B": 0.9, "EST-C": 0.0}) is False
 
 
 def test_station_outside_every_group_is_its_own_source() -> None:
@@ -118,6 +122,9 @@ evidences = st.builds(
 
 
 @given(evidences, st.sampled_from(["EST-A", "EST-B", "EST-C", "EST-D"]))
+@example(  # con la media del grupo, la copia de EST-B subía la media de 0,75 a 1,0
+    Evidence(True, {"EST-B": 1.5, "EST-C": 0.0}, None, None, 0.13), "EST-B"
+)
 def test_duplicating_a_correlated_station_never_raises_confidence(
     evidence: Evidence, station: str
 ) -> None:

@@ -54,6 +54,10 @@ class Settings(BaseSettings):
     target_rule: TargetRule
     station_group_min_r: float = Field(ge=0, le=1)
     station_group_min_overlap_days: int = Field(ge=2)
+    confidence_weight_station: float = Field(ge=0)
+    confidence_weight_satellite: float = Field(ge=0)
+    confidence_weight_forecast: float = Field(ge=0)
+    rain_day_mm: float = Field(gt=0)
 
     local_timezone: ZoneInfo
     counter_sensors: list[str] = Field(min_length=1)
