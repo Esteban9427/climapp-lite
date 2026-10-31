@@ -89,6 +89,11 @@ class Settings(BaseSettings):
     station_groups_file: Path
 
     official_channels_url: str
+    basin_polygon_file: Path
+    reports_db_file: Path
+    photos_dir: Path
+    max_photo_bytes: int = Field(ge=1)
+    public_coord_decimals: int = Field(ge=0, le=6)
     ideam_alerts_url: str = Field(min_length=1)
     demo_fallback: bool
     scope_freeze_date: date

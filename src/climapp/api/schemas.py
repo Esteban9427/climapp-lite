@@ -2,11 +2,18 @@
 
 from datetime import date, datetime
 from typing import Literal
+from uuid import UUID
 
-from pydantic import BaseModel
+from pydantic import BaseModel, ConfigDict, Field
 
 from climapp.config import DataPlan, TargetRule
 from climapp.forecast.features import Variant
+from climapp.verification.checks import Reason
+from climapp.verification.confidence import Confidence
+from climapp.verification.schemas import ReportStructured
+
+ReportStatus = Literal["verificando", "verificado", "rechazado", "requiere_revision_humana"]
+RejectReason = Literal["fuera_de_cuenca", "entrada_invalida"]
 
 
 class Error(BaseModel):
@@ -36,3 +43,47 @@ class Forecast(BaseModel):
     replay: bool
     disclaimer: str
     official_channels_url: str
+
+
+class VerificationAttemptOut(BaseModel):
+    """Intento de verificación publicado (`VerificationAttempt` de `docs/openapi.yaml`)."""
+
+    model_config = ConfigDict(frozen=True)
+
+    n: int = Field(ge=1)
+    passed: bool
+    reasons: list[Reason]
+    finish_reason: str
+    tokens_in: int
+    tokens_out: int
+    latency_ms: int
+
+
+class Report(BaseModel):
+    """Reporte publicado (`Report` de `docs/openapi.yaml`); sin el texto del ciudadano."""
+
+    model_config = ConfigDict(frozen=True)
+
+    id: UUID
+    received_at: datetime
+    lat: float
+    lon: float
+    status: ReportStatus
+    reject_reason: RejectReason | None
+    structured: ReportStructured | None
+    confidence: Confidence | None
+    attempts: list[VerificationAttemptOut]
+    fallback: bool
+
+
+class ReportRecord(Report):
+    """Reporte guardado: además del público, el texto y la foto limpia (privados)."""
+
+    text: str | None
+    photo_file: str | None
+
+    def public(self, decimals: int) -> Report:
+        """Versión publicable: coordenadas redondeadas y sin texto ni foto."""
+        data = self.model_dump(exclude={"text", "photo_file"})
+        data |= {"lat": round(self.lat, decimals), "lon": round(self.lon, decimals)}
+        return Report.model_validate(data)

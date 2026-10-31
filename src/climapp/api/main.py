@@ -3,8 +3,7 @@
 Uso: `uv run uvicorn climapp.api.main:app`.
 """
 
-from datetime import UTC, date, datetime, timedelta
-from functools import cache
+from datetime import date, datetime, timedelta
 from typing import Annotated
 
 from fastapi import Depends, FastAPI, Query, Request
@@ -17,6 +16,8 @@ from climapp.api.artifacts import (
     find_forecast,
     load_evaluation,
 )
+from climapp.api.deps import ApiError, NowDep, SettingsDep, get_now, get_settings
+from climapp.api.reports import router as reports_router
 from climapp.api.schemas import Error, Forecast
 from climapp.config import Settings, TargetRule
 from climapp.forecast.evaluation import EvaluationReport
@@ -26,6 +27,7 @@ from climapp.logging import get_logger
 from climapp.verification.explain import Explainer, build_explainer
 
 log = get_logger(__name__)
+__all__ = ["ApiError", "create_app", "get_now", "get_settings"]
 DISCLAIMER = (
     "No es una alerta oficial. ClimApp Lite es un pronóstico experimental e informativo: "
     "ante cualquier riesgo, sigue las indicaciones de los organismos oficiales."
@@ -52,28 +54,6 @@ ERROR_RESPONSES: dict[int | str, dict[str, object]] = {
 }
 
 
-class ApiError(Exception):
-    """Error de negocio que se responde como `{code, message}`."""
-
-    def __init__(self, status: int, code: str, message: str) -> None:
-        """Guarda el código HTTP y el error del contrato."""
-        super().__init__(message)
-        self.status, self.code, self.message = status, code, message
-
-
-@cache
-def get_settings() -> Settings:
-    """Configuración leída una vez de `.env` (se reemplaza en los tests)."""
-    return Settings()
-
-
-def get_now() -> datetime:
-    """Instante actual con zona (se reemplaza en los tests)."""
-    return datetime.now(UTC)
-
-
-SettingsDep = Annotated[Settings, Depends(get_settings)]
-NowDep = Annotated[datetime, Depends(get_now)]
 _EXPLAINERS: dict[int, tuple[Settings, Explainer | None]] = {}
 
 
@@ -205,6 +185,7 @@ def create_app() -> FastAPI:
     app = FastAPI(title="ClimApp Lite API", description=DISCLAIMER, version="0.1.0")
     app.add_api_route("/forecast", forecast, methods=["GET"], responses=ERROR_RESPONSES)
     app.add_api_route("/evaluation", evaluation, methods=["GET"], responses=ERROR_RESPONSES)
+    app.include_router(reports_router, responses=ERROR_RESPONSES)
     app.add_exception_handler(ApiError, _api_error)
     app.add_exception_handler(RequestValidationError, _validation_error)
     return app

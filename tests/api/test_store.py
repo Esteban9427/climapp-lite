@@ -3,11 +3,13 @@
 from datetime import UTC, date, datetime, timedelta
 from pathlib import Path
 from uuid import uuid4
+from zoneinfo import ZoneInfo
 
 from climapp.api.schemas import ReportRecord
 from climapp.api.store import ReportStore
 
 T0 = datetime(2024, 12, 31, 21, 0, tzinfo=UTC)  # 16:00 en Cali
+TZ = ZoneInfo("America/Bogota")
 
 
 def _record(status: str = "verificando", received: datetime = T0) -> ReportRecord:
@@ -28,7 +30,7 @@ def _record(status: str = "verificando", received: datetime = T0) -> ReportRecor
 
 
 def test_add_get_and_update_round_trip(tmp_path: Path) -> None:
-    store = ReportStore(tmp_path / "db" / "climapp.db")
+    store = ReportStore(tmp_path / "db" / "climapp.db", TZ)
     record = _record()
     store.add(record)
     assert store.get(record.id) == record
@@ -38,11 +40,11 @@ def test_add_get_and_update_round_trip(tmp_path: Path) -> None:
 
 
 def test_missing_report_is_none(tmp_path: Path) -> None:
-    assert ReportStore(tmp_path / "c.db").get(uuid4()) is None
+    assert ReportStore(tmp_path / "c.db", TZ).get(uuid4()) is None
 
 
 def test_list_filters_by_status_local_dates_and_limit(tmp_path: Path) -> None:
-    store = ReportStore(tmp_path / "c.db")
+    store = ReportStore(tmp_path / "c.db", TZ)
     old = _record("verificado", T0 - timedelta(days=2))
     ok = _record("verificado")
     late = _record("verificado", datetime(2025, 1, 1, 4, 0, tzinfo=UTC))  # 23:00 del 31 en Cali

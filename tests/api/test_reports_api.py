@@ -16,7 +16,7 @@ from PIL import Image
 from climapp.api.main import create_app, get_settings
 from climapp.api.reports import get_muse_client
 from climapp.config import Settings
-from climapp.verification.muse import MuseTask
+from climapp.verification.muse import MuseError, MuseTask, RecordedMuseClient
 from tests.api.contract import assert_matches, documented_statuses
 from tests.conftest import rewrite_env
 from tests.verification.fakes import ScriptedMuse, reply
@@ -184,3 +184,23 @@ def test_list_filters_by_status_and_matches_the_contract(client: TestClient) -> 
 def test_every_status_code_is_documented() -> None:
     assert {202, 422, 503} <= documented_statuses("/reports", "post")
     assert {200, 404} <= documented_statuses("/reports/{id}")
+
+
+def test_muse_failure_sends_the_report_to_human_review(settings: Settings) -> None:
+    class Down:
+        def complete(self, task: MuseTask, messages: object) -> object:
+            raise MuseError("sin red")
+
+    app = create_app()
+    app.dependency_overrides[get_settings] = lambda: settings
+    app.dependency_overrides[get_muse_client] = lambda: Down()
+    with TestClient(app) as client:
+        report_id = client.post("/reports", data={"text": TEXT, **INSIDE}).json()["id"]
+        assert client.get(f"/reports/{report_id}").json()["status"] == "requiere_revision_humana"
+
+
+def test_default_client_with_demo_fallback_uses_recordings(env_file: Path) -> None:
+    settings = Settings(_env_file=rewrite_env(env_file, DEMO_FALLBACK="1"))
+    client = get_muse_client(settings)
+    assert isinstance(client, RecordedMuseClient)
+    assert get_muse_client(settings) is client  # uno por configuración

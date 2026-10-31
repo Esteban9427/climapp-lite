@@ -3,7 +3,7 @@
 import io
 
 import pytest
-from PIL import Image
+from PIL import Image, PngImagePlugin
 
 from climapp.api.photos import PhotoError, strip_metadata
 
@@ -32,8 +32,6 @@ def test_exif_and_gps_are_removed_from_jpeg() -> None:
 
 
 def test_png_text_metadata_is_removed() -> None:
-    from PIL import PngImagePlugin
-
     info = PngImagePlugin.PngInfo()
     info.add_text("Comment", "ubicacion-secreta")
     out = io.BytesIO()
@@ -44,7 +42,7 @@ def test_png_text_metadata_is_removed() -> None:
 
 
 def test_photo_over_the_limit_is_rejected() -> None:
-    with pytest.raises(PhotoError, match="5 MB|tamaño"):
+    with pytest.raises(PhotoError, match=r"5 MB|tamaño"):
         strip_metadata(b"x" * (MAX + 1), MAX)
 
 

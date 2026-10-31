@@ -52,6 +52,8 @@ Inventario de solo lectura del 2026-10-29 [INV]:
    - Estaciones: autorización pendiente. Si no llega antes del 2026-11-01, se aplica el **plan B de datos (D-03)**: modelo y demo solo con CHIRPS e IMERG Early, con el objetivo definido sobre CHIRPS (SUPUESTO del plan B).
 6. **IMERG Early V07 diario de 2000 a hoy** (`GPM_3IMERGDE`, celda de la cuenca): se descarga con Earthdata (`EARTHDATA_TOKEN`), se guarda en `DATA_DIR/raw/imerg_early/` con su hash y entra a la tabla diaria como `IMERG_E`. Si Earthdata falla, se aplica el **plan B de Earthdata** (ADR-001 §5). El IMERG Final del CSV histórico entra como `IMERG_F`, solo para el contraste Early↔Final [Should].
 
+7. **Polígono de la cuenca (TASK-016, 2026-10-31):** `POST /reports` rechaza como `fuera_de_cuenca` los puntos fuera del GeoJSON de `BASIN_POLYGON_FILE` (`Polygon` o `MultiPolygon`, en `DATA_DIR`, fuera de git). Si falta, `POST /reports` responde 503 `sin_poligono` y el resto de la app sigue funcionando. La entrega del 2026-10-29 no trae el límite de la cuenca. **Provisional propuesto** (pendiente de aprobación; todavía no se guardó): rectángulo envolvente de los tramos del río Pance en OpenStreetMap (ODbL, Overpass, consultado el 2026-10-31; extensión del cauce: lat 3,2861 a 3,3486 y lon −76,6847 a −76,5275), con un margen. Es el cauce, no el límite hidrográfico (PRD SP-16). El polígono oficial lo aporta JM.
+
 ## Consecuencias
 - Los nombres de estaciones nunca llegan a git. Un grep en el CI lo vigila (DoD).
 - El desfase UTC/local añade ruido al satélite; se mide en lugar de ocultarlo.
