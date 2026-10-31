@@ -56,6 +56,11 @@ paths:
           content:
             application/json:
               schema: {$ref: "#/components/schemas/Error"}
+        "503":
+          description: Falta el polígono de la cuenca (`sin_poligono`); no se puede decidir si el reporte está dentro
+          content:
+            application/json:
+              schema: {$ref: "#/components/schemas/Error"}
     get:
       summary: Listar reportes (para el mapa)
       parameters:
@@ -79,6 +84,11 @@ paths:
               schema:
                 type: array
                 items: {$ref: "#/components/schemas/Report"}
+        "422":
+          description: Parámetros inválidos
+          content:
+            application/json:
+              schema: {$ref: "#/components/schemas/Error"}
   /reports/{id}:
     get:
       summary: Estado de un reporte
