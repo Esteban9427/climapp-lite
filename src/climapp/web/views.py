@@ -73,7 +73,7 @@ def index(  # noqa: PLR0913 - dependencias de la vista
     """Página principal: pronóstico, formulario y reportes verificados."""
     shown, error = _forecast_or_error(settings, now, explainer, replay_date)
     records = store.list("verificado", None, None, LIST_LIMIT)
-    reports = [r.public(settings.public_coord_decimals) for r in records]
+    reports = [r.summary(settings.public_coord_decimals) for r in records]
     context = _base(settings) | {
         "forecast": shown,
         "forecast_error": error,

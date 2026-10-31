@@ -10,7 +10,7 @@ from datetime import date, datetime, timedelta
 from zoneinfo import ZoneInfo
 
 from climapp.api.artifacts import ArtifactInvalidError, ArtifactMissingError, load_evaluation
-from climapp.api.schemas import Report
+from climapp.api.schemas import ReportSummary
 from climapp.api.store import ReportStore
 from climapp.config import Settings
 from climapp.verification.basin import BasinError, load_basin
@@ -46,15 +46,14 @@ def _outcome(settings: Settings, target: date) -> str | None:
     return OUTCOME_TEXT.get(found[0]) if found else None
 
 
-def _marker(report: Report, day: date, tz: ZoneInfo) -> dict[str, object] | None:
+def _marker(report: ReportSummary, day: date, tz: ZoneInfo) -> dict[str, object] | None:
     """Marcador de un reporte verificado observado en `day`; `None` si no corresponde."""
-    structured, confidence = report.structured, report.confidence
-    if structured is None or confidence is None:
+    if report.observed_at is None or report.confidence is None:
         return None
-    if structured.observed_at.astimezone(tz).date() != day:
+    if report.observed_at.astimezone(tz).date() != day:
         return None
-    score = round(confidence.score * PERCENT)
-    label = f"{structured.event_type} {structured.intensity} · confianza {score} %"
+    score = round(report.confidence.score * PERCENT)
+    label = f"{report.event_type} {report.intensity} · confianza {score} %"
     return {"lat": report.lat, "lon": report.lon, "label": label}
 
 
@@ -71,7 +70,7 @@ def map_view(settings: Settings, store: ReportStore, now: datetime, replay: date
     day = replay or now.astimezone(settings.local_timezone).date()
     target = day + timedelta(days=1)
     verified = store.list("verificado", None, None, MAP_LIST_LIMIT)
-    public = (r.public(settings.public_coord_decimals) for r in verified)
+    public = (r.summary(settings.public_coord_decimals) for r in verified)
     candidates = (_marker(r, day, settings.local_timezone) for r in public)
     markers = [m for m in candidates if m is not None]
     return MapView(day, target, _outcome(settings, target), markers, _center(settings))

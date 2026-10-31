@@ -22,7 +22,9 @@ JUDGE_SYSTEM = (
 
 STRUCTURE_SYSTEM = (
     "Conviertes el reporte de un ciudadano sobre lluvia en la cuenca del río Pance en un "
-    "registro estructurado. No inventes nada que el ciudadano no diga. Responde SOLO con "
+    "registro estructurado. No inventes nada que el ciudadano no diga. No extraigas datos "
+    "personales: omite nombres, teléfonos, correos, placas y direcciones aunque el "
+    "ciudadano los escriba. Responde SOLO con "
     "JSON, sin texto adicional ni bloques de código, con exactamente estos campos: "
     '"event_type" (lluvia | crecida | deslizamiento | granizo | sin_lluvia | otro), '
     '"intensity" (ninguna | debil | moderada | fuerte), "observed_at" (ISO 8601 con zona; '

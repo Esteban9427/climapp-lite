@@ -27,6 +27,7 @@ La verificación sigue el taller de Meta: comprobaciones deterministas, juez y r
       - Contenido no vacío ni `None`; si no, `respuesta_vacia`.
       - JSON válido contra el esquema Pydantic; si no, `esquema_invalido`.
       - Cada cifra citada es igual a la calculada por el modelo de pronóstico (probabilidad redondeada a entero en %, acumulado a 1 decimal en mm); si no, `cifra_no_coincide`.
+      - **Sin datos personales en las afirmaciones** (decisión del equipo, 2026-10-31): una `claim` con teléfono colombiano (celular 3xx o fijo 60x, con +57 opcional), correo o placa (ABC123, ABC12D) produce `dato_personal`. El prompt de estructuración además pide omitirlos. Va después de las cifras y antes de las herramientas.
       - Solo herramientas permitidas: la lista blanca de v1 está vacía, así que cualquier `tool_call` produce `herramienta_no_permitida`.
    2. **Juez Muse Spark:** revisa que cada afirmación del registro o de la explicación tenga evidencia en el texto o la foto del ciudadano o en los datos entregados. Cualquier `supported=false` produce `afirmacion_sin_evidencia`.
    3. **Reintentos:** hasta 3 intentos en total. Cada intento recibe los motivos del anterior. Tras el tercer fallo, el estado es `requiere_revision_humana`. Cada intento queda registrado (motivos, tokens y latencia).

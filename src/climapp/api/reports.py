@@ -2,7 +2,8 @@
 
 `POST` responde `202` enseguida: la verificación (compuerta y confianza) corre en segundo
 plano y el cliente sondea `GET /reports/{id}`. Fuera de la cuenca se rechaza sin llamar
-al LLM. La foto se guarda sin metadatos y nunca se publica el texto del ciudadano.
+al LLM. La foto se guarda sin metadatos y nunca se publica el texto del ciudadano. La
+lista no lleva id ni afirmaciones; el detalle por id (UUID4) lo ve quien envió el reporte.
 """
 
 from datetime import UTC, date, datetime
@@ -13,7 +14,13 @@ from fastapi import APIRouter, BackgroundTasks, Depends, File, Form, Query, Uplo
 
 from climapp.api.deps import ApiError, NowDep, SettingsDep
 from climapp.api.photos import PhotoError, strip_metadata
-from climapp.api.schemas import RejectReason, Report, ReportRecord, ReportStatus
+from climapp.api.schemas import (
+    RejectReason,
+    Report,
+    ReportRecord,
+    ReportStatus,
+    ReportSummary,
+)
 from climapp.api.store import ReportStore
 from climapp.config import Settings
 from climapp.logging import get_logger
@@ -158,7 +165,7 @@ async def post_report(  # noqa: PLR0913 - campos del formulario del contrato (Re
     return record.public(settings.public_coord_decimals)
 
 
-@router.get("/reports", response_model=list[Report])
+@router.get("/reports", response_model=list[ReportSummary])
 def list_reports(  # noqa: PLR0913 - parámetros de consulta del contrato
     *,
     settings: SettingsDep,
@@ -167,10 +174,10 @@ def list_reports(  # noqa: PLR0913 - parámetros de consulta del contrato
     date_from: Annotated[date | None, Query(alias="from")] = None,
     date_to: Annotated[date | None, Query(alias="to")] = None,
     limit: Annotated[int, Query(ge=1, le=LIST_LIMIT_MAX)] = LIST_LIMIT_DEFAULT,
-) -> list[Report]:
-    """`GET /reports`: lista para el mapa, con coordenadas redondeadas."""
+) -> list[ReportSummary]:
+    """`GET /reports`: lista sin id ni afirmaciones, con coordenadas redondeadas."""
     records = store.list(status, date_from, date_to, limit)
-    return [r.public(settings.public_coord_decimals) for r in records]
+    return [r.summary(settings.public_coord_decimals) for r in records]
 
 
 @router.get("/reports/{report_id}", response_model=Report)

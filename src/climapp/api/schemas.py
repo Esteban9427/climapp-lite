@@ -10,7 +10,7 @@ from climapp.config import DataPlan, TargetRule
 from climapp.forecast.features import Variant
 from climapp.verification.checks import Reason
 from climapp.verification.confidence import Confidence
-from climapp.verification.schemas import ReportStructured
+from climapp.verification.schemas import EventType, Intensity, ReportStructured
 
 ReportStatus = Literal["verificando", "verificado", "rechazado", "requiere_revision_humana"]
 RejectReason = Literal["fuera_de_cuenca", "entrada_invalida"]
@@ -76,6 +76,21 @@ class Report(BaseModel):
     fallback: bool
 
 
+class ReportSummary(BaseModel):
+    """Reporte para la lista y el mapa (`ReportSummary`): sin id, texto ni afirmaciones."""
+
+    model_config = ConfigDict(frozen=True)
+
+    event_type: EventType | None
+    intensity: Intensity | None
+    observed_at: datetime | None
+    lat: float
+    lon: float
+    status: ReportStatus
+    confidence: Confidence | None
+    fallback: bool
+
+
 class ReportRecord(Report):
     """Reporte guardado: además del público, el texto y la foto limpia (privados)."""
 
@@ -87,3 +102,17 @@ class ReportRecord(Report):
         data = self.model_dump(exclude={"text", "photo_file"})
         data |= {"lat": round(self.lat, decimals), "lon": round(self.lon, decimals)}
         return Report.model_validate(data)
+
+    def summary(self, decimals: int) -> ReportSummary:
+        """Versión para la lista y el mapa: solo campos estructurados y coordenadas redondeadas."""
+        structured = self.structured
+        return ReportSummary(
+            event_type=structured.event_type if structured else None,
+            intensity=structured.intensity if structured else None,
+            observed_at=structured.observed_at if structured else None,
+            lat=round(self.lat, decimals),
+            lon=round(self.lon, decimals),
+            status=self.status,
+            confidence=self.confidence,
+            fallback=self.fallback,
+        )

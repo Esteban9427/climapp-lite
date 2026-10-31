@@ -57,7 +57,21 @@
 | `claims` | list[str]: afirmaciones atómicas que revisa el juez |
 | `numbers_cited` | list[float]: deben coincidir con las cifras del sistema |
 
-### Report (`GET /reports`)
+### ReportSummary (`GET /reports`, lista y mapa)
+Sin `id`, texto ni afirmaciones (decisión del equipo, 2026-10-31): desde la lista no se llega al detalle.
+
+| Campo | Tipo | Nota |
+|-------|------|------|
+| `event_type` | enum \| null | De `structured`; null si no está verificado |
+| `intensity` | enum \| null | De `structured` |
+| `observed_at` | datetime \| null | De `structured` |
+| `lat`, `lon` | float | Redondeados a 3 decimales (~100 m) |
+| `status` | enum | Igual que en `Report` |
+| `confidence` | Confidence \| null | Solo si `verificado` |
+| `fallback` | bool | Respuesta grabada (`DEMO_FALLBACK=1`) |
+
+### Report (`POST /reports`, `GET /reports/{id}`)
+Detalle para quien envió el reporte (id UUID4 no adivinable): incluye `structured.claims`. El texto del ciudadano nunca se publica.
 | Campo | Tipo | Nota |
 |-------|------|------|
 | `id` | UUID | |
@@ -75,7 +89,7 @@
 |-------|------|
 | `n` | int (1-3) |
 | `passed` | bool |
-| `reasons` | list[enum]: `respuesta_incompleta`, `respuesta_vacia`, `esquema_invalido`, `cifra_no_coincide`, `herramienta_no_permitida`, `afirmacion_sin_evidencia` |
+| `reasons` | list[enum]: `respuesta_incompleta`, `respuesta_vacia`, `esquema_invalido`, `cifra_no_coincide`, `dato_personal`, `herramienta_no_permitida`, `afirmacion_sin_evidencia` |
 | `finish_reason` | str |
 | `tokens_in`, `tokens_out` | int |
 | `latency_ms` | int |

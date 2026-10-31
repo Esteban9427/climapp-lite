@@ -1,8 +1,9 @@
 """Comprobaciones deterministas de la compuerta, sin LLM (ADR-002 §3.1).
 
 Orden: `finish_reason == "stop"` → contenido no vacío → esquema → cifras iguales a las
-del modelo → solo herramientas permitidas. Se reportan todos los motivos que fallen, en
-ese orden; el esquema y las cifras solo se pueden revisar si hay contenido.
+del modelo → sin datos personales en las afirmaciones → solo herramientas permitidas. Se
+reportan todos los motivos que fallen, en ese orden; el esquema, las cifras y los datos
+personales solo se pueden revisar si hay contenido.
 """
 
 import json
@@ -18,6 +19,13 @@ from climapp.verification.muse import MuseReply
 
 ALLOWED_TOOLS: frozenset[str] = frozenset()  # lista blanca de v1: vacía (ADR-002 §3)
 NUMBER_TOLERANCE = 1e-9  # las cifras ya vienen redondeadas: se exige igualdad
+# Datos personales en las afirmaciones (decisión del equipo, 2026-10-31): celulares (3xx) y
+# fijos (60x) de Colombia con indicativo opcional, correos y placas (ABC123, ABC12D).
+PERSONAL_DATA = (
+    re.compile(r"(?<!\d)(?:\+?57[\s.-]?)?(?:3\d{2}|60\d)[\s.-]?\d{3}[\s.-]?\d{4}(?!\d)"),
+    re.compile(r"[\w.+-]+@[\w-]+(?:\.[\w-]+)+"),
+    re.compile(r"\b[A-Z]{3}[\s-]?\d{2}[0-9A-Z]\b"),
+)
 FENCE = re.compile(r"^\s*```(?:json)?\s*\n(?P<body>.*)\n\s*```\s*$", re.DOTALL)
 
 
@@ -28,6 +36,7 @@ class Reason(StrEnum):
     RESPUESTA_VACIA = "respuesta_vacia"
     ESQUEMA_INVALIDO = "esquema_invalido"
     CIFRA_NO_COINCIDE = "cifra_no_coincide"
+    DATO_PERSONAL = "dato_personal"
     HERRAMIENTA_NO_PERMITIDA = "herramienta_no_permitida"
     AFIRMACION_SIN_EVIDENCIA = "afirmacion_sin_evidencia"
 
@@ -81,6 +90,11 @@ def _numbers_match(cited: list[float], allowed: Collection[float]) -> bool:
     return all(any(abs(c - a) <= NUMBER_TOLERANCE for a in allowed) for c in cited)
 
 
+def _has_personal_data(texts: list[str]) -> bool:
+    """`True` si algún texto tiene un teléfono, un correo o una placa."""
+    return any(pattern.search(text) for text in texts for pattern in PERSONAL_DATA)
+
+
 def deterministic_checks[T: CitesNumbers](
     reply: MuseReply,
     schema: type[T],
@@ -109,8 +123,11 @@ def deterministic_checks[T: CitesNumbers](
         parsed = _parse(reply.content, schema)
         if parsed is None:
             reasons.append(Reason.ESQUEMA_INVALIDO)
-        elif not _numbers_match(parsed.cited_numbers(), allowed_numbers):
-            reasons.append(Reason.CIFRA_NO_COINCIDE)
+        else:
+            if not _numbers_match(parsed.cited_numbers(), allowed_numbers):
+                reasons.append(Reason.CIFRA_NO_COINCIDE)
+            if _has_personal_data(parsed.judged_claims()):
+                reasons.append(Reason.DATO_PERSONAL)
     if any(tool not in allowed_tools for tool in reply.tool_calls):
         reasons.append(Reason.HERRAMIENTA_NO_PERMITIDA)
     return CheckResult(tuple(reasons), parsed if not reasons else None)
