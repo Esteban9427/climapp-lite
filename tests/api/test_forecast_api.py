@@ -10,8 +10,8 @@ from fastapi.testclient import TestClient
 
 from climapp.api.main import DISCLAIMER, create_app, get_explainer, get_now, get_settings
 from climapp.api.schemas import Forecast
-from climapp.verification.explain import VerifiedExplanation, build_explainer
 from climapp.config import Settings
+from climapp.verification.explain import VerifiedExplanation, build_explainer
 from tests.api.contract import assert_matches, documented_statuses
 from tests.conftest import rewrite_env
 

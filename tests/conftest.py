@@ -4,6 +4,7 @@ from collections.abc import Iterator
 from pathlib import Path
 
 import pytest
+from openai.resources.chat.completions import Completions
 
 ROOT = Path(__file__).resolve().parents[1]
 ENV_EXAMPLE = ROOT / ".env.example"
@@ -25,6 +26,17 @@ def _isolated_env(monkeypatch: pytest.MonkeyPatch) -> Iterator[None]:
     for key in env_example_items():
         monkeypatch.delenv(key, raising=False)
     yield
+
+
+@pytest.fixture(autouse=True)
+def _no_network_to_muse(monkeypatch: pytest.MonkeyPatch) -> None:
+    """Ningún test llama a la API real de Meta: el SDK falla si se intenta."""
+
+    def _blocked(*_: object, **__: object) -> object:
+        msg = "llamada real a Muse bloqueada en los tests"
+        raise AssertionError(msg)
+
+    monkeypatch.setattr(Completions, "create", _blocked)
 
 
 @pytest.fixture

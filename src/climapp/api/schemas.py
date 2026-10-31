@@ -30,6 +30,7 @@ class Forecast(BaseModel):
     variant: Variant
     model_version: str
     explanation: str | None
+    explanation_fallback: bool
     inputs_available: list[str]
     stale: bool
     replay: bool

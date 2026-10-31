@@ -32,6 +32,7 @@
 | `variant` | enum `operativa` \| `historica` | `operativa` en vivo; `historica` (con CHIRPS, semanas de retraso) solo en reproducción (ADR-001 §3) |
 | `model_version` | str | Hash de datos y parámetros |
 | `explanation` | str \| null | Texto de Muse Spark **verificado**; null si no pasó la compuerta |
+| `explanation_fallback` | bool | `true` si la explicación viene de respuestas grabadas (`DEMO_FALLBACK=1`, ADR-002 §5) |
 | `inputs_available` | list[str] | Series con dato para el día de emisión |
 | `stale` | bool | `true` si `issued_at` tiene más de 24 h |
 | `replay` | bool | `true` en reproducción histórica |

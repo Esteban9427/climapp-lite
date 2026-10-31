@@ -23,6 +23,7 @@ from climapp.forecast.evaluation import EvaluationReport
 from climapp.forecast.features import Variant
 from climapp.forecast.publish import ForecastRecord
 from climapp.logging import get_logger
+from climapp.verification.explain import Explainer, build_explainer
 
 log = get_logger(__name__)
 DISCLAIMER = (
@@ -58,6 +59,22 @@ def get_now() -> datetime:
 
 SettingsDep = Annotated[Settings, Depends(get_settings)]
 NowDep = Annotated[datetime, Depends(get_now)]
+_EXPLAINERS: dict[int, tuple[Settings, Explainer | None]] = {}
+
+
+def get_explainer(settings: SettingsDep) -> Explainer | None:
+    """Explicador de Muse (TASK-022), uno por configuración; `None` si no está habilitado.
+
+    Depende de `get_settings`, así que respeta la configuración que reemplazan los tests.
+    """
+    cached = _EXPLAINERS.get(id(settings))
+    if cached is None or cached[0] is not settings:
+        cached = (settings, build_explainer(settings))
+        _EXPLAINERS[id(settings)] = cached
+    return cached[1]
+
+
+ExplainerDep = Annotated[Explainer | None, Depends(get_explainer)]
 
 
 def _to_forecast(
@@ -71,7 +88,8 @@ def _to_forecast(
         threshold_mm=settings.forecast_threshold_mm,
         target_rule=settings.target_rule,
         data_plan=settings.data_plan,
-        explanation=None,  # TASK-022: solo si pasa la compuerta de verificación
+        explanation=None,  # se completa solo si pasa la compuerta (TASK-022)
+        explanation_fallback=False,
         stale=now - record.issued_at > STALE_AFTER,
         replay=replay,
         disclaimer=DISCLAIMER,
@@ -79,9 +97,19 @@ def _to_forecast(
     )
 
 
+def _explained(forecast: Forecast, explainer: Explainer | None) -> Forecast:
+    """Agrega la explicación verificada, si el explicador está habilitado y pasó."""
+    verified = explainer(forecast) if explainer else None
+    if verified is None:
+        return forecast
+    update = {"explanation": verified.text, "explanation_fallback": verified.fallback}
+    return forecast.model_copy(update=update)
+
+
 def forecast(
     settings: SettingsDep,
     now: NowDep,
+    explainer: ExplainerDep,
     replay_date: date | None = None,
     variant: Annotated[Variant | None, Query()] = None,
 ) -> Forecast:
@@ -90,6 +118,7 @@ def forecast(
     Args:
         settings: configuración (dependencia).
         now: instante actual (dependencia), para `stale`.
+        explainer: explicador verificado (dependencia, TASK-022).
         replay_date: fecha de emisión a reproducir (solo demo).
         variant: variante pedida; por defecto según `replay_date` (ADR-001 §3).
 
@@ -110,7 +139,8 @@ def forecast(
         raise ApiError(503, "sin_pronostico", str(err)) from err
     except ArtifactInvalidError as err:
         raise ApiError(503, "artefacto_invalido", str(err)) from err
-    return _to_forecast(record, settings, now, replay=replay_date is not None)
+    built = _to_forecast(record, settings, now, replay=replay_date is not None)
+    return _explained(built, explainer)
 
 
 def evaluation(settings: SettingsDep, target_rule: TargetRule | None = None) -> EvaluationReport:
