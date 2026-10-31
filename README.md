@@ -24,6 +24,7 @@ Todo lo que está en este repositorio se construyó durante el evento. La lista 
 - [x] 2026-10-30: líneas base (climatología ±15 días y persistencia) y métricas POD, FAR, CSI, Brier, AUC y calibración, sin días imputados (TASK-007, TDD).
 - [x] 2026-10-30: variables con las estaciones disponibles cada día y CHIRPS, random forest calibrado y evaluado contra climatología y persistencia en 2023-2026, con test de fuga; `uv run climapp-train` escribe la evaluación y los pronósticos (TASK-008, TDD).
 - [x] 2026-10-30: API `GET /forecast` (variante operativa en vivo e histórica en reproducción) y `GET /evaluation` sobre artefactos precalculados, con tests de contrato contra `openapi.yaml` y el aviso "no es alerta oficial" siempre presente (TASK-015, TDD).
+- [x] 2026-10-31: correcciones de calidad de datos confirmadas por JM. Los saltos aislados del contador tras lecturas regulares se marcan `suspect` y no suman al total diario (SP-12); los días de periodos de falla conocidos quedan inválidos con un registro versionado (SP-13). Se regeneraron la tabla diaria y la evaluación (TASK-003 y TASK-004, TDD).
 - [ ] Compuerta de verificación de reportes con Muse Spark.
 - [ ] Web móvil con pronóstico, reportes y mapa.
 

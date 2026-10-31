@@ -2,7 +2,7 @@
 
 > Versión 0.2 · 2026-10-30 · Spec Gate (perfil hackathon) + TASK-020.
 > Toda cifra lleva fuente o la marca **SUPUESTO**. Los SUPUESTOS se revisaron con el validador científico (JM) con sus respuestas del 2026-10-29; los que no respondió siguen como SUPUESTO.
-> Fuentes citadas: **[INV]** inventario de datos del 2026-10-29 (ver `docs/adr/ADR-004-datos.md`); **[PREV]** análisis exploratorio previo al evento, que todavía no se ha reproducido en este repositorio; **[API]** pruebas de la Meta Model API del 2026-10-29; **[OMM]** OMM-N° 1203, *Directrices de la OMM sobre el cálculo de las normales climáticas*, edición 2017; **[IDEAM]** IDEAM GDI-I001 v02, *Instructivo para la elaboración del mapa de precipitación mensual*, 2025; **[JM]** respuestas del validador científico del 2026-10-29; **[EVT]** análisis de eventos del 2026-10-30 sobre los datos crudos (solo lectura, ver §Eventos documentados).
+> Fuentes citadas: **[INV]** inventario de datos del 2026-10-29 (ver `docs/adr/ADR-004-datos.md`); **[PREV]** análisis exploratorio previo al evento, que todavía no se ha reproducido en este repositorio; **[API]** pruebas de la Meta Model API del 2026-10-29; **[OMM]** OMM-N° 1203, *Directrices de la OMM sobre el cálculo de las normales climáticas*, edición 2017; **[IDEAM]** IDEAM GDI-I001 v02, *Instructivo para la elaboración del mapa de precipitación mensual*, 2025; **[JM]** respuestas del validador científico del 2026-10-29 (**[JM 2026-10-30]**: respuestas sobre calidad de datos del 2026-10-30); **[EVT]** análisis de eventos del 2026-10-30 sobre los datos crudos (solo lectura, ver §Eventos documentados).
 
 ## Problema
 Quien piensa ir al río Pance (Cali, Colombia) no tiene una forma simple de saber si mañana lloverá fuerte en la cuenca ni si la lluvia de los últimos días aumenta el riesgo de derrumbe. Los pronósticos generales no llegan a la escala de una cuenca corta de montaña, y lo que la gente ve en el terreno no se usa para confirmarlos.
@@ -45,7 +45,7 @@ Sequía e incendios · audio · cuentas de usuario · notificaciones · app nati
 | NFR-2 | Latencia de `POST /reports` con verificación completa | p95 ≤ 30 s con ≤ 3 intentos; la respuesta es asíncrona (`202` + estado) | SUPUESTO; se mide en el eval-harness |
 | NFR-3 | Costo por reporte (estructuración + juez, todos los intentos) | ≤ US$0,03 por reporte (p95) | Precios $1,25/M de entrada y $4,25/M de salida [API]; tokens por intento: SUPUESTO (~1,5 k de entrada y ~0,4 k de salida al estructurar, ~2,5 k y ~0,8 k en el juez ≈ US$0,01 por intento) |
 | NFR-4 | Cobertura de tests | ≥ 85 % en el núcleo (`core-paths.txt`: forecast, verification) y ≥ 70 % global | Perfil hackathon de FORGE |
-| NFR-5 | El modelo supera a las líneas base | AUC y Brier del RF mejores que climatología y persistencia en el periodo apartado | **Cumple (TASK-008, 2026-10-30)**, ver §Resultados del modelo. Previo: AUC 0,75 / 0,66 / 0,57 [PREV], con otra partición |
+| NFR-5 | El modelo supera a las líneas base | AUC y Brier del RF mejores que climatología y persistencia en el periodo apartado | **Cumple (TASK-008, 2026-10-30; se mantiene el 2026-10-31 tras SP-12 y SP-13)**, ver §Resultados del modelo. Previo: AUC 0,75 / 0,66 / 0,57 [PREV], con otra partición |
 | NFR-6 | Confianza reproducible | El mismo reporte con la misma evidencia da la misma confianza (función pura, con test) | ADR-002 |
 | NFR-7 | Seguridad | Sin secretos en git (gitleaks limpio), SAST sin hallazgos altos y EXIF eliminado de las fotos | Perfil hackathon |
 | NFR-8 | Accesibilidad | Contraste WCAG AA y uso desde 360 px de ancho | SUPUESTO |
@@ -76,26 +76,47 @@ Sequía e incendios · audio · cuentas de usuario · notificaciones · app nati
 | SP-8 | Día válido con ≥ 100 de 144 lecturas | SUPUESTO; [OMM] (pág. PDF 18) e [IDEAM] (pág. 3) solo dan criterios mensuales (11/5 días faltantes; 80 % del mes) |
 | SP-9 | La latencia real de IMERG Early sobre la cuenca permite publicar el pronóstico a la hora prevista | Pendiente de medir |
 | SP-10 | Umbral del objetivo: 20 mm/día | Confirmado por JM (promedio empírico en días de desbordamiento), **pendiente de segunda revisión** |
-| SP-11 | Capacidad de JM en el Sprint 1: 8 h | Declarada por JM, **por confirmar** |
-| SP-12 | El filtro de picos (> 40 mm en 10 min) basta para descartar artefactos del contador | **En duda** [EVT]: un salto aislado de 38,6 mm en una sola lectura de 10 min, con la hora anterior y la posterior en 0, pasa el filtro y fabrica un día de 52,6 mm y una hora "torrencial". Pregunta abierta para JM. **Precisión (TASK-003, 2026-10-30):** la hora anterior al salto (EST-A, 2024-12-31 23:50) está en 0, pero la posterior no: hay 1,8 mm entre las 00:30 y las 00:50. La limpieza marca `suspect` (sin borrar) un salto ≥ `SUSPECT_STEP_MM` (30 mm, SUPUESTO) con `SUSPECT_QUIET_MIN` (60 min) de calma antes y después, tolerando hasta `SUSPECT_QUIET_MAX_MM` en cada ventana. Con 0 mm (regla literal, valor actual) este salto **no** se marca; con 2 mm sí. Saltos marcados en la exportación csv, por estación: 0 mm → 2, 0, 2, 0; 2 mm → 5, 1, 3, 7. Preguntas para JM: ¿tolerancia de calma? ¿los `suspect` se excluyen del total diario o solo se señalan? |
-| SP-13 | El criterio de día válido (≥ 100/144 lecturas) detecta un sensor que no registra | **No lo detecta** [EVT]: EST-B suma ≈ 6 mm entre el 2022-01-01 y el 2022-03-01 con días completos de lecturas, mientras EST-A registra días de 40-52 mm. Pregunta abierta para JM |
-| SP-14 | Un paso del contador sobre un hueco > 20 min (`MAX_GAP_MIN`) que cruza el día local no es lluvia atribuible; dentro del mismo día sí | SUPUESTO (2026-10-30, ADR-004 §2). Los huecos de 1-3 h dentro del día son frecuentes en EST-C (854, con 1 103 mm). Preguntas para JM: ¿esos huecos son cortes de transmisión con el contador sumando? ¿20 min es el límite adecuado? ¿un día con un hueco largo, aunque tenga ≥ 100 lecturas, debe ser válido? |
+| SP-11 | Capacidad de JM en el Sprint 1: 8 h | **Confirmado** [JM 2026-10-30] |
+| SP-12 | El filtro de picos (> 40 mm en 10 min) basta para descartar artefactos del contador | **Cerrado** [JM 2026-10-30]: no basta. Un salto aislado puede ser una falla de transmisión; hay que mirar si hubo vacíos antes. Regla (ADR-004 §2): un salto ≥ `SUSPECT_STEP_MM` (30 mm, SUPUESTO) que cierra un hueco > `MAX_GAP_MIN` dentro del día es lluvia acumulada (`GAP_INTRADAY`, se conserva). Si lo preceden lecturas regulares con el contador quieto (`SUSPECT_QUIET_MIN` = 60 min sin huecos, con a lo sumo `SUSPECT_QUIET_MAX_MM` = 2 mm [JM 2026-10-30] antes y después), es `suspect` y su lluvia **no** se suma al total diario: queda en `n_suspect` y `suspect_mm`. **Caso E1 (EST-A, 2024-12-31 23:50, +38,6 mm):** las lecturas de la hora previa eran regulares cada 10 min y el contador estaba quieto desde las 21:30; después hay 1,8 mm entre las 00:30 y las 00:50. Se marca `suspect` y el día queda en 14,0 mm. Pero ese mismo día, antes de la calma, el contador bajó de 593,4 a 567,0 a las 17:50, hubo una lectura corrupta a las 20:20 y huecos de 40 y 70 min hasta las 21:30: el salto devuelve el contador a 605,6, 12,2 mm por encima del último valor bueno. Pregunta para JM: ¿esos 12,2 mm pueden ser lluvia real entre las 17:50 y las 23:50? En toda la serie quedan 3 días con `suspect`, todos en EST-A (105,3 mm apartados): el 2014-11-30 (día ya inválido), el 2022-12-30 (el contador baja de 60,8 a 27,4 y vuelve exactamente a 60,8: el día pasa de 33,4 a 0,2 mm) y el 2024-12-31 |
+| SP-13 | El criterio de día válido (≥ 100/144 lecturas) detecta un sensor que no registra | **Cerrado** [JM 2026-10-30]: no lo detecta. Falla del balancín de EST-B, que no registró lluvia hasta el reinicio. Se declara en el registro versionado `config/known_outages.json` (`KNOWN_OUTAGES_FILE`: `series_id`, `desde`, `hasta`, `motivo`, `fuente`) y sus días quedan `valid=false`. Primer registro: EST-B del 2022-01-01 al 2022-03-01, ambos incluidos; el 2022-03-01 a las 14:00 el contador se pone en 0 (reinicio verificado en los datos). Quedan inválidos 59 días (el 2022-01-17 ya lo era). Nota para JM: el contador vuelve a 0 el 2022-03-07 a las 09:00, tras 1,0 mm; no se incluyó en el periodo |
+| SP-14 | Un paso del contador sobre un hueco > 20 min (`MAX_GAP_MIN`) que cruza el día local no es lluvia atribuible; dentro del mismo día sí | **Confirmado** [JM 2026-10-30]: los cortes de EST-C fueron fallas de transmisión por la dirección de la antena durante un año, con el contador sumando. Se mantiene la regla de ADR-004 §2, sin cambios de código |
 
-## Resultados del modelo (TASK-008, 2026-10-30)
+## Resultados del modelo (TASK-008, 2026-10-30; regenerados el 2026-10-31 con las correcciones de SP-12 y SP-13)
 Periodo apartado de prueba 2023-01-01 → 2026-10-31: 1 388 días evaluables (objetivo observado y dato el día de emisión), 157 eventos (11,3 %). Regla `basin_mean`, umbral 20 mm, `DATA_PLAN=plan_b_earthdata`. Calibración isotónica fuera de muestra 2020-2022 (ADR-001 §1). Todos los modelos se evalúan sobre los mismos días; el umbral de decisión de cada uno se fija fuera de la prueba.
 
 | Modelo | Disponible en vivo | AUC | Brier | POD | FAR | CSI |
 |--------|--------------------|-----|-------|-----|-----|-----|
-| RF `operativa`, calibrado (publica `GET /forecast`) | Sí | 0,664 | 0,0975 | 0,68 | 0,83 | 0,16 |
-| RF `operativa`, sin calibrar | Sí | 0,670 | 0,0972 | 0,61 | 0,82 | 0,16 |
-| RF `historica`, calibrado (solo reproducción) | No: CHIRPS llega con semanas de retraso | 0,707 | 0,0962 | 0,42 | 0,79 | 0,16 |
-| RF `historica`, sin calibrar | No | 0,716 | 0,0949 | 0,42 | 0,79 | 0,16 |
-| Climatología (±15 días) | Sí | 0,626 | 0,0987 | 0,74 | 0,85 | 0,15 |
+| RF `operativa`, calibrado (publica `GET /forecast`) | Sí | 0,665 | 0,0977 | 0,29 | 0,79 | 0,14 |
+| RF `operativa`, sin calibrar | Sí | 0,668 | 0,0972 | 0,29 | 0,79 | 0,14 |
+| RF `historica`, calibrado (solo reproducción) | No: CHIRPS llega con semanas de retraso | 0,701 | 0,0962 | 0,43 | 0,79 | 0,17 |
+| RF `historica`, sin calibrar | No | 0,715 | 0,0951 | 0,43 | 0,79 | 0,17 |
+| Climatología (±15 días) | Sí | 0,627 | 0,0987 | 0,74 | 0,85 | 0,15 |
 | Persistencia | Sí | 0,580 | 0,0983 | 0,25 | 0,75 | 0,15 |
 
 - **Antes del cambio de calibración** (isotónica solo en 2022, ADR-001 §1): RF con CHIRPS AUC 0,691 y Brier 0,1009, peor en Brier que la climatología (0,0989) y la persistencia (0,0981). El cambio se decidió después de ver ese resultado; es el único y no se ajusta nada más con la prueba.
-- La mejora del RF operativo sobre las líneas base es pequeña en Brier (0,0975 frente a 0,0983) y clara en AUC (0,664 frente a 0,626 y 0,580). Con un 83 % de falsas alarmas, el producto se comunica como informativo (R9).
+- La mejora del RF operativo sobre las líneas base es pequeña en Brier (0,0977 frente a 0,0983) y clara en AUC (0,665 frente a 0,627 y 0,580). Con un 79 % de falsas alarmas, el producto se comunica como informativo (R9).
 - Frente a [PREV] (AUC 0,75 / 0,66 / 0,57): el orden RF > climatología > persistencia se mantiene; el AUC es menor con una partición distinta (prueba 2023-2026 en vez de 2015-2026), la regla `basin_mean` y sin IMERG.
+
+### Cambio por correcciones de calidad de datos (2026-10-31)
+**Razón:** correcciones de calidad de datos **decididas por el experto** (JM, 2026-10-30: SP-12 y SP-13), **no por el resultado de la prueba**. No se cambió ningún parámetro del modelo, de la partición ni de la calibración, y `climapp-train` se corrió una sola vez. Los eventos de la prueba no cambian (157 de 1 388 días); en la calibración 2020-2022 pasan de 108 a 110 (2022-02-06: 13,0 → 26,0 mm y 2022-02-27: 19,8 → 39,4 mm, al quedar fuera EST-B), y en el entrenamiento siguen siendo 213. Lo que más cambia es el umbral de decisión que se fija fuera de la prueba: el del RF operativo calibrado pasa de 0,114 a 0,132 y cruza un escalón de la isotónica, así que el POD baja de 0,68 a 0,29 y el FAR de 0,83 a 0,79. AUC y Brier casi no se mueven. Detalle en ADR-001 §Consecuencias.
+
+| Modelo | AUC antes → después | Brier antes → después | POD | FAR | CSI |
+|--------|---------------------|-----------------------|-----|-----|-----|
+| RF `operativa`, calibrado | 0,664 → 0,665 | 0,0975 → 0,0977 | 0,68 → 0,29 | 0,83 → 0,79 | 0,16 → 0,14 |
+| RF `operativa`, sin calibrar | 0,670 → 0,668 | 0,0972 → 0,0972 | 0,61 → 0,29 | 0,82 → 0,79 | 0,16 → 0,14 |
+| RF `historica`, calibrado | 0,707 → 0,701 | 0,0962 → 0,0962 | 0,42 → 0,43 | 0,79 → 0,79 | 0,16 → 0,17 |
+| RF `historica`, sin calibrar | 0,716 → 0,715 | 0,0949 → 0,0951 | 0,42 → 0,43 | 0,79 → 0,79 | 0,16 → 0,17 |
+| Climatología (±15 días) | 0,626 → 0,627 | 0,0987 → 0,0987 | 0,74 → 0,74 | 0,85 → 0,85 | 0,15 → 0,15 |
+| Persistencia | 0,580 → 0,580 | 0,0983 → 0,0983 | 0,25 → 0,25 | 0,75 → 0,75 | 0,15 → 0,15 |
+
+**Reproducción de E1** (`GET /forecast?replay_date=2024-12-31`, objetivo 2025-01-01, media de la cuenca observada 11,2 mm, sin evento):
+
+| Variante | p antes (umbral) | p después (umbral) | Aviso antes → después | `accum_3d_mm` |
+|----------|------------------|--------------------|-----------------------|---------------|
+| `historica` | 0,146 (0,146) | 0,132 (0,132) | sí, justo en el umbral → sí, justo en el umbral | 50,4 → 40,8 |
+| `operativa` | 0,114 (0,114) | 0,149 (0,132) | sí, justo en el umbral → sí, 1,7 puntos por encima | 50,4 → 40,8 |
+
+En las dos versiones E1 sería una falsa alarma frente al objetivo de 20 mm; la creciente ocurrió sin que la cuenca llegara a 20 mm (§Eventos documentados). El acumulado de 3 días baja 9,6 mm, que es el salto de 38,6 mm repartido entre las 4 estaciones. `model_version` pasa de `4959fa8c1e5a` a `c839469b8df2`.
 
 ## Eventos documentados
 Crecidas citadas por JM como candidatas para la demo. Solo se citan hechos verificados en la fuente; no se publican cifras de víctimas.
@@ -107,19 +128,19 @@ Crecidas citadas por JM como candidatas para la demo. Solo se citan hechos verif
 
 JM había dado el 2025-01-02 para E1: es la fecha de publicación de la nota; el hecho ocurrió el 1 de enero.
 
-Lluvia diaria (mm, día local) por posición altitudinal (ADR-004) [EVT]. "inv." = día inválido (< 100/144 lecturas); "s/d" = la estación aún no existía. E1 se muestra **sin** el salto aislado de SP-12 (con él, EST-A el 2024-12-31 sube de 14,0 a 52,6 mm).
+Lluvia diaria (mm, día local) por posición altitudinal (ADR-004) [EVT]. "inv." = día inválido (< 100/144 lecturas); "s/d" = la estación aún no existía. Tabla regenerada el 2026-10-31 con las correcciones de SP-12 y SP-13: el salto aislado de E1 ya no se suma (con él, EST-A el 2024-12-31 subía de 14,0 a 52,6 mm) y EST-B queda inválida en E2.
 
 | Evento | Día | EST-C (alta) | EST-B (media-alta) | EST-A (media) | EST-D (piedemonte) | Media de la cuenca | CHIRPS (3 celdas) |
 |--------|-----|--------------|--------------------|---------------|--------------------|--------------------|-------------------|
 | E1 | D-1 (2024-12-31) | 10,4 | 12,0 | 14,0 | 4,8 | 10,3 | 4,4-5,8 |
 | E1 | D (2025-01-01) | 7,6 | 15,6 | 10,4 | inv. | 11,2 | 8,4-11,5 |
 | E1 | D+1 (2025-01-02) | 0,1 | 0,2 | 0,2 | 4,5 | 1,3 | 3,7-5,2 |
-| E2 | D-1 (2022-02-26) | s/d | 0,0 (SP-13) | 47,6 | s/d | 23,8 | 15,0-19,1 |
-| E2 | D (2022-02-27) | s/d | 0,2 (SP-13) | 39,4 | s/d | 19,8 | 24,1-30,0 |
-| E2 | D+1 (2022-02-28) | s/d | 0,1 (SP-13) | 6,6 | s/d | 3,3 | 28,5-33,9 |
+| E2 | D-1 (2022-02-26) | s/d | inv. (SP-13) | 47,6 | s/d | 47,6 | 15,0-19,1 |
+| E2 | D (2022-02-27) | s/d | inv. (SP-13) | 39,4 | s/d | 39,4 | 24,1-30,0 |
+| E2 | D+1 (2022-02-28) | s/d | inv. (SP-13) | 6,6 | s/d | 6,6 | 28,5-33,9 |
 
-- **Acumulado de 3 días (D-2 a D):** E1: 34,8 mm (EST-A), 47,2 (EST-B), 39,6 (EST-C); media de la cuenca 35,4. E2: 87,6 mm (EST-A); media de la cuenca 43,9 (baja por EST-B). Ninguno llega al umbral de 100 mm (SP-4).
-- **Máxima intensidad horaria** (ventana móvil de 6 lecturas de 10 min, D-1 a D+1): E1: 6,0 mm/h (EST-B), **moderada**; ninguna estación pasa de moderada. E2: 15,2 mm/h (EST-A, 2022-02-26), **fuerte**. Con el salto de SP-12, E1 aparecería como "torrencial" (38,6-40,2 mm/h): por eso el indicador muestra también la lectura máxima de 10 min.
+- **Acumulado de 3 días (D-2 a D):** E1: 34,8 mm (EST-A), 47,2 (EST-B), 39,6 (EST-C); media de la cuenca 35,4. E2: 87,6 mm (EST-A); media de la cuenca 87,6 (solo EST-A: EST-B queda inválida por SP-13; antes, 43,9). Ninguno llega al umbral de 100 mm (SP-4).
+- **Máxima intensidad horaria** (ventana móvil de 6 lecturas de 10 min, D-1 a D+1): E1: 6,0 mm/h (EST-B), **moderada**; ninguna estación pasa de moderada. E2: 15,2 mm/h (EST-A, 2022-02-26), **fuerte**. Con el salto de SP-12, E1 aparecería como "torrencial" (38,6-40,2 mm/h): por eso el indicador excluye los saltos `suspect` y muestra también la lectura máxima de 10 min.
 - **CHIRPS:** cubre los dos eventos (las 3 celdas con dato). Agrega por día UTC (ADR-004 §1).
 - **Lectura honesta de E1:** la creciente ocurrió sin que la media de la cuenca llegara a 20 mm en D-1 ni en D. El producto pronostica lluvia, no crecientes, y la demo debe decirlo (R9).
 - **Recomendación:** E1 para la demo, porque es el único en el periodo de prueba (una reproducción de E2 usaría el año con el que se calibra el modelo y se fija el umbral de decisión). E2 sirve como ejemplo de lluvia de varios días, marcado como periodo de validación.
