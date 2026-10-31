@@ -42,8 +42,12 @@ TEMPLATES.env.filters["local_time"] = _local_time
 
 
 def _base(settings: Settings) -> dict[str, object]:
-    """Contexto común: los canales oficiales del aviso."""
-    return {"official_url": settings.official_channels_url, "ideam_url": settings.ideam_alerts_url}
+    """Contexto común: los canales oficiales del aviso y la reproducción de la demo."""
+    return {
+        "official_url": settings.official_channels_url,
+        "ideam_url": settings.ideam_alerts_url,
+        "demo_replay_date": settings.demo_replay_date,
+    }
 
 
 def _forecast_or_error(

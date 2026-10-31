@@ -99,6 +99,7 @@ class Settings(BaseSettings):
     map_attribution_url: str = Field(min_length=1)
     ideam_alerts_url: str = Field(min_length=1)
     demo_fallback: bool
+    demo_replay_date: date | None
     scope_freeze_date: date
 
     @field_validator("data_dir", mode="before")
@@ -109,6 +110,12 @@ class Settings(BaseSettings):
             msg = "DATA_DIR no puede estar vacío: los datos viven fuera de git (ADR-004)"
             raise ValueError(msg)
         return value
+
+    @field_validator("demo_replay_date", mode="before")
+    @classmethod
+    def _empty_replay_is_none(cls, value: object) -> object:
+        """`DEMO_REPLAY_DATE` vacío significa que la portada no enlaza una reproducción."""
+        return None if isinstance(value, str) and not value.strip() else value
 
     @model_validator(mode="after")
     def _suspect_below_max_step(self) -> Self:

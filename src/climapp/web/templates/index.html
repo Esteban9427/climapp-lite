@@ -1,6 +1,9 @@
 {% extends "base.html" %}
 {% block body %}
 <main class="two">
+  {% if demo_replay_date and not replay_date %}
+    <p class="card"><a href="/?replay_date={{ demo_replay_date }}">Ver la reproducción histórica del evento de la demo (emisión {{ demo_replay_date }})</a></p>
+  {% endif %}
   <section class="card" aria-labelledby="forecast-title">
     <h1 id="forecast-title">Lluvia en la cuenca del río Pance</h1>
     {% include "partials/forecast.html" %}
