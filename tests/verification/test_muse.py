@@ -16,7 +16,7 @@ from climapp.verification.muse import (
     RecordedMuseClient,
     build_client,
     load_recordings,
-    request_key,
+    request_hash,
 )
 from tests.conftest import ROOT, env_example_items, rewrite_env
 from tests.verification.fakes import FakeCompletions, completion
@@ -90,7 +90,7 @@ def _recordings(tmp_path: Path, *entries: dict[str, object]) -> Path:
 def _entry(task: str, content: str, key: str | None = None) -> dict[str, object]:
     return {
         "task": task,
-        "key": key,
+        "request_hash": key,
         "model": "muse-spark-1.3",
         "recorded_at": "2026-10-31T12:00:00-05:00",
         "content": content,
@@ -103,7 +103,7 @@ def _entry(task: str, content: str, key: str | None = None) -> dict[str, object]
 
 
 def test_recorded_client_returns_the_exact_recording_marked_fallback(tmp_path: Path) -> None:
-    key = request_key(MuseTask.JUDGE, MESSAGES)
+    key = request_hash(MuseTask.JUDGE, MESSAGES)
     path = _recordings(tmp_path, _entry("juez", "otro"), _entry("juez", "exacta", key))
     out = RecordedMuseClient(load_recordings(path)).complete(MuseTask.JUDGE, MESSAGES)
     assert out.content == "exacta"
@@ -123,11 +123,11 @@ def test_recorded_client_without_recording_for_the_task_fails(tmp_path: Path) ->
         client.complete(MuseTask.EXPLAIN, MESSAGES)
 
 
-def test_request_key_depends_on_task_and_messages() -> None:
+def test_request_hash_depends_on_task_and_messages() -> None:
     other = [{"role": "user", "content": "otro"}]
-    assert request_key(MuseTask.JUDGE, MESSAGES) == request_key(MuseTask.JUDGE, list(MESSAGES))
-    assert request_key(MuseTask.JUDGE, MESSAGES) != request_key(MuseTask.EXPLAIN, MESSAGES)
-    assert request_key(MuseTask.JUDGE, MESSAGES) != request_key(MuseTask.JUDGE, other)
+    assert request_hash(MuseTask.JUDGE, MESSAGES) == request_hash(MuseTask.JUDGE, list(MESSAGES))
+    assert request_hash(MuseTask.JUDGE, MESSAGES) != request_hash(MuseTask.EXPLAIN, MESSAGES)
+    assert request_hash(MuseTask.JUDGE, MESSAGES) != request_hash(MuseTask.JUDGE, other)
 
 
 def test_invalid_recording_file_is_rejected(tmp_path: Path) -> None:
@@ -149,4 +149,4 @@ def test_build_client_is_live_without_demo_fallback(env_file: Path) -> None:
 def test_versioned_fallback_file_is_valid_and_covers_every_task() -> None:
     recordings = load_recordings(ROOT / env_example_items()["MUSE_FALLBACK_FILE"])
     assert {r.task for r in recordings} == set(MuseTask)
-    assert all(r.key for r in recordings)  # grabadas de una corrida real, con su clave
+    assert all(r.request_hash for r in recordings)  # grabadas de una corrida real, con su clave

@@ -25,7 +25,7 @@ from climapp.logging import get_logger
 
 log = get_logger(__name__)
 Message = Mapping[str, str]
-KEY_HEX_CHARS = 16  # 64 bits de SHA-256: basta para distinguir unas pocas grabaciones
+HASH_HEX_CHARS = 16  # 64 bits de SHA-256: basta para distinguir unas pocas grabaciones
 
 
 class MuseTask(StrEnum):
@@ -162,7 +162,7 @@ class Recording(BaseModel):
     model_config = ConfigDict(frozen=True, extra="forbid")
 
     task: MuseTask
-    key: str | None
+    request_hash: str | None
     model: str
     recorded_at: datetime
     content: str | None
@@ -181,10 +181,10 @@ class _RecordingFile(BaseModel):
     recordings: list[Recording]
 
 
-def request_key(task: MuseTask, messages: Sequence[Message]) -> str:
+def request_hash(task: MuseTask, messages: Sequence[Message]) -> str:
     """Clave estable de un pedido: SHA-256 de la tarea y los mensajes, abreviado."""
     payload = json.dumps([task.value, [dict(m) for m in messages]], sort_keys=True)
-    return hashlib.sha256(payload.encode("utf-8")).hexdigest()[:KEY_HEX_CHARS]
+    return hashlib.sha256(payload.encode("utf-8")).hexdigest()[:HASH_HEX_CHARS]
 
 
 def load_recordings(path: Path) -> list[Recording]:
@@ -210,9 +210,9 @@ class RecordedMuseClient:
         Raises:
             MuseError: si no hay ninguna grabación para la tarea.
         """
-        key = request_key(task, messages)
+        digest = request_hash(task, messages)
         same_task = [r for r in self._recordings if r.task is task]
-        exact = [r for r in same_task if r.key == key]
+        exact = [r for r in same_task if r.request_hash == digest]
         if not same_task:
             msg = f"no hay respuestas grabadas para la tarea {task.value}"
             raise MuseError(msg)

@@ -1,0 +1,16 @@
+{
+  "recordings": [
+    {
+      "task": "juez",
+      "request_hash": "45b40dc26b5a3e79",
+      "model": "muse-spark-1.3",
+      "recorded_at": "2026-10-31T12:05:12-05:00",
+      "content": "{\"claims\": [{\"text\": \"Alerta de creciente: hay un 13 % de probabilidad de 20 mm o más; en tres días cayeron 40,8 mm. No es una alerta oficial.\", \"evidence\": \"No es una alerta oficial: es un pronóstico experimental e informativo de lluvia; sin mención de 'creciente'\", \"supported\": false}]}",
+      "finish_reason": "stop",
+      "tool_calls": [],
+      "tokens_in": 400,
+      "tokens_out": 1833,
+      "latency_ms": 7572
+    }
+  ]
+}

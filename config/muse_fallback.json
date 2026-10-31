@@ -2,7 +2,7 @@
   "recordings": [
     {
       "task": "estructurar",
-      "key": "c81f9eea75e55adf",
+      "request_hash": "c81f9eea75e55adf",
       "model": "muse-spark-1.3",
       "recorded_at": "2026-10-31T11:50:40-05:00",
       "content": "{\"event_type\":\"lluvia\",\"intensity\":\"fuerte\",\"observed_at\":\"2024-12-31T16:30:00-05:00\",\"claims\":[\"Está lloviendo en la parte alta de la cuenca\",\"La lluvia es muy fuerte\",\"La lluvia lleva una hora\",\"El río viene crecido\",\"El río es de color café\"],\"numbers_cited\":[]}",
@@ -14,7 +14,7 @@
     },
     {
       "task": "juez",
-      "key": "8a93b6a74153b9bb",
+      "request_hash": "8a93b6a74153b9bb",
       "model": "muse-spark-1.3",
       "recorded_at": "2026-10-31T11:50:44-05:00",
       "content": "{\"claims\": [{\"text\": \"Está lloviendo en la parte alta de la cuenca\", \"evidence\": \"Está lloviendo muy fuerte desde hace una hora en la parte alta de la cuenca\", \"supported\": true}, {\"text\": \"La lluvia es muy fuerte\", \"evidence\": \"Está lloviendo muy fuerte\", \"supported\": true}, {\"text\": \"La lluvia lleva una hora\", \"evidence\": \"desde hace una hora\", \"supported\": true}, {\"text\": \"El río viene crecido\", \"evidence\": \"el río viene crecido\", \"supported\": true}, {\"text\": \"El río es de color café\", \"evidence\": \"de color café\", \"supported\": true}]}",
@@ -26,75 +26,27 @@
     },
     {
       "task": "explicar",
-      "key": "870b8df7345de676",
+      "request_hash": "a65f02e6c6afd8aa",
       "model": "muse-spark-1.3",
-      "recorded_at": "2026-10-31T11:50:50-05:00",
-      "content": "{\"text\": \"Mañana hay un pronóstico experimental de lluvia para la cuenca del río Pance. Hay 13 por ciento de probabilidad de pasar 20.0 milímetros. En los últimos tres días cayeron 40.8 milímetros, un nivel normal. No es una alerta oficial. Este dato es solo informativo, sigue las indicaciones de los organismos oficiales y ten mucha precaución.\", \"numbers_cited\": [13, 20.0, 40.8]}",
+      "recorded_at": "2026-10-31T12:04:35-05:00",
+      "content": "{\"text\": \"Este es un pronóstico experimental e informativo de lluvia para mañana en la cuenca del río Pance, no es oficial. Es una reproducción histórica para demo, no es el pronóstico de hoy. La probabilidad de que la lluvia media llegue a 20.0 mm o la supere es de 13. En los últimos tres días cayeron 40.8 mm, un nivel normal.\", \"numbers_cited\": [20.0, 13, 40.8]}",
       "finish_reason": "stop",
       "tool_calls": [],
-      "tokens_in": 218,
-      "tokens_out": 1305,
-      "latency_ms": 6304
+      "tokens_in": 362,
+      "tokens_out": 1459,
+      "latency_ms": 6187
     },
     {
       "task": "juez",
-      "key": "9bd50d942746f54a",
+      "request_hash": "41ed7cf15da2c8f7",
       "model": "muse-spark-1.3",
-      "recorded_at": "2026-10-31T11:50:56-05:00",
-      "content": "{\"claims\": [{\"text\": \"Mañana hay un pronóstico experimental de lluvia para la cuenca del río Pance. Hay 13 por ciento de probabilidad de pasar 20.0 milímetros. En los últimos tres días cayeron 40.8 milímetros, un nivel normal. No es una alerta oficial. Este dato es solo informativo, sigue las indicaciones de los organismos oficiales y ten mucha precaución.\", \"evidence\": \"probabilidad_pct: 13, umbral_mm: 20.0, acumulado_3d_mm: 40.8, nivel_acumulado_3d: normal; No es una alerta oficial. ClimApp Lite es un pronóstico experimental e informativo\", \"supported\": false}]}",
+      "recorded_at": "2026-10-31T12:04:40-05:00",
+      "content": "{\"claims\": [{\"text\": \"Este es un pronóstico experimental e informativo de lluvia para mañana en la cuenca del río Pance, no es oficial. Es una reproducción histórica para demo, no es el pronóstico de hoy. La probabilidad de que la lluvia media llegue a 20.0 mm o la supere es de 13. En los últimos tres días cayeron 40.8 mm, un nivel normal.\", \"evidence\": \"No es una alerta oficial: es un pronóstico experimental e informativo de lluvia; es una reproducción histórica para la demo, no el pronóstico de hoy; probabilidad_pct valor 13, umbral_mm 20.0, lluvia media llegue a umbral o lo supere; acumulado_3d_mm 40.8 nivel normal\", \"supported\": true}]}",
       "finish_reason": "stop",
       "tool_calls": [],
-      "tokens_in": 311,
-      "tokens_out": 1659,
-      "latency_ms": 5958
-    },
-    {
-      "task": "explicar",
-      "key": "1190ccbe45e6f78e",
-      "model": "muse-spark-1.3",
-      "recorded_at": "2026-10-31T11:51:00-05:00",
-      "content": "{\"text\": \"Para mañana en la cuenca del río Pance este es un pronóstico experimental de lluvia con 13 por ciento de probabilidad de superar 20.0 mm. En los últimos tres días se acumuló 40.8 mm, con nivel normal. No es una alerta oficial, es solo información experimental. Ante cualquier riesgo sigue las indicaciones de los organismos oficiales.\", \"numbers_cited\": [13, 20.0, 40.8]}",
-      "finish_reason": "stop",
-      "tool_calls": [],
-      "tokens_in": 254,
-      "tokens_out": 1276,
-      "latency_ms": 4352
-    },
-    {
-      "task": "juez",
-      "key": "974944733eed1800",
-      "model": "muse-spark-1.3",
-      "recorded_at": "2026-10-31T11:51:07-05:00",
-      "content": "{\"claims\": [{\"text\": \"Para mañana en la cuenca del río Pance este es un pronóstico experimental de lluvia con 13 por ciento de probabilidad de superar 20.0 mm. En los últimos tres días se acumuló 40.8 mm, con nivel normal. No es una alerta oficial, es solo información experimental. Ante cualquier riesgo sigue las indicaciones de los organismos oficiales.\", \"evidence\": \"ninguna\", \"supported\": false}]}",
-      "finish_reason": "stop",
-      "tool_calls": [],
-      "tokens_in": 305,
-      "tokens_out": 1833,
-      "latency_ms": 6347
-    },
-    {
-      "task": "explicar",
-      "key": "1190ccbe45e6f78e",
-      "model": "muse-spark-1.3",
-      "recorded_at": "2026-10-31T11:51:11-05:00",
-      "content": "{\"text\": \"Para mañana en la cuenca del río Pance hay una probabilidad de 13 de lluvia mayor a 20.0. El acumulado de los últimos tres días es de 40.8 y su nivel es normal. No es una alerta oficial. ClimApp Lite es un pronóstico experimental e informativo: ante cualquier riesgo, sigue las indicaciones de los organismos oficiales.\", \"numbers_cited\": [13, 20.0, 40.8]}",
-      "finish_reason": "stop",
-      "tool_calls": [],
-      "tokens_in": 254,
-      "tokens_out": 882,
-      "latency_ms": 4284
-    },
-    {
-      "task": "juez",
-      "key": "28e43bac416fb6d2",
-      "model": "muse-spark-1.3",
-      "recorded_at": "2026-10-31T11:51:17-05:00",
-      "content": "{\"claims\": [{\"text\": \"Para mañana en la cuenca del río Pance hay una probabilidad de 13 de lluvia mayor a 20.0. El acumulado de los últimos tres días es de 40.8 y su nivel es normal. No es una alerta oficial. ClimApp Lite es un pronóstico experimental e informativo: ante cualquier riesgo, sigue las indicaciones de los organismos oficiales.\", \"evidence\": \"ninguna\", \"supported\": false}]}",
-      "finish_reason": "stop",
-      "tool_calls": [],
-      "tokens_in": 305,
-      "tokens_out": 1271,
-      "latency_ms": 5743
+      "tokens_in": 442,
+      "tokens_out": 1264,
+      "latency_ms": 4617
     }
   ]
 }

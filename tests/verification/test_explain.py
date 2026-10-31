@@ -76,7 +76,7 @@ def test_verified_explanation_is_returned_with_its_fallback_flag() -> None:
     assert result is not None
     assert (result.text, result.fallback) == (TEXT, False)
     prompt = muse.requests[0][1][-1]["content"]
-    assert '"probabilidad_pct": 15' in prompt and '"acumulado_3d_mm": 40.8' in prompt
+    assert '"valor": 15' in prompt and '"valor": 40.8' in prompt
 
 
 def test_altered_figure_is_rejected_and_explanation_is_null() -> None:
@@ -105,7 +105,7 @@ def _recorded(tmp_path: Path, *entries: tuple[str, str]) -> Path:
     recs = [
         {
             "task": task,
-            "key": None,
+            "request_hash": None,
             "model": "m",
             "recorded_at": "2026-10-31T12:00:00-05:00",
             "content": content,

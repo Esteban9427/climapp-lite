@@ -47,19 +47,54 @@ def forecast_figures(forecast: Forecast) -> dict[str, float]:
     return figures
 
 
-def _request(forecast: Forecast) -> GateRequest[ForecastExplanation]:
-    """Pedido de la compuerta: cifras, contexto y la misma información para el juez."""
+VARIANT_MEANING = {
+    "operativa": "operativa: pronóstico con las estaciones disponibles al día siguiente",
+    "historica": "historica: modelo con estaciones y CHIRPS, que llega con semanas de retraso",
+}
+NOT_OFFICIAL = "No es una alerta oficial: es un pronóstico experimental e informativo de lluvia."
+
+
+def _context(forecast: Forecast) -> dict[str, object]:
+    """Cifras con su significado, iguales para el explicador y para el juez."""
     figures = forecast_figures(forecast)
-    context: dict[str, float | str] = {
-        **figures,
-        "nivel_acumulado_3d": forecast.accum_3d_level,
-        "aviso": forecast.disclaimer,
+    target = f"regla {forecast.target_rule}: lluvia media de las estaciones de la cuenca"
+    context: dict[str, object] = {
+        "probabilidad_pct": {
+            "valor": figures["probabilidad_pct"],
+            "significado": (
+                "probabilidad, en %, de que mañana (el día siguiente a la emisión) la lluvia en "
+                f"la cuenca del río Pance llegue a umbral_mm o lo supere ({target})"
+            ),
+        },
+        "umbral_mm": {
+            "valor": figures["umbral_mm"],
+            "significado": "umbral de lluvia diaria del pronóstico, en mm",
+        },
+        "variante": VARIANT_MEANING[forecast.variant],
+        "reproduccion": "es una reproducción histórica para la demo, no el pronóstico de hoy"
+        if forecast.replay
+        else "es el pronóstico vigente",
+        "aviso": NOT_OFFICIAL,
     }
+    if "acumulado_3d_mm" in figures:
+        context["acumulado_3d_mm"] = {
+            "valor": figures["acumulado_3d_mm"],
+            "significado": (
+                "lluvia acumulada en la cuenca en los últimos tres días, en mm; nivel "
+                f"{forecast.accum_3d_level}"
+            ),
+        }
+    return context
+
+
+def _request(forecast: Forecast) -> GateRequest[ForecastExplanation]:
+    """Pedido de la compuerta: el juez recibe exactamente la información del explicador."""
+    context = _context(forecast)
     return GateRequest(
         task=MuseTask.EXPLAIN,
         schema=ForecastExplanation,
         messages=explain_messages(context),
-        allowed_numbers=frozenset(figures.values()),
+        allowed_numbers=frozenset(forecast_figures(forecast).values()),
         evidence=json.dumps({"datos_del_pronostico": context}, ensure_ascii=False),
     )
 

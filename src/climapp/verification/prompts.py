@@ -5,7 +5,7 @@ que la calcule: las cifras se le entregan y la compuerta exige que las copie igu
 """
 
 import json
-from collections.abc import Collection, Sequence
+from collections.abc import Collection, Mapping, Sequence
 
 from climapp.verification.checks import Reason
 from climapp.verification.muse import Message
@@ -34,7 +34,8 @@ STRUCTURE_SYSTEM = (
 EXPLAIN_SYSTEM = (
     "Explicas en español sencillo, en máximo 600 caracteres, un pronóstico experimental "
     "de lluvia para mañana en la cuenca del río Pance. No es una alerta oficial y no lo "
-    "presentes como tal; nunca digas que es seguro ir al río. Usa SOLO las cifras que se "
+    "presentes como tal; nunca digas que es seguro ir al río. Habla solo de lluvia: no "
+    "hables de crecientes, inundaciones ni alertas. Usa SOLO las cifras que se "
     "te entregan, copiadas exactamente; cualquier otra cantidad escríbela en palabras y "
     "no escribas fechas con números. Responde SOLO con JSON, sin texto adicional ni "
     'bloques de código: {"text": <explicación>, "numbers_cited": [<cada cifra que '
@@ -67,7 +68,7 @@ def structure_messages(text: str, received_at: str) -> list[Message]:
     return [{"role": "system", "content": STRUCTURE_SYSTEM}, {"role": "user", "content": user}]
 
 
-def explain_messages(figures: dict[str, float | str]) -> list[Message]:
-    """Mensajes para explicar un pronóstico a partir de sus cifras ya redondeadas."""
-    user = json.dumps({"pronostico": figures}, ensure_ascii=False)
+def explain_messages(figures: Mapping[str, object]) -> list[Message]:
+    """Mensajes para explicar un pronóstico a partir de sus cifras y su significado."""
+    user = json.dumps({"pronostico": dict(figures)}, ensure_ascii=False)
     return [{"role": "system", "content": EXPLAIN_SYSTEM}, {"role": "user", "content": user}]
