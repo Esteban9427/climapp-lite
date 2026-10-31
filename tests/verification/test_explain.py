@@ -1,13 +1,26 @@
 """Tests de la explicación verificada del pronóstico (TASK-022, ADR-002 §2 y §3)."""
 
 import json
+from collections.abc import Sequence
 from datetime import UTC, date, datetime
 from pathlib import Path
 
 from climapp.api.schemas import Forecast
 from climapp.config import Settings
-from climapp.verification.explain import build_explainer, explain_forecast, forecast_figures
-from climapp.verification.muse import MuseError, MuseTask
+from climapp.verification.explain import (
+    _request,
+    build_explainer,
+    explain_forecast,
+    forecast_figures,
+)
+from climapp.verification.muse import (
+    Message,
+    MuseError,
+    MuseReply,
+    MuseTask,
+    RecordedMuseClient,
+    load_recordings,
+)
 from tests.conftest import rewrite_env
 from tests.verification.fakes import ScriptedMuse, reply
 
@@ -123,3 +136,66 @@ def test_demo_explainer_without_recordings_gives_null(env_file: Path, tmp_path: 
     rewrite_env(env_file, DEMO_FALLBACK="1", MUSE_FALLBACK_FILE=str(tmp_path / "no.json"))
     explainer = build_explainer(Settings(_env_file=env_file))
     assert explainer is not None and explainer(FORECAST) is None
+
+
+# --- evidencia del juez con el significado de cada cifra (decisión 2026-10-31) -------
+
+E1 = FORECAST.model_copy(
+    update={"prob_ge_threshold": 0.1324200913242009, "variant": "historica", "replay": True}
+)
+FIXTURES = Path(__file__).resolve().parents[1] / "fixtures" / "muse"
+ALERT_TEXT = (
+    "Alerta de creciente: hay un 13 % de probabilidad de 20 mm o más; "
+    "en tres días cayeron 40,8 mm. No es una alerta oficial."
+)
+
+
+def test_judge_evidence_states_what_each_figure_means() -> None:
+    evidence = _request(E1).evidence
+    for phrase in (
+        "mañana",
+        "cuenca del río Pance",
+        "basin_mean",
+        "últimos tres días",
+        "historica",
+        "reproducción",
+        "No es una alerta oficial",
+    ):
+        assert phrase in evidence, phrase
+    assert '"valor": 13' in evidence and '"valor": 40.8' in evidence
+
+
+def test_explainer_receives_the_same_meanings_as_the_judge() -> None:
+    user = _request(E1).messages[-1]["content"]
+    assert "basin_mean" in user and "últimos tres días" in user
+
+
+def test_explainer_is_told_not_to_talk_about_floods_or_alerts() -> None:
+    system = _request(E1).messages[0]["content"]
+    assert "crecientes" in system and "alertas" in system
+
+
+def test_changed_figure_is_still_rejected_with_the_new_evidence() -> None:
+    changed = _explanation(TEXT.replace("15 %", "13 %"), [13, 20, 40.8])
+    muse = ScriptedMuse({MuseTask.EXPLAIN: [reply(changed)]})
+    assert explain_forecast(muse, FORECAST, max_attempts=1) is None  # FORECAST da 15 %
+
+
+def test_flood_alert_explanation_is_rejected_by_the_real_judge() -> None:
+    """Veredicto real de Muse (grabado el 2026-10-31) ante una explicación incorrecta."""
+    recorded = RecordedMuseClient(load_recordings(FIXTURES / "juez_rechaza_alerta.json"))
+
+    class Probe:
+        def complete(self, task: MuseTask, messages: Sequence[Message]) -> MuseReply:
+            if task is MuseTask.EXPLAIN:
+                return reply(_explanation(ALERT_TEXT, [13, 20, 40.8]))
+            return recorded.complete(task, messages)
+
+    assert explain_forecast(Probe(), E1, max_attempts=1) is None
+
+
+def test_first_real_run_is_blocked_by_the_gate() -> None:
+    """Ejemplo para el video: la corrida real del 2026-10-31 que el juez rechazó 3 veces."""
+    recordings = load_recordings(FIXTURES / "e1_rechazada_2026-10-31.json")
+    assert [r.task for r in recordings] == [MuseTask.EXPLAIN, MuseTask.JUDGE] * 3
+    assert explain_forecast(RecordedMuseClient(recordings), E1, max_attempts=3) is None
