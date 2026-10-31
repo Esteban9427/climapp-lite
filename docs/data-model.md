@@ -85,7 +85,7 @@
 |-------|------|
 | `score` | float [0, 1] |
 | `sources` | list[{`source_id`, `kind`: `station_group` \| `satellite` \| `forecast`, `members`: list[str], `agrees`: bool, `weight`: float}] |
-| `independent_sources` | int: número de grupos, no de estaciones |
+| `independent_sources` | int: número de fuentes con dato; cada grupo de estaciones correlacionadas cuenta una vez (no cada estación), más IMERG Early y el pronóstico |
 
 ## Evaluación
 ### EvaluationReport (`GET /evaluation`)

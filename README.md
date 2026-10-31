@@ -25,7 +25,12 @@ Todo lo que está en este repositorio se construyó durante el evento. La lista 
 - [x] 2026-10-30: variables con las estaciones disponibles cada día y CHIRPS, random forest calibrado y evaluado contra climatología y persistencia en 2023-2026, con test de fuga; `uv run climapp-train` escribe la evaluación y los pronósticos (TASK-008, TDD).
 - [x] 2026-10-30: API `GET /forecast` (variante operativa en vivo e histórica en reproducción) y `GET /evaluation` sobre artefactos precalculados, con tests de contrato contra `openapi.yaml` y el aviso "no es alerta oficial" siempre presente (TASK-015, TDD).
 - [x] 2026-10-31: correcciones de calidad de datos confirmadas por JM. Los saltos aislados del contador tras lecturas regulares se marcan `suspect` y no suman al total diario (SP-12); los días de periodos de falla conocidos quedan inválidos con un registro versionado (SP-13). Se regeneraron la tabla diaria y la evaluación (TASK-003 y TASK-004, TDD).
-- [ ] Compuerta de verificación de reportes con Muse Spark.
+- [x] 2026-10-31: grupos de estaciones correlacionadas (r ≥ 0,8) sobre la tabla diaria, que cuentan como una sola fuente de evidencia (TASK-002 mínima, TDD).
+- [x] 2026-10-31: cliente de Muse Spark con el SDK `openai` y el esfuerzo por tarea desde la configuración, más fallback de demo con respuestas reales grabadas y marcadas `fallback=true` (TASK-011, TDD).
+- [x] 2026-10-31: compuerta de verificación: comprobaciones deterministas en el orden de ADR-002, juez con Muse Spark y hasta 3 intentos antes de `requiere_revision_humana` (TASK-012 y TASK-013, TDD).
+- [x] 2026-10-31: confianza calculada por código, sin el LLM, con test de propiedades: duplicar una estación correlacionada no la sube (TASK-014, TDD).
+- [x] 2026-10-31: explicación del pronóstico verificada: si una cifra no coincide con el modelo, o el juez la rechaza, `explanation=null` (TASK-022, TDD).
+- [ ] Reportes ciudadanos de punta a punta (`POST /reports`).
 - [ ] Web móvil con pronóstico, reportes y mapa.
 
 ## Herramientas previas al evento, no parte del entregable
