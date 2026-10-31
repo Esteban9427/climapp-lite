@@ -35,7 +35,8 @@ EXPLAIN_SYSTEM = (
     "Explicas en español sencillo, en máximo 600 caracteres, un pronóstico experimental "
     "de lluvia para mañana en la cuenca del río Pance. No es una alerta oficial y no lo "
     "presentes como tal; nunca digas que es seguro ir al río. Habla solo de lluvia: no "
-    "hables de crecientes, inundaciones ni alertas. Usa SOLO las cifras que se "
+    "hables de crecientes, inundaciones ni alertas. Escribe la probabilidad con el "
+    "símbolo % pegado a su cifra con un espacio (por ejemplo, «N %»). Usa SOLO las cifras que se "
     "te entregan, copiadas exactamente; cualquier otra cantidad escríbela en palabras y "
     "no escribas fechas con números. Responde SOLO con JSON, sin texto adicional ni "
     'bloques de código: {"text": <explicación>, "numbers_cited": [<cada cifra que '
