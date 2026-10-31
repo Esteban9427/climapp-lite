@@ -94,6 +94,9 @@ class Settings(BaseSettings):
     photos_dir: Path
     max_photo_bytes: int = Field(ge=1)
     public_coord_decimals: int = Field(ge=0, le=6)
+    map_tile_url: str = Field(min_length=1)
+    map_attribution: str = Field(min_length=1)
+    map_attribution_url: str = Field(min_length=1)
     ideam_alerts_url: str = Field(min_length=1)
     demo_fallback: bool
     scope_freeze_date: date

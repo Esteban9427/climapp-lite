@@ -3,6 +3,7 @@
 import json
 import re
 
+from climapp.config import Settings
 from climapp.verification.muse import MuseTask
 from tests.api.test_reports_api import CLAIMS, INSIDE, OUTSIDE, TEXT, VERDICT
 from tests.verification.fakes import ScriptedMuse, reply
@@ -90,3 +91,13 @@ def test_map_centers_on_the_basin_when_there_are_no_markers(make_client: MakeCli
 def test_live_map_without_outcome_says_it_is_not_evaluated_yet(make_client: MakeClient) -> None:
     html = make_client().get("/mapa").text
     assert "aún sin resultado observado" in html
+
+
+def test_without_evaluation_or_polygon_the_map_still_renders(
+    make_client: MakeClient, web_settings: Settings
+) -> None:
+    (web_settings.data_dir / web_settings.evaluation_file).unlink()
+    (web_settings.data_dir / web_settings.basin_polygon_file).unlink()
+    html = make_client().get("/mapa", params={"replay_date": "2024-12-31"}).text
+    assert "aún sin resultado observado" in html
+    assert _map_data(html)["center"] is None

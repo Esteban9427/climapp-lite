@@ -42,6 +42,12 @@ class Basin:
                 return True
         return False
 
+    def center(self) -> tuple[float, float]:
+        """Centro `(lat, lon)` del rectángulo que envuelve los anillos exteriores."""
+        points = [p for outer, *_ in self.polygons for p in outer]
+        lons, lats = [p[0] for p in points], [p[1] for p in points]
+        return (min(lats) + max(lats)) / 2, (min(lons) + max(lons)) / 2
+
 
 def _ring(points: Sequence[Sequence[float]]) -> Ring:
     """Anillo validado."""

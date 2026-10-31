@@ -19,6 +19,7 @@ from climapp.api.forecast_routes import ExplainerDep, forecast
 from climapp.api.reports import MAX_TEXT_CHARS, MuseDep, StoreDep, post_report
 from climapp.api.schemas import Forecast, Report
 from climapp.config import Settings
+from climapp.web.map import map_view
 
 TEMPLATES = Jinja2Templates(directory=Path(__file__).resolve().parent / "templates")
 LIST_LIMIT = 20
@@ -127,3 +128,30 @@ def web_report_status(
     if record is None:
         return _status(request, None, "No se pudo consultar el estado; reintenta.")
     return _status(request, record.public(settings.public_coord_decimals))
+
+
+@router.get("/mapa", response_class=HTMLResponse)
+def mapa(
+    request: Request,
+    settings: SettingsDep,
+    now: NowDep,
+    store: StoreDep,
+    replay_date: date | None = None,
+) -> HTMLResponse:
+    """Mapa de reportes verificados del día con el resultado del pronóstico."""
+    view = map_view(settings, store, now, replay_date)
+    data = {
+        "markers": view.markers,
+        "center": view.center,
+        "tile_url": settings.map_tile_url,
+        "attribution": settings.map_attribution,
+        "attribution_url": settings.map_attribution_url,
+    }
+    context = _base(settings) | {
+        "view": view,
+        "replay_date": replay_date,
+        "map_data": data,
+        "attribution": settings.map_attribution,
+        "attribution_url": settings.map_attribution_url,
+    }
+    return TEMPLATES.TemplateResponse(request, "mapa.html", context)

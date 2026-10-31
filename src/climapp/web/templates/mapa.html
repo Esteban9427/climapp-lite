@@ -1,0 +1,25 @@
+{% extends "base.html" %}
+{% block title %}Mapa · ClimApp Lite{% endblock %}
+{% block head %}<link rel="stylesheet" href="/static/vendor/leaflet/leaflet.css">{% endblock %}
+{% block body %}
+<main>
+  <h1>Reportes verificados en el mapa</h1>
+  {% if replay_date %}<p><span class="replay">Reproducción histórica · emisión {{ replay_date }}</span></p>{% endif %}
+  <section class="card" aria-labelledby="legend-title">
+    <h2 id="legend-title">Leyenda</h2>
+    <p>Reportes observados el {{ view.day.isoformat() }}: {{ view.markers | length }}.</p>
+    {% if not view.markers %}<p class="muted">No hay reportes verificados para este día.</p>{% endif %}
+    {% if view.outcome %}
+      <p>Pronóstico para el {{ view.target_day.isoformat() }}: {{ view.outcome }}</p>
+    {% else %}
+      <p class="muted">Pronóstico para el {{ view.target_day.isoformat() }}: aún sin resultado observado.</p>
+    {% endif %}
+  </section>
+  <div id="map" role="img" aria-label="Mapa de reportes verificados">Cargando mapa…</div>
+  <p class="muted">Mapa base: <a href="{{ attribution_url }}" rel="noopener">{{ attribution }}</a></p>
+  <p><a href="/{% if replay_date %}?replay_date={{ replay_date }}{% endif %}">← Volver al pronóstico</a></p>
+</main>
+<script type="application/json" id="map-data">{{ map_data | tojson }}</script>
+<script src="/static/vendor/leaflet/leaflet.js" defer></script>
+<script src="/static/map.js" defer></script>
+{% endblock %}
