@@ -15,7 +15,8 @@ from climapp.verification.confidence import (
     load_station_groups,
 )
 
-WEIGHTS = ConfidenceWeights(station=0.5, satellite=1.0, forecast=0.5, rain_mm=1.0)
+# Pesos SUPUESTO del equipo (2026-10-31, ADR-002 §4): estaciones > satélite > pronóstico
+WEIGHTS = ConfidenceWeights(station=1.0, satellite=0.5, forecast=0.25, rain_mm=1.0)
 GROUPS = (("EST-A",), ("EST-B", "EST-C"), ("EST-D",))
 
 
@@ -40,8 +41,8 @@ def test_breakdown_has_one_source_per_group_and_the_other_kinds() -> None:
         ("pronostico", "forecast", [], True),
     ]
     assert conf.independent_sources == 5
-    # (0,5 + 0,5 + 0 + 1,0 + 0,5) / (0,5·3 + 1,0 + 0,5)
-    assert conf.score == pytest.approx(2.5 / 3.0)
+    # (1 + 1 + 0 + 0,5 + 0,25) / (1·3 + 0,5 + 0,25)
+    assert conf.score == pytest.approx(2.75 / 3.75)
 
 
 def test_correlated_stations_count_as_one_source() -> None:
@@ -98,7 +99,7 @@ def test_without_evidence_the_score_is_zero() -> None:
 
 def test_weights_come_from_settings(env_file: Path) -> None:
     weights = ConfidenceWeights.from_settings(Settings(_env_file=env_file))
-    assert weights == ConfidenceWeights(station=0.5, satellite=1.0, forecast=0.5, rain_mm=1.0)
+    assert weights == WEIGHTS
 
 
 def test_load_station_groups_reads_the_artifact(tmp_path: Path) -> None:
@@ -168,3 +169,13 @@ def test_order_of_the_stations_does_not_matter(evidence: Evidence) -> None:
     assert compute_confidence(other, GROUPS, WEIGHTS) == compute_confidence(
         evidence, GROUPS, WEIGHTS
     )
+
+
+def test_station_groups_outweigh_satellite_and_forecast_together() -> None:
+    """Dos fuentes remotas que contradicen a un grupo de estaciones no lo superan."""
+    conf = compute_confidence(
+        _evidence(station_mm={"EST-A": 6.0}, satellite_mm=0.0, forecast_prob=0.01),
+        GROUPS,
+        WEIGHTS,
+    )
+    assert conf.score > 0.5
