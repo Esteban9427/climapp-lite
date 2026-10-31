@@ -21,6 +21,7 @@ from climapp.config import Settings
 from climapp.data.cleaning import CleaningParams, compute_increments
 from climapp.data.days import local_day
 from climapp.data.models import GAP_FLAGS, DailyPrecip, Increment, Reading, StepFlag
+from climapp.data.outages import KnownOutage, apply_outages
 from climapp.data.station_reader import read_csv_export, read_xls_export
 from climapp.logging import get_logger
 
@@ -221,7 +222,10 @@ def _read_export(path: Path, sensors: Collection[str], tz: ZoneInfo) -> SourcedR
 
 
 def build_station_daily(
-    exports: Sequence[Path], station_map: Mapping[str, str], config: DailyConfig
+    exports: Sequence[Path],
+    station_map: Mapping[str, str],
+    config: DailyConfig,
+    outages: Sequence[KnownOutage] = (),
 ) -> list[DailyPrecip]:
     """Construye la tabla diaria de todas las estaciones uniendo las exportaciones.
 
@@ -229,6 +233,7 @@ def build_station_daily(
         exports: exportaciones en orden de preferencia (csv o xls).
         station_map: correspondencia nombre crudo → `EST-x`.
         config: sensores, zona horaria, limpieza y mínimo de lecturas.
+        outages: periodos de falla conocidos (SP-13); sus días quedan inválidos.
 
     Returns:
         Filas ordenadas por serie y fecha.
@@ -248,7 +253,7 @@ def build_station_daily(
         for raw, pairs in merged.readings_by_station.items()
         for row in daily_for_station(station_map[raw], pairs, config.cleaning, config.min_readings)
     ]
-    return sorted(rows, key=lambda r: (r.series_id, r.date))
+    return apply_outages(sorted(rows, key=lambda r: (r.series_id, r.date)), outages)
 
 
 def _csv_cell(value: object) -> str:

@@ -1,0 +1,9 @@
+[
+  {
+    "series_id": "EST-B",
+    "desde": "2022-01-01",
+    "hasta": "2022-03-01",
+    "motivo": "falla del balancín",
+    "fuente": "JM 2026-10-30"
+  }
+]

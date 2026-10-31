@@ -62,6 +62,7 @@ class Settings(BaseSettings):
     station_exports: list[Path] = Field(min_length=1)
     station_map_file: Path
     daily_stations_file: Path
+    known_outages_file: Path
     min_readings: int = Field(ge=1, le=READINGS_PER_DAY)
 
     climatology_window_days: int = Field(ge=1)
