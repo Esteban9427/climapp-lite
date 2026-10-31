@@ -22,6 +22,15 @@
       refresh();
     }, function () { where.textContent = "No pudimos obtener tu ubicación."; });
   });
+  document.querySelectorAll(".demo-example").forEach(function (button) {
+    button.addEventListener("click", function () {
+      text.value = button.dataset.text;
+      lat.value = button.dataset.lat;
+      lon.value = button.dataset.lon;
+      where.textContent = "Ubicación de ejemplo: centro de la cuenca.";
+      refresh();
+    });
+  });
   text.addEventListener("input", refresh);
   photo.addEventListener("change", refresh);
   form.addEventListener("htmx:beforeRequest", function () { submit.disabled = true; submit.textContent = "Enviando…"; });

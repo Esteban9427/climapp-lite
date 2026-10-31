@@ -19,6 +19,8 @@ from climapp.api.forecast_routes import ExplainerDep, forecast
 from climapp.api.reports import MAX_TEXT_CHARS, MuseDep, StoreDep, post_report
 from climapp.api.schemas import Forecast, Report
 from climapp.config import Settings
+from climapp.verification.basin import BasinError, load_basin
+from climapp.web.demo import DemoReport, load_demo_reports
 from climapp.web.map import map_view
 
 TEMPLATES = Jinja2Templates(directory=Path(__file__).resolve().parent / "templates")
@@ -48,6 +50,18 @@ def _base(settings: Settings) -> dict[str, object]:
         "ideam_url": settings.ideam_alerts_url,
         "demo_replay_date": settings.demo_replay_date,
     }
+
+
+def _demo_examples(settings: Settings) -> tuple[list[DemoReport], tuple[float, float] | None]:
+    """Ejemplos de la demo y el centro de la cuenca; vacío fuera del modo fallback."""
+    if not settings.demo_fallback:
+        return [], None
+    try:
+        examples = load_demo_reports(settings.demo_reports_file)
+        center = load_basin(settings.data_dir / settings.basin_polygon_file).center()
+    except (OSError, ValueError, BasinError):
+        return [], None
+    return examples, center
 
 
 def _forecast_or_error(
@@ -80,6 +94,8 @@ def index(  # noqa: PLR0913 - dependencias de la vista
         "replay_date": replay_date,
         "reports": reports,
     }
+    examples, center = _demo_examples(settings)
+    context |= {"demo_examples": examples, "demo_center": center}
     return TEMPLATES.TemplateResponse(request, "index.html", context)
 
 

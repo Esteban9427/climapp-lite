@@ -24,6 +24,16 @@
       <p id="location-status" class="muted" aria-live="polite">Necesitamos tu ubicación para saber si estás en la cuenca.</p>
       <button type="submit" class="btn-primary">Enviar reporte</button>
     </form>
+    {% if demo_examples and demo_center %}
+      <div class="demo-examples">
+        <h2>Ejemplos de la demo</h2>
+        <p class="muted">Textos grabados con Muse Spark: solo estos se verifican sin red (respuesta grabada).</p>
+        {% for ex in demo_examples %}
+          <button type="button" class="btn-secondary demo-example" data-text="{{ ex.text }}"
+                  data-lat="{{ demo_center[0] }}" data-lon="{{ demo_center[1] }}">{{ ex.titulo }}</button>
+        {% endfor %}
+      </div>
+    {% endif %}
     <div id="report-status" aria-live="polite"></div>
   </section>
   <section class="card" aria-labelledby="list-title">

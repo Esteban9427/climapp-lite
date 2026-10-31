@@ -8,7 +8,7 @@ import json
 from collections.abc import Collection, Mapping, Sequence
 
 from climapp.verification.checks import Reason
-from climapp.verification.muse import Message
+from climapp.verification.muse import Message, MuseTask
 
 JUDGE_SYSTEM = (
     "Eres un juez estricto de un sistema de reportes de lluvia. Recibes afirmaciones y "
@@ -44,6 +44,13 @@ EXPLAIN_SYSTEM = (
     'bloques de código: {"text": <explicación>, "numbers_cited": [<cada cifra que '
     "aparece en el texto>]}."
 )
+
+
+SYSTEM_PROMPTS = {
+    MuseTask.STRUCTURE: STRUCTURE_SYSTEM,
+    MuseTask.EXPLAIN: EXPLAIN_SYSTEM,
+    MuseTask.JUDGE: JUDGE_SYSTEM,
+}
 
 
 def judge_messages(claims: Sequence[str], evidence: str) -> list[Message]:

@@ -25,6 +25,9 @@
 {% else %}
   <div>
     <span class="badge badge-review">Requiere revisión humana: no pudimos verificarlo automáticamente</span>
+    {% if report.review_reason == "sin_grabacion" %}<p class="muted">Modo demo: este texto no tiene una respuesta grabada (sin grabación), así que no se verifica.</p>
+    {% elif report.review_reason == "muse_no_disponible" %}<p class="muted">El verificador no respondió.</p>
+    {% elif report.review_reason == "solo_foto" %}<p class="muted">Las fotos sin texto las revisa una persona.</p>{% endif %}
     <ul class="muted">
       {% for a in report.attempts %}
         <li>Intento {{ a.n }}: {{ a.reasons | join(", ") }}</li>

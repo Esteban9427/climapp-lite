@@ -14,6 +14,8 @@ from climapp.verification.schemas import EventType, Intensity, ReportStructured
 
 ReportStatus = Literal["verificando", "verificado", "rechazado", "requiere_revision_humana"]
 RejectReason = Literal["fuera_de_cuenca", "entrada_invalida"]
+# Por qué un reporte fue a revisión humana sin pasar por la compuerta
+ReviewReason = Literal["solo_foto", "muse_no_disponible", "sin_grabacion"]
 
 
 class Error(BaseModel):
@@ -70,6 +72,7 @@ class Report(BaseModel):
     lon: float
     status: ReportStatus
     reject_reason: RejectReason | None
+    review_reason: ReviewReason | None = None
     structured: ReportStructured | None
     confidence: Confidence | None
     attempts: list[VerificationAttemptOut]

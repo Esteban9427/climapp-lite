@@ -71,7 +71,10 @@ def _verifier(settings: Settings, client: MuseClient) -> ReportVerifier:
         log.warning("report.groups_missing", error=type(err).__name__)
         groups = ()
     weights = ConfidenceWeights.from_settings(settings)
-    return ReportVerifier(client, sources, groups, weights, settings.verify_max_attempts)
+    prompt_time = settings.demo_report_time if settings.demo_fallback else None
+    return ReportVerifier(
+        client, sources, groups, weights, settings.verify_max_attempts, prompt_time
+    )
 
 
 def _verify_in_background(store: ReportStore, verifier: ReportVerifier, report_id: UUID) -> None:

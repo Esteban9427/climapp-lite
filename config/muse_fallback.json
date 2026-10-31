@@ -1,52 +1,108 @@
 {
   "recordings": [
     {
-      "task": "estructurar",
-      "request_hash": "c81f9eea75e55adf",
-      "model": "muse-spark-1.3",
-      "recorded_at": "2026-10-31T11:50:40-05:00",
-      "content": "{\"event_type\":\"lluvia\",\"intensity\":\"fuerte\",\"observed_at\":\"2024-12-31T16:30:00-05:00\",\"claims\":[\"Está lloviendo en la parte alta de la cuenca\",\"La lluvia es muy fuerte\",\"La lluvia lleva una hora\",\"El río viene crecido\",\"El río es de color café\"],\"numbers_cited\":[]}",
-      "finish_reason": "stop",
-      "tool_calls": [],
-      "tokens_in": 222,
-      "tokens_out": 922,
-      "latency_ms": 3705
-    },
-    {
-      "task": "juez",
-      "request_hash": "8a93b6a74153b9bb",
-      "model": "muse-spark-1.3",
-      "recorded_at": "2026-10-31T11:50:44-05:00",
-      "content": "{\"claims\": [{\"text\": \"Está lloviendo en la parte alta de la cuenca\", \"evidence\": \"Está lloviendo muy fuerte desde hace una hora en la parte alta de la cuenca\", \"supported\": true}, {\"text\": \"La lluvia es muy fuerte\", \"evidence\": \"Está lloviendo muy fuerte\", \"supported\": true}, {\"text\": \"La lluvia lleva una hora\", \"evidence\": \"desde hace una hora\", \"supported\": true}, {\"text\": \"El río viene crecido\", \"evidence\": \"el río viene crecido\", \"supported\": true}, {\"text\": \"El río es de color café\", \"evidence\": \"de color café\", \"supported\": true}]}",
-      "finish_reason": "stop",
-      "tool_calls": [],
-      "tokens_in": 218,
-      "tokens_out": 743,
-      "latency_ms": 3110
-    },
-    {
       "task": "explicar",
-      "request_hash": "0c0962998c2319d8",
+      "prompt_version": "a27b9cc087a154f3",
+      "request_hash": "2a2f9fc099bf17ae",
       "model": "muse-spark-1.3",
-      "recorded_at": "2026-10-31T12:14:20-05:00",
-      "content": "{\"text\": \"Mañana hay un 13 % de probabilidad de que la lluvia media en la cuenca del río Pance llegue a 20.0 mm o pase ese valor. Es un pronóstico experimental e informativo, no oficial, y es una reproducción histórica para una demostración, no el pronóstico de hoy. En los últimos tres días la lluvia acumulada en la cuenca es de 40.8 mm, un nivel normal.\", \"numbers_cited\": [13, 20.0, 40.8]}",
+      "recorded_at": "2026-10-31T12:58:03-05:00",
+      "content": "{\"text\": \"Este es un pronóstico experimental e informativo de lluvia para mañana en la cuenca del río Pance. No es una alerta oficial, es una reproducción histórica para una demo y no es el pronóstico de hoy. La probabilidad de pasar el umbral es 13 %. El umbral es 20.0 mm y lo acumulado en los últimos tres días es 40.8 mm, nivel normal.\", \"numbers_cited\": [\"13\", \"20.0\", \"40.8\"]}",
       "finish_reason": "stop",
       "tool_calls": [],
       "tokens_in": 386,
-      "tokens_out": 1113,
-      "latency_ms": 5039
+      "tokens_out": 1987,
+      "latency_ms": 8825
     },
     {
       "task": "juez",
-      "request_hash": "9e29bfc01331f99c",
+      "prompt_version": "3d788113e23bd5de",
+      "request_hash": "733f3ead63467be4",
       "model": "muse-spark-1.3",
-      "recorded_at": "2026-10-31T12:14:23-05:00",
-      "content": "{\"claims\": [{\"text\": \"Mañana hay un 13 % de probabilidad de que la lluvia media en la cuenca del río Pance llegue a 20.0 mm o pase ese valor. Es un pronóstico experimental e informativo, no oficial, y es una reproducción histórica para una demostración, no el pronóstico de hoy. En los últimos tres días la lluvia acumulada en la cuenca es de 40.8 mm, un nivel normal.\", \"evidence\": \"probabilidad_pct valor 13 de que mañana la lluvia en la cuenca del río Pance llegue a umbral_mm o lo supere; umbral_mm valor 20.0; aviso: No es una alerta oficial: es un pronóstico experimental e informativo; reproduccion histórica para la demo, no el pronóstico de hoy; acumulado_3d_mm valor 40.8 nivel normal\", \"supported\": true}]}",
+      "recorded_at": "2026-10-31T12:58:07-05:00",
+      "content": "{\"claims\": [{\"text\": \"Este es un pronóstico experimental e informativo de lluvia para mañana en la cuenca del río Pance. No es una alerta oficial, es una reproducción histórica para una demo y no es el pronóstico de hoy. La probabilidad de pasar el umbral es 13 %. El umbral es 20.0 mm y lo acumulado en los últimos tres días es 40.8 mm, nivel normal.\", \"evidence\": \"aviso: No es una alerta oficial: es un pronóstico experimental e informativo de lluvia.; reproduccion: es una reproducción histórica para la demo, no el pronóstico de hoy; probabilidad_pct valor 13; umbral_mm valor 20.0; acumulado_3d_mm valor 40.8 nivel normal\", \"supported\": true}]}",
       "finish_reason": "stop",
       "tool_calls": [],
-      "tokens_in": 449,
-      "tokens_out": 1020,
-      "latency_ms": 2982
+      "tokens_in": 442,
+      "tokens_out": 1258,
+      "latency_ms": 3556
+    },
+    {
+      "task": "estructurar",
+      "prompt_version": "ab656a8c83bdce4b",
+      "request_hash": "1292a4766560e230",
+      "model": "muse-spark-1.3",
+      "recorded_at": "2026-10-31T12:58:09-05:00",
+      "content": "{\"event_type\":\"lluvia\",\"intensity\":\"debil\",\"observed_at\":\"2024-12-31T16:30:00-05:00\",\"claims\":[\"Cae una llovizna suave en el sendero de la parte media\",\"El río se ve normal\"],\"numbers_cited\":[]}",
+      "finish_reason": "stop",
+      "tool_calls": [],
+      "tokens_in": 241,
+      "tokens_out": 611,
+      "latency_ms": 2251
+    },
+    {
+      "task": "juez",
+      "prompt_version": "3d788113e23bd5de",
+      "request_hash": "e20d2424111193c6",
+      "model": "muse-spark-1.3",
+      "recorded_at": "2026-10-31T12:58:11-05:00",
+      "content": "{\"claims\": [{\"text\": \"Cae una llovizna suave en el sendero de la parte media\", \"evidence\": \"Cae una llovizna suave en el sendero de la parte media\", \"supported\": true}, {\"text\": \"El río se ve normal\", \"evidence\": \"el río se ve normal\", \"supported\": true}]}",
+      "finish_reason": "stop",
+      "tool_calls": [],
+      "tokens_in": 194,
+      "tokens_out": 511,
+      "latency_ms": 2097
+    },
+    {
+      "task": "estructurar",
+      "prompt_version": "ab656a8c83bdce4b",
+      "request_hash": "c21f7fd5464eb97b",
+      "model": "muse-spark-1.3",
+      "recorded_at": "2026-10-31T12:58:14-05:00",
+      "content": "{\"event_type\":\"sin_lluvia\",\"intensity\":\"ninguna\",\"observed_at\":\"2024-12-31T16:30:00-05:00\",\"claims\":[\"No está lloviendo en la ubicación del reportante\",\"Se ven nubes muy oscuras hacia la montaña\"],\"numbers_cited\":[]}",
+      "finish_reason": "stop",
+      "tool_calls": [],
+      "tokens_in": 237,
+      "tokens_out": 714,
+      "latency_ms": 2975
+    },
+    {
+      "task": "juez",
+      "prompt_version": "3d788113e23bd5de",
+      "request_hash": "aff904bcd37f051d",
+      "model": "muse-spark-1.3",
+      "recorded_at": "2026-10-31T12:58:17-05:00",
+      "content": "{\"claims\": [{\"text\": \"No está lloviendo en la ubicación del reportante\", \"evidence\": \"Aquí abajo no está lloviendo\", \"supported\": true}, {\"text\": \"Se ven nubes muy oscuras hacia la montaña\", \"evidence\": \"se ven nubes muy oscuras hacia la montaña\", \"supported\": true}]}",
+      "finish_reason": "stop",
+      "tool_calls": [],
+      "tokens_in": 189,
+      "tokens_out": 801,
+      "latency_ms": 2962
+    },
+    {
+      "task": "estructurar",
+      "prompt_version": "ab656a8c83bdce4b",
+      "request_hash": "87b4b0c8b9c9e60d",
+      "model": "muse-spark-1.3",
+      "recorded_at": "2026-10-31T12:58:30-05:00",
+      "content": "{\"event_type\":\"lluvia\",\"intensity\":\"fuerte\",\"observed_at\":\"2024-12-31T16:30:00-05:00\",\"claims\":[\"Llueve en la parte alta de la cuenca\",\"La lluvia es muy fuerte\",\"Llueve desde hace una hora\",\"El río viene crecido\",\"El río es de color café\"],\"numbers_cited\":[]}",
+      "finish_reason": "stop",
+      "tool_calls": [],
+      "tokens_in": 247,
+      "tokens_out": 760,
+      "latency_ms": 2173
+    },
+    {
+      "task": "juez",
+      "prompt_version": "3d788113e23bd5de",
+      "request_hash": "3db2bce88fc06546",
+      "model": "muse-spark-1.3",
+      "recorded_at": "2026-10-31T12:58:33-05:00",
+      "content": "{\"claims\": [{\"text\": \"Llueve en la parte alta de la cuenca\", \"evidence\": \"Está lloviendo ... en la parte alta de la cuenca\", \"supported\": true}, {\"text\": \"La lluvia es muy fuerte\", \"evidence\": \"Está lloviendo muy fuerte\", \"supported\": true}, {\"text\": \"Llueve desde hace una hora\", \"evidence\": \"desde hace una hora\", \"supported\": true}, {\"text\": \"El río viene crecido\", \"evidence\": \"el río viene crecido\", \"supported\": true}, {\"text\": \"El río es de color café\", \"evidence\": \"de color café\", \"supported\": true}]}",
+      "finish_reason": "stop",
+      "tool_calls": [],
+      "tokens_in": 217,
+      "tokens_out": 824,
+      "latency_ms": 2935
     }
   ]
 }

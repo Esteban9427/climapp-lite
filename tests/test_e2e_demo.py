@@ -82,7 +82,7 @@ def test_e1_replay_end_to_end_without_network(demo: TestClient) -> None:
     home = demo.get("/?replay_date=2024-12-31").text
     assert "Reproducción histórica" in home and "No es una alerta oficial" in home
     assert "13 %" in home
-    assert re.search(r"un 13 % de probabilidad", home)  # explicación real grabada
+    assert re.search(r"Explicación</h2>\s*<p>[^<]*\b13 %", home)  # explicación real grabada
     assert "respuesta grabada" in home
 
     api = demo.get("/forecast", params={"replay_date": "2024-12-31"}).json()

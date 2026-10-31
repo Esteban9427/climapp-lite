@@ -3,7 +3,9 @@
 ADR-002 §1, §2 y §5: `base_url`, clave, modelo y esfuerzo por tarea salen de `Settings`;
 `max_tokens` es siempre `MUSE_MAX_TOKENS` (≥ 2000, porque el razonamiento consume la
 salida). Con `DEMO_FALLBACK=1` se usan respuestas grabadas que pasan por la misma
-compuerta y se marcan `fallback=true`.
+compuerta y se marcan `fallback=true`. Una grabación solo responde si coinciden la tarea,
+la versión del prompt (hash del prompt de sistema) y el hash de la entrada; si no, el
+cliente falla cerrado (`MissingRecordingError`): nunca devuelve la respuesta de otro pedido.
 """
 
 import hashlib
@@ -38,6 +40,10 @@ class MuseTask(StrEnum):
 
 class MuseError(Exception):
     """Falla al obtener una respuesta de Muse (red, API o grabación inexistente)."""
+
+
+class MissingRecordingError(MuseError):
+    """En modo demo no hay una grabación exacta para el pedido (falla cerrado)."""
 
 
 @dataclass(frozen=True, slots=True)
@@ -162,7 +168,8 @@ class Recording(BaseModel):
     model_config = ConfigDict(frozen=True, extra="forbid")
 
     task: MuseTask
-    request_hash: str | None
+    prompt_version: str
+    request_hash: str
     model: str
     recorded_at: datetime
     content: str | None
@@ -181,9 +188,21 @@ class _RecordingFile(BaseModel):
     recordings: list[Recording]
 
 
+def prompt_version_of(system_prompt: str) -> str:
+    """Versión de un prompt: hash de su texto. Cambiar el prompt cambia la versión."""
+    return hashlib.sha256(system_prompt.encode("utf-8")).hexdigest()[:HASH_HEX_CHARS]
+
+
+def prompt_version(messages: Sequence[Message]) -> str:
+    """Versión del prompt de sistema de un pedido (vacío si no tiene)."""
+    system = [m["content"] for m in messages if m.get("role") == "system"]
+    return prompt_version_of(system[0] if system else "")
+
+
 def request_hash(task: MuseTask, messages: Sequence[Message]) -> str:
-    """Clave estable de un pedido: SHA-256 de la tarea y los mensajes, abreviado."""
-    payload = json.dumps([task.value, [dict(m) for m in messages]], sort_keys=True)
+    """Hash de la entrada: la tarea y los mensajes que no son el prompt de sistema."""
+    body = [dict(m) for m in messages if m.get("role") != "system"]
+    payload = json.dumps([task.value, body], sort_keys=True)
     return hashlib.sha256(payload.encode("utf-8")).hexdigest()[:HASH_HEX_CHARS]
 
 
@@ -205,19 +224,21 @@ class RecordedMuseClient:
         self._recordings = list(recordings)
 
     def complete(self, task: MuseTask, messages: Sequence[Message]) -> MuseReply:
-        """La grabación del mismo pedido o, si no hay, la primera de la tarea.
+        """La grabación exacta de (tarea, versión del prompt, hash de la entrada).
 
         Raises:
-            MuseError: si no hay ninguna grabación para la tarea.
+            MissingRecordingError: si no hay una grabación exacta (falla cerrado).
         """
-        digest = request_hash(task, messages)
-        same_task = [r for r in self._recordings if r.task is task]
-        exact = [r for r in same_task if r.request_hash == digest]
-        if not same_task:
-            msg = f"no hay respuestas grabadas para la tarea {task.value}"
-            raise MuseError(msg)
-        rec = (exact or same_task)[0]
-        log.info("muse.fallback", task=task.value, exact=bool(exact))
+        version, digest = prompt_version(messages), request_hash(task, messages)
+        same_input = [r for r in self._recordings if r.task is task and r.request_hash == digest]
+        exact = [r for r in same_input if r.prompt_version == version]
+        if not exact:
+            detail = "de otra versión del prompt" if same_input else "para esta entrada"
+            msg = f"sin grabación {detail} (tarea {task.value})"
+            log.warning("muse.fallback_miss", task=task.value, prompt_changed=bool(same_input))
+            raise MissingRecordingError(msg)
+        rec = exact[0]
+        log.info("muse.fallback", task=task.value)
         return MuseReply(
             rec.content,
             rec.finish_reason,

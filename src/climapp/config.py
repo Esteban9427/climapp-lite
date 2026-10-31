@@ -5,7 +5,7 @@ Cada clave de `.env.example` es un campo obligatorio: si falta en el entorno o e
 `docs/PRD.md` y en los ADR.
 """
 
-from datetime import date
+from datetime import date, datetime
 from pathlib import Path
 from typing import Literal, Self
 from zoneinfo import ZoneInfo
@@ -100,6 +100,8 @@ class Settings(BaseSettings):
     ideam_alerts_url: str = Field(min_length=1)
     demo_fallback: bool
     demo_replay_date: date | None
+    demo_report_time: datetime
+    demo_reports_file: Path
     scope_freeze_date: date
 
     @field_validator("data_dir", mode="before")

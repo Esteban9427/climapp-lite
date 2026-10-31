@@ -35,6 +35,7 @@ Todo lo que está en este repositorio se construyó durante el evento. La lista 
 - [x] 2026-10-31: web móvil (Jinja2 + HTMX) con el pronóstico, la explicación verificada, el formulario de reporte con estado en vivo y la lista de reportes verificados, según `docs/design.md`. Contraste AA verificado por test (TASK-017, TDD).
 - [x] 2026-10-31: mapa mínimo con Leaflet y OpenStreetMap, con la atribución ODbL visible, los marcadores de los reportes verificados del día y en la leyenda el resultado del pronóstico (TASK-018, TDD).
 - [x] 2026-10-31: privacidad de los reportes: la lista y el mapa solo muestran campos estructurados, sin id ni afirmaciones; las afirmaciones quedan en el detalle por UUID4. Una comprobación determinista rechaza teléfonos, correos y placas (TASK-016, TDD).
+- [x] 2026-10-31: el fallback de la demo solo responde con coincidencia exacta (tarea, versión del prompt y hash de la entrada) y falla cerrado; un reporte nunca recibe la respuesta de otro. Se regrabaron E1 y 3 reportes de ejemplo con Muse Spark real (TASK-011, TDD).
 - [x] 2026-10-31: reproducción de E1 de punta a punta con `DEMO_FALLBACK=1` y respuestas reales grabadas: pronóstico, explicación verificada, reporte verificado y mapa, con un test end-to-end que bloquea la red (TASK-019, TDD).
 
 ## Herramientas previas al evento, no parte del entregable

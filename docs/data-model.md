@@ -79,6 +79,7 @@ Detalle para quien envió el reporte (id UUID4 no adivinable): incluye `structur
 | `lat`, `lon` | float | Redondeados a 3 decimales (~100 m) al publicarlos (privacidad) |
 | `status` | enum `verificando` \| `verificado` \| `rechazado` \| `requiere_revision_humana` | |
 | `reject_reason` | enum \| null | `fuera_de_cuenca`, `entrada_invalida` |
+| `review_reason` | enum \| null | Por qué fue a revisión humana sin pasar por la compuerta: `solo_foto`, `muse_no_disponible` o `sin_grabacion` (demo sin grabación exacta, ADR-002 §5) |
 | `structured` | ReportStructured \| null | Solo si `verificado` |
 | `confidence` | Confidence \| null | Solo si `verificado` |
 | `attempts` | list[VerificationAttempt] | Historial completo |
