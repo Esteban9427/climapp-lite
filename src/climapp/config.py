@@ -39,8 +39,11 @@ class Settings(BaseSettings):
     muse_model: str
     muse_effort_structure: Effort
     muse_effort_judge: Effort
+    muse_effort_explain: Effort
     muse_max_tokens: int = Field(ge=MIN_MUSE_MAX_TOKENS)
     verify_max_attempts: int = Field(ge=1)
+    muse_timeout_s: float = Field(gt=0)
+    muse_fallback_file: Path
 
     data_dir: Path
     earthdata_token: SecretStr
