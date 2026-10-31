@@ -8,7 +8,14 @@ from pathlib import Path
 import pytest
 from fastapi.testclient import TestClient
 
-from climapp.api.main import DISCLAIMER, create_app, get_explainer, get_now, get_settings
+from climapp.api.main import (
+    DISCLAIMER,
+    create_app,
+    disclaimer_text,
+    get_explainer,
+    get_now,
+    get_settings,
+)
 from climapp.api.schemas import Forecast
 from climapp.config import Settings
 from climapp.verification.explain import VerifiedExplanation, build_explainer
@@ -16,6 +23,7 @@ from tests.api.contract import assert_matches, documented_statuses
 from tests.conftest import rewrite_env
 
 OFFICIAL = "https://example.org/canales-oficiales"
+IDEAM = "https://www.ideam.gov.co/nuestra-entidad/servicio-de-pronosticos-y-alertas"
 
 
 def _forecast(variant: str, issue: str, target: str, prob: float) -> dict[str, object]:
@@ -122,9 +130,11 @@ def test_forecast_returns_latest_operational_forecast_matching_contract(client: 
 def test_disclaimer_and_official_link_are_always_present(client: TestClient) -> None:
     for query in ("", "?replay_date=2024-12-31", "?replay_date=2024-12-31&variant=operativa"):
         body = client.get(f"/forecast{query}").json()
-        assert body["disclaimer"] == DISCLAIMER
+        assert body["disclaimer"].startswith(DISCLAIMER)
         assert "No es una alerta oficial" in body["disclaimer"]
         assert body["official_channels_url"] == OFFICIAL
+        assert OFFICIAL in body["disclaimer"]  # canal principal
+        assert IDEAM in body["disclaimer"]  # segundo canal: pronósticos y alertas del IDEAM
 
 
 def test_replay_defaults_to_the_historical_variant(client: TestClient) -> None:
@@ -263,3 +273,11 @@ def test_default_explainer_is_disabled_without_api_key_or_fallback(settings: Set
 def test_default_explainer_is_enabled_with_demo_fallback(env_file: Path) -> None:
     rewrite_env(env_file, DEMO_FALLBACK="1")
     assert build_explainer(Settings(_env_file=env_file)) is not None
+
+
+def test_disclaimer_without_official_url_still_names_the_ideam(env_file: Path) -> None:
+    settings = Settings(_env_file=rewrite_env(env_file, OFFICIAL_CHANNELS_URL=""))
+    text = disclaimer_text(settings)
+    assert text.startswith(DISCLAIMER)
+    assert IDEAM in text
+    assert "()" not in text
