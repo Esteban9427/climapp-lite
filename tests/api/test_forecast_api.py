@@ -8,7 +8,9 @@ from pathlib import Path
 import pytest
 from fastapi.testclient import TestClient
 
-from climapp.api.main import DISCLAIMER, create_app, get_now, get_settings
+from climapp.api.main import DISCLAIMER, create_app, get_explainer, get_now, get_settings
+from climapp.api.schemas import Forecast
+from climapp.verification.explain import VerifiedExplanation, build_explainer
 from climapp.config import Settings
 from tests.api.contract import assert_matches, documented_statuses
 from tests.conftest import rewrite_env
@@ -112,6 +114,7 @@ def test_forecast_returns_latest_operational_forecast_matching_contract(client: 
     )
     assert body["stale"] is False
     assert body["explanation"] is None
+    assert body["explanation_fallback"] is False
     assert body["threshold_mm"] == 20.0
     assert body["data_plan"] == "plan_b_earthdata"
 
@@ -230,3 +233,33 @@ def test_corrupt_evaluation_artifact_is_503_not_500(client: TestClient, settings
     response = client.get("/evaluation")
     assert response.status_code == 503
     assert_matches(response.json(), "Error")
+
+
+def test_verified_explanation_is_published_with_its_fallback_flag(client: TestClient) -> None:
+    seen: list[Forecast] = []
+
+    def explainer(forecast: Forecast) -> VerifiedExplanation:
+        seen.append(forecast)
+        return VerifiedExplanation(text="Explicación verificada.", fallback=True)
+
+    client.app.dependency_overrides[get_explainer] = lambda: explainer  # type: ignore[attr-defined]
+    body = client.get("/forecast", params={"replay_date": "2024-12-31"}).json()
+    assert_matches(body, "Forecast")
+    assert (body["explanation"], body["explanation_fallback"]) == ("Explicación verificada.", True)
+    assert seen[0].prob_ge_threshold == 0.15
+
+
+def test_explanation_that_does_not_pass_the_gate_is_null(client: TestClient) -> None:
+    client.app.dependency_overrides[get_explainer] = lambda: lambda _: None  # type: ignore[attr-defined]
+    body = client.get("/forecast").json()
+    assert (body["explanation"], body["explanation_fallback"]) == (None, False)
+
+
+def test_default_explainer_is_disabled_without_api_key_or_fallback(settings: Settings) -> None:
+    assert settings.demo_fallback is False
+    assert build_explainer(settings) is None
+
+
+def test_default_explainer_is_enabled_with_demo_fallback(env_file: Path) -> None:
+    rewrite_env(env_file, DEMO_FALLBACK="1")
+    assert build_explainer(Settings(_env_file=env_file)) is not None

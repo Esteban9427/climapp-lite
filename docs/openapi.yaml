@@ -149,7 +149,7 @@ components:
       enum: [verificando, verificado, rechazado, requiere_revision_humana]
     Forecast:
       type: object
-      required: [issued_at, target_date, prob_ge_threshold, threshold_mm, target_rule, data_plan, variant, model_version, stale, replay, disclaimer, official_channels_url]
+      required: [issued_at, target_date, prob_ge_threshold, threshold_mm, target_rule, data_plan, variant, model_version, explanation_fallback, stale, replay, disclaimer, official_channels_url]
       properties:
         issued_at: {type: string, format: date-time}
         target_date: {type: string, format: date}
@@ -162,6 +162,7 @@ components:
         variant: {$ref: "#/components/schemas/Variant"}
         model_version: {type: string}
         explanation: {type: [string, "null"]}
+        explanation_fallback: {type: boolean, description: "true si la explicación viene de respuestas grabadas (DEMO_FALLBACK=1, ADR-002 §5)"}
         inputs_available:
           type: array
           items: {type: string}
