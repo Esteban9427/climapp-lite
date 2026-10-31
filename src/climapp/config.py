@@ -111,6 +111,15 @@ class Settings(BaseSettings):
             raise ValueError(msg)
         return value
 
+    @field_validator("official_channels_url", "ideam_alerts_url", "map_attribution_url")
+    @classmethod
+    def _http_link(cls, value: str) -> str:
+        """Enlaces públicos solo http(s): evita `javascript:` en los `href` del aviso y el mapa."""
+        if value and not value.startswith(("https://", "http://")):
+            msg = "los enlaces públicos deben empezar con http:// o https://"
+            raise ValueError(msg)
+        return value
+
     @field_validator("demo_replay_date", mode="before")
     @classmethod
     def _empty_replay_is_none(cls, value: object) -> object:

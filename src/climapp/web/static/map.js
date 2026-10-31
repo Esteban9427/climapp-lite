@@ -10,7 +10,9 @@ window.addEventListener("load", function () {
     attribution: '<a href="' + data.attribution_url + '">' + data.attribution + "</a>",
   }).addTo(map);
   const points = data.markers.map(function (m) {
-    L.marker([m.lat, m.lon]).addTo(map).bindPopup(m.label);
+    const popup = document.createElement("span");
+    popup.textContent = m.label;  // texto, nunca HTML
+    L.marker([m.lat, m.lon]).addTo(map).bindPopup(popup);
     return [m.lat, m.lon];
   });
   if (points.length) { map.fitBounds(points, { padding: [32, 32], maxZoom: 14 }); }

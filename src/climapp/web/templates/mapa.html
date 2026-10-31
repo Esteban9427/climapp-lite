@@ -16,6 +16,11 @@
     {% endif %}
   </section>
   <div id="map" role="img" aria-label="Mapa de reportes verificados">Cargando mapa…</div>
+  {% if view.markers %}
+    <ul class="reports" id="map-list">
+      {% for m in view.markers %}<li>{{ m.label }}</li>{% endfor %}
+    </ul>
+  {% endif %}
   <p class="muted">Mapa base: <a href="{{ attribution_url }}" rel="noopener">{{ attribution }}</a></p>
   <p><a href="/{% if replay_date %}?replay_date={{ replay_date }}{% endif %}">← Volver al pronóstico</a></p>
 </main>
