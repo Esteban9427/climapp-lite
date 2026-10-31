@@ -1,0 +1,41 @@
+/* Tokens de diseño de ClimApp Lite (docs/design.md). Un test verifica el contraste AA. */
+:root {
+  --color-bg: #FFFFFF;
+  --color-surface: #F2F5F8;
+  --color-text: #1B232C;
+  --color-text-muted: #4B5866;
+  --color-primary: #0A58A8;
+  --color-on-primary: #FFFFFF;
+  --color-border: #7B8794;
+  --color-warning-bg: #FFF1CC;
+  --color-warning-text: #5A3A00;
+  --color-warning-border: #B07800;
+  --color-info-bg: #E4EEF9;
+  --color-info-text: #0A4F96;
+  --color-success-bg: #E3F4E8;
+  --color-success-text: #17602D;
+  --color-danger-bg: #FDE7E5;
+  --color-danger-text: #A1231B;
+  --color-review-bg: #F3E8FA;
+  --color-review-text: #6B2C8F;
+  --color-disabled-bg: #E6EAEE;
+  --color-disabled-text: #5A6571;
+  --color-replay-bg: #3D2C8D;
+  --color-replay-text: #FFFFFF;
+
+  --font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  --font-size-sm: 0.875rem;
+  --font-size-base: 1rem;
+  --font-size-lg: 1.25rem;
+  --font-size-xl: 1.5rem;
+  --font-size-display: 2.25rem;
+
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 24px;
+  --space-6: 32px;
+  --radius: 8px;
+  --touch: 44px;
+}

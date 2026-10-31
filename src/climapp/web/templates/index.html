@@ -1,0 +1,33 @@
+{% extends "base.html" %}
+{% block body %}
+<main class="two">
+  <section class="card" aria-labelledby="forecast-title">
+    <h1 id="forecast-title">Lluvia en la cuenca del río Pance</h1>
+    {% include "partials/forecast.html" %}
+  </section>
+  <section class="card" aria-labelledby="report-title">
+    <h2 id="report-title">Reportar lo que ves</h2>
+    <form id="report-form" hx-post="/web/reports" hx-encoding="multipart/form-data"
+          hx-target="#report-status" hx-swap="innerHTML">
+      <label for="report-text">¿Qué está pasando?</label>
+      <textarea id="report-text" name="text" rows="3" maxlength="1000"
+                aria-describedby="text-help"></textarea>
+      <p id="text-help" class="muted">Cuenta la lluvia o el estado del río. No incluyas datos personales.</p>
+      <label for="report-photo">Foto (opcional, JPEG o PNG de hasta 5 MB)</label>
+      <input id="report-photo" name="photo" type="file" accept="image/jpeg,image/png">
+      <input type="hidden" name="lat">
+      <input type="hidden" name="lon">
+      <button type="button" id="use-location" class="btn-secondary">Usar mi ubicación</button>
+      <p id="location-status" class="muted" aria-live="polite">Necesitamos tu ubicación para saber si estás en la cuenca.</p>
+      <button type="submit" class="btn-primary">Enviar reporte</button>
+    </form>
+    <div id="report-status" aria-live="polite"></div>
+  </section>
+  <section class="card" aria-labelledby="list-title">
+    <h2 id="list-title">Reportes verificados</h2>
+    {% include "partials/reports_list.html" %}
+    <p><a href="/mapa{% if replay_date %}?replay_date={{ replay_date }}{% endif %}">Ver mapa →</a></p>
+  </section>
+</main>
+<script src="/static/app.js" defer></script>
+{% endblock %}

@@ -1,0 +1,13 @@
+{% if reports %}
+  <ul class="reports">
+    {% for r in reports %}
+      <li>
+        <strong>{{ r.structured.event_type }}</strong> · {{ r.structured.intensity }}
+        · <span class="badge badge-ok">Verificado · confianza {{ (r.confidence.score * 100) | round | int }} %</span>
+        <br><span class="muted">{{ r.structured.observed_at | local_time }}{% if r.fallback %} · respuesta grabada (demo){% endif %}</span>
+      </li>
+    {% endfor %}
+  </ul>
+{% else %}
+  <p class="muted">Aún no hay reportes verificados.</p>
+{% endif %}

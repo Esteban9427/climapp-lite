@@ -1,0 +1,34 @@
+{% if error %}
+  <p class="error" role="alert">{{ error }}</p>
+{% elif report.status == "verificando" %}
+  <div hx-get="/web/reports/{{ report.id }}/estado" hx-trigger="every 2s" hx-swap="outerHTML">
+    <span class="badge badge-info">Verificando tu reporte…</span>
+  </div>
+{% elif report.status == "verificado" %}
+  <div>
+    <span class="badge badge-ok">Verificado · confianza {{ (report.confidence.score * 100) | round | int }} %</span>
+    <ul class="muted">
+      {% for s in report.confidence.sources %}
+        <li>{{ s.source_id }}: {{ "concuerda" if s.agrees else "no concuerda" }} (peso {{ s.weight }})</li>
+      {% endfor %}
+    </ul>
+    {% if report.fallback %}<p class="muted">Respuesta grabada (demo).</p>{% endif %}
+  </div>
+{% elif report.status == "rechazado" %}
+  <div>
+    {% if report.reject_reason == "fuera_de_cuenca" %}
+      <span class="badge badge-danger">Rechazado: la ubicación está fuera de la cuenca del río Pance</span>
+    {% else %}
+      <span class="badge badge-danger">Rechazado: revisa el texto o la foto</span>
+    {% endif %}
+  </div>
+{% else %}
+  <div>
+    <span class="badge badge-review">Requiere revisión humana: no pudimos verificarlo automáticamente</span>
+    <ul class="muted">
+      {% for a in report.attempts %}
+        <li>Intento {{ a.n }}: {{ a.reasons | join(", ") }}</li>
+      {% endfor %}
+    </ul>
+  </div>
+{% endif %}
