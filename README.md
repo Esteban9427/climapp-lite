@@ -30,6 +30,7 @@ Todo lo que está en este repositorio se construyó durante el evento. La lista 
 - [x] 2026-10-31: compuerta de verificación: comprobaciones deterministas en el orden de ADR-002, juez con Muse Spark y hasta 3 intentos antes de `requiere_revision_humana` (TASK-012 y TASK-013, TDD).
 - [x] 2026-10-31: confianza calculada por código, sin el LLM, con test de propiedades: duplicar una estación correlacionada no la sube (TASK-014, TDD).
 - [x] 2026-10-31: explicación del pronóstico verificada: si una cifra no coincide con el modelo, o el juez la rechaza, `explanation=null` (TASK-022, TDD).
+- [x] 2026-10-31: el juez recibe el significado de cada cifra; con eso la explicación de E1 se verifica con Muse Spark real y una explicación que habla de "alerta de creciente" se rechaza. El aviso nombra a la Gestión del Riesgo de Cali y al IDEAM. Los pesos de confianza quedan como SUPUESTO para JM (TASK-022, TASK-015 y TASK-014, TDD).
 - [ ] Reportes ciudadanos de punta a punta (`POST /reports`).
 - [ ] Web móvil con pronóstico, reportes y mapa.
 
