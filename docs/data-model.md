@@ -13,7 +13,8 @@
 | `valid` | bool | Estaciones: `n_readings ≥ 100` (SUPUESTO) |
 | `imputed` | bool | `true` si se rellenó con vecinas; **excluido de la evaluación** |
 | `source_hash` | str | SHA-256 de los archivos crudos de origen del día, separados por coma (la unión de exportaciones puede aportar dos); vacío si el día no tiene lecturas |
-| `n_suspect` | int | Saltos `suspect` (SP-12) incluidos en `precip_mm`; se señalan, no se borran |
+| `n_suspect` | int | Saltos `suspect` del día (SP-12 [JM 2026-10-30]): salto ≥ `SUSPECT_STEP_MM` tras lecturas regulares con el contador quieto |
+| `suspect_mm` | float | Lluvia de esos saltos; **no** se suma a `precip_mm`, se conserva para auditoría |
 | `n_gap` | int | Pasos sobre huecos > `MAX_GAP_MIN`: si cruzan el día local no suman lluvia (`GAP`); si no, la conservan (`GAP_INTRADAY`). ADR-004 §2, PRD SP-14 |
 
 ## Pronóstico

@@ -45,7 +45,8 @@ class Increment:
     Attributes:
         ts: instante de la lectura que cierra el paso.
         mm: lluvia del paso; 0 si el paso se ignoró (`RESET`, `SPIKE` o `GAP`).
-        flag: motivo de limpieza; `SUSPECT` conserva `mm` (SP-12). Un paso entre
+        flag: motivo de limpieza; `SUSPECT` conserva `mm` para auditoría, pero la tabla
+            diaria no lo suma (SP-12 [JM 2026-10-30]). Un paso entre
             lecturas separadas por más de `MAX_GAP_MIN` es `GAP` (0 mm) si cruza el día
             local y `GAP_INTRADAY` (conserva `mm`) si queda dentro del mismo día.
     """
@@ -66,7 +67,8 @@ class DailyPrecip(BaseModel):
         valid: `n_readings >= MIN_READINGS` (SUPUESTO, SP-8).
         imputed: `True` si se rellenó con vecinas; nunca entra a la evaluación.
         source_hash: SHA-256 de los archivos crudos de origen, separados por coma.
-        n_suspect: saltos `suspect` (SP-12) incluidos en `precip_mm`.
+        n_suspect: saltos `suspect` del día (SP-12 [JM 2026-10-30]).
+        suspect_mm: lluvia de esos saltos; no se suma a `precip_mm`, queda para auditoría.
         n_gap: pasos sobre huecos mayores a `MAX_GAP_MIN`; solo los que cruzan el día
             (`GAP`) se anulan, los del mismo día (`GAP_INTRADAY`) conservan su lluvia.
     """
@@ -81,4 +83,5 @@ class DailyPrecip(BaseModel):
     imputed: bool
     source_hash: str
     n_suspect: int = Field(ge=0)
+    suspect_mm: float = Field(ge=0)
     n_gap: int = Field(ge=0)

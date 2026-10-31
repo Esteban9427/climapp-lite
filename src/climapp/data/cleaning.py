@@ -2,8 +2,9 @@
 
 Función pura: incremento = diferencia con la lectura válida anterior. Se ignoran los
 descensos (reinicios) y los aumentos mayores a `max_step_mm` (picos; umbral SUPUESTO).
-Un salto aislado de al menos `suspect_step_mm`, con `suspect_quiet` sin lluvia antes y
-después, se marca `SUSPECT` sin borrarse (SP-12, SUPUESTO pendiente de JM).
+Un salto de al menos `suspect_step_mm` precedido por lecturas regulares con el contador
+quieto y seguido de calma se marca `SUSPECT`; un salto tras un hueco es lluvia acumulada
+por falla de transmisión y se conserva (SP-12 [JM 2026-10-30]).
 """
 
 from bisect import bisect_right
@@ -13,7 +14,7 @@ from datetime import datetime, timedelta
 from itertools import pairwise
 
 from climapp.data.days import step_crosses_day
-from climapp.data.models import Increment, Reading, StepFlag
+from climapp.data.models import GAP_FLAGS, Increment, Reading, StepFlag
 
 # Los valores del contador traen ruido de coma flotante (p. ej. 821.20000000000005);
 # el pluviómetro mide en décimas de mm, así que 1e-6 mm es ruido, no lluvia.
@@ -29,7 +30,7 @@ class CleaningParams:
         suspect_step_mm: salto mínimo que puede marcarse `SUSPECT` (`SUSPECT_STEP_MM`).
         suspect_quiet: tiempo sin lluvia exigido antes y después (`SUSPECT_QUIET_MIN`).
         suspect_quiet_max_mm: lluvia máxima tolerada en cada ventana de calma
-            (`SUSPECT_QUIET_MAX_MM`; 0 es la regla literal de SP-12).
+            (`SUSPECT_QUIET_MAX_MM`, 2 mm [JM 2026-10-30]).
         max_gap: separación máxima entre lecturas sin marca de hueco (`MAX_GAP_MIN`,
             SUPUESTO); un paso más largo es `GAP` (0 mm) si cruza el día local y
             `GAP_INTRADAY` (conserva la lluvia) si no.
@@ -87,13 +88,14 @@ def _is_isolated(
     Un incremento con instante `t` es lluvia caída hasta `t`, así que la lluvia de la
     hora previa son los incrementos en `(ts - quiet, ts)` y la de la posterior, los de
     `(ts, ts + quiet]`. Cada ventana se compara por separado con `suspect_quiet_max_mm`.
-    Un hueco (`GAP`) dentro de una ventana impide afirmar que no llovió.
+    Un hueco (`GAP` o `GAP_INTRADAY`) en una ventana impide afirmar que las lecturas
+    eran regulares: el salto puede ser lluvia acumulada durante el corte (SP-12 [JM]).
     """
     ts, quiet = incs[i].ts, params.suspect_quiet
     limit = params.suspect_quiet_max_mm + FLOAT_TOLERANCE_MM
     before = incs[bisect_right(times, ts - quiet) : i]
     after = incs[i + 1 : bisect_right(times, ts + quiet)]
-    if any(inc.flag is StepFlag.GAP for inc in (*before, *after)):
+    if any(inc.flag in GAP_FLAGS for inc in (*before, *after)):
         return False
     return sum(inc.mm for inc in before) <= limit and sum(inc.mm for inc in after) <= limit
 
@@ -101,7 +103,7 @@ def _is_isolated(
 def _flag_suspects(
     incs: list[Increment], series: tuple[datetime, datetime], params: CleaningParams
 ) -> list[Increment]:
-    """Marca `SUSPECT` los saltos aislados (SP-12), conservando su lluvia.
+    """Marca `SUSPECT` los saltos aislados (SP-12); el incremento conserva su lluvia.
 
     Solo se marca si las lecturas cubren las dos ventanas completas: la serie debe
     empezar antes de `ts - quiet` y terminar después de `ts + quiet`.

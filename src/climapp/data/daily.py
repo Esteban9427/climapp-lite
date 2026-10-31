@@ -116,13 +116,17 @@ class _DayTally:
     hashes: set[str] = field(default_factory=set)
     mm: float = 0.0
     n_suspect: int = 0
+    suspect_mm: float = 0.0
     n_gap: int = 0
 
 
 def _tally(
     pairs: Sequence[tuple[Reading, str]], incs: Sequence[Increment]
 ) -> dict[date, _DayTally]:
-    """Cuenta lecturas, hashes, lluvia, saltos `suspect` y huecos por día local."""
+    """Cuenta lecturas, hashes, lluvia, saltos `suspect` y huecos por día local.
+
+    La lluvia de un salto `suspect` va a `suspect_mm`, no al total (SP-12 [JM 2026-10-30]).
+    """
     days: defaultdict[date, _DayTally] = defaultdict(_DayTally)
     for reading, digest in pairs:
         if reading.value is not None:
@@ -131,8 +135,12 @@ def _tally(
             day.hashes.add(digest)
     for inc in incs:
         day = days[local_day(inc.ts)]
-        day.mm += inc.mm
-        day.n_suspect += inc.flag is StepFlag.SUSPECT
+        suspect = inc.flag is StepFlag.SUSPECT
+        day.n_suspect += suspect
+        if suspect:
+            day.suspect_mm += inc.mm
+        else:
+            day.mm += inc.mm
         day.n_gap += inc.flag in GAP_FLAGS
     return days
 
@@ -149,6 +157,7 @@ def _row(series_id: str, day: date, tally: _DayTally, min_readings: int) -> Dail
         imputed=False,
         source_hash=",".join(sorted(tally.hashes)),
         n_suspect=tally.n_suspect,
+        suspect_mm=round(tally.suspect_mm, PRECIP_DECIMALS),
         n_gap=tally.n_gap,
     )
 
