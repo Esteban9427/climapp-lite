@@ -5,8 +5,8 @@ from datetime import datetime, timedelta
 from pathlib import Path
 
 import pytest
-from climapp.data.increments import build_station_increments, write_increments_csv
 
+from climapp.data.increments import build_station_increments, write_increments_csv
 from climapp.data.models import Reading, StepFlag
 from tests.data.test_daily import CONFIG, MIDNIGHT, STEP, TZ, _write_export
 
@@ -23,7 +23,8 @@ def test_increments_use_the_same_cleaning_and_public_ids(tmp_path: Path) -> None
     assert {r.series_id for r in rows} == {"EST-A"}
     flags = [r.increment.flag for r in rows]
     assert flags[:4] == [StepFlag.OK, StepFlag.OK, StepFlag.RESET, StepFlag.OK]
-    assert flags[4] is StepFlag.GAP  # hueco que cruza la medianoche
+    # hueco que termina a las 00:00: esa lectura cierra el mismo día, no lo cruza (ADR-004 §2)
+    assert flags[4] is StepFlag.GAP_INTRADAY
     assert [round(r.increment.mm, 1) for r in rows[:4]] == [0.2, 0.0, 0.0, 0.4]
 
 
@@ -48,7 +49,7 @@ def test_csv_has_local_time_local_day_mm_and_flag(tmp_path: Path) -> None:
     assert (last["fecha_hora_local"], last["dia_local"], last["flag"]) == (
         "2025-01-01 00:00",
         "2024-12-31",
-        "gap",
+        "gap_intraday",
     )
 
 

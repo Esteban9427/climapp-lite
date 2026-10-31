@@ -221,6 +221,24 @@ def _read_export(path: Path, sensors: Collection[str], tz: ZoneInfo) -> SourcedR
     return SourcedReadings(file_sha256(path), reader(path, sensors, tz))
 
 
+def merge_exports(
+    exports: Sequence[Path], station_map: Mapping[str, str], config: DailyConfig
+) -> MergedReadings:
+    """Lee y une las exportaciones, y exige que cada estación tenga identificador público.
+
+    Raises:
+        ValueError: si una exportación tiene formato desconocido o hay estaciones sin
+            correspondencia en el mapa.
+    """
+    merged = merge_sources(_read_export(p, config.sensors, config.tz) for p in exports)
+    missing = set(merged.readings_by_station) - set(station_map)
+    if missing:
+        msg = f"{len(missing)} estación(es) sin correspondencia en STATION_MAP_FILE"
+        raise ValueError(msg)
+    log.info("daily.merged", exports=len(exports), conflicts=merged.conflicts)
+    return merged
+
+
 def build_station_daily(
     exports: Sequence[Path],
     station_map: Mapping[str, str],
@@ -242,12 +260,7 @@ def build_station_daily(
         ValueError: si una exportación tiene formato desconocido o hay estaciones sin
             correspondencia en el mapa.
     """
-    merged = merge_sources(_read_export(p, config.sensors, config.tz) for p in exports)
-    missing = set(merged.readings_by_station) - set(station_map)
-    if missing:
-        msg = f"{len(missing)} estación(es) sin correspondencia en STATION_MAP_FILE"
-        raise ValueError(msg)
-    log.info("daily.merged", exports=len(exports), conflicts=merged.conflicts)
+    merged = merge_exports(exports, station_map, config)
     rows = [
         row
         for raw, pairs in merged.readings_by_station.items()
