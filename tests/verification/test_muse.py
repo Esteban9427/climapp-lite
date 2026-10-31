@@ -18,7 +18,7 @@ from climapp.verification.muse import (
     load_recordings,
     request_key,
 )
-from tests.conftest import rewrite_env
+from tests.conftest import ROOT, env_example_items, rewrite_env
 from tests.verification.fakes import FakeCompletions, completion
 
 PARAMS = MuseParams(
@@ -144,3 +144,9 @@ def test_build_client_uses_recordings_with_demo_fallback(env_file: Path, tmp_pat
 def test_build_client_is_live_without_demo_fallback(env_file: Path) -> None:
     rewrite_env(env_file, DEMO_FALLBACK="0", META_API_KEY="clave-falsa")
     assert isinstance(build_client(Settings(_env_file=env_file)), LiveMuseClient)
+
+
+def test_versioned_fallback_file_is_valid_and_covers_every_task() -> None:
+    recordings = load_recordings(ROOT / env_example_items()["MUSE_FALLBACK_FILE"])
+    assert {r.task for r in recordings} == set(MuseTask)
+    assert all(r.key for r in recordings)  # grabadas de una corrida real, con su clave
