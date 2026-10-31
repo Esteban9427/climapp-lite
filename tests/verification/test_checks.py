@@ -5,6 +5,7 @@ import json
 import pytest
 
 from climapp.verification.checks import Reason, deterministic_checks
+from climapp.verification.prompts import STRUCTURE_SYSTEM
 from climapp.verification.schemas import ForecastExplanation, ReportStructured
 from tests.verification.fakes import reply
 
@@ -130,6 +131,60 @@ def test_reason_values_match_the_data_model() -> None:
         "respuesta_vacia",
         "esquema_invalido",
         "cifra_no_coincide",
+        "dato_personal",
         "herramienta_no_permitida",
         "afirmacion_sin_evidencia",
     ]
+
+
+# --- datos personales en las afirmaciones (decisión del equipo, 2026-10-31) ----------
+
+
+@pytest.mark.parametrize(
+    "claim",
+    [
+        "Llamen al 300 123 4567",
+        "Mi celular es 3001234567",
+        "Teléfono +57 315-555-0101",
+        "Fijo 602 555 1234",
+        "Escríbanme a vecina.pance@example.com",
+        "El carro de placa ABC123 quedó atrapado",
+        "La moto XYZ 12D se fue con el agua",
+        "Camión con placa KLM-456",
+    ],
+)
+def test_claim_with_phone_email_or_plate_is_dato_personal(claim: str) -> None:
+    content = _report(claims=["llueve fuerte", claim])
+    result = deterministic_checks(reply(content), ReportStructured, ALLOWED)
+    assert result.reasons == (Reason.DATO_PERSONAL,)
+
+
+@pytest.mark.parametrize(
+    "claim",
+    [
+        "Llovió el 2024-12-31 desde las 16:30",
+        "Hay unas 100 personas en el sendero",
+        "Cayeron como 20 mm en una hora",
+        "Las 300 casas de la vereda están bien",
+        "El río subió hace una hora",
+    ],
+)
+def test_ordinary_claims_are_not_personal_data(claim: str) -> None:
+    content = _report(claims=[claim])
+    assert deterministic_checks(reply(content), ReportStructured, ALLOWED).passed
+
+
+def test_personal_data_goes_after_numbers_and_before_tools() -> None:
+    content = _report(claims=["Llamen al 3001234567"], numbers_cited=[99])
+    result = deterministic_checks(reply(content, tool_calls=("x",)), ReportStructured, ALLOWED)
+    assert result.reasons == (
+        Reason.CIFRA_NO_COINCIDE,
+        Reason.DATO_PERSONAL,
+        Reason.HERRAMIENTA_NO_PERMITIDA,
+    )
+
+
+def test_structure_prompt_forbids_extracting_personal_data() -> None:
+    assert "datos personales" in STRUCTURE_SYSTEM
+    for word in ("teléfonos", "correos", "placas", "nombres"):
+        assert word in STRUCTURE_SYSTEM

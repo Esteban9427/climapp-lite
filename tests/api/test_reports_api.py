@@ -7,7 +7,7 @@ import io
 import json
 from collections.abc import Iterator
 from pathlib import Path
-from uuid import uuid4
+from uuid import UUID, uuid4
 
 import pytest
 from fastapi.testclient import TestClient
@@ -176,7 +176,7 @@ def test_list_filters_by_status_and_matches_the_contract(client: TestClient) -> 
     verified = client.get("/reports", params={"status": "verificado"}).json()
     assert [r["status"] for r in verified] == ["verificado"]
     for item in client.get("/reports").json():
-        assert_matches(item, "Report")
+        assert_matches(item, "ReportSummary")
     assert len(client.get("/reports", params={"limit": 1}).json()) == 1
     assert client.get("/reports", params={"limit": 501}).status_code == 422
 
@@ -204,3 +204,57 @@ def test_default_client_with_demo_fallback_uses_recordings(env_file: Path) -> No
     client = get_muse_client(settings)
     assert isinstance(client, RecordedMuseClient)
     assert get_muse_client(settings) is client  # uno por configuración
+
+
+# --- privacidad de las afirmaciones (decisión del equipo, 2026-10-31) ----------------
+
+SUMMARY_FIELDS = {
+    "event_type",
+    "intensity",
+    "observed_at",
+    "lat",
+    "lon",
+    "status",
+    "confidence",
+    "fallback",
+}
+
+
+def test_list_shows_only_structured_fields_without_claims_or_ids(client: TestClient) -> None:
+    client.post("/reports", data={"text": TEXT, **INSIDE})
+    (item,) = client.get("/reports", params={"status": "verificado"}).json()
+    assert set(item) == SUMMARY_FIELDS  # sin id: no se puede llegar al detalle desde la lista
+    assert (item["event_type"], item["intensity"]) == ("lluvia", "fuerte")
+    assert item["observed_at"].startswith("2024-12-31T16:30")
+    assert (item["lat"], item["lon"]) == (1.512, -1.499)
+    assert CLAIMS[0] not in json.dumps(item, ensure_ascii=False)
+
+
+def test_rejected_reports_in_the_list_have_no_structured_fields(client: TestClient) -> None:
+    client.post("/reports", data={"text": TEXT, **OUTSIDE})
+    (item,) = client.get("/reports", params={"status": "rechazado"}).json()
+    assert_matches(item, "ReportSummary")
+    assert (item["event_type"], item["confidence"]) == (None, None)
+
+
+def test_detail_by_id_keeps_the_claims_for_the_sender(client: TestClient) -> None:
+    report_id = client.post("/reports", data={"text": TEXT, **INSIDE}).json()["id"]
+    assert UUID(report_id).version == 4  # id no adivinable
+    detail = client.get(f"/reports/{report_id}").json()
+    assert_matches(detail, "Report")
+    assert detail["structured"]["claims"] == CLAIMS
+
+
+def test_claims_with_personal_data_are_rejected_and_retried(settings: Settings) -> None:
+    leaky = json.loads(STRUCTURED) | {"claims": ["Llueve fuerte", "Llamen al 300 123 4567"]}
+    muse = ScriptedMuse(
+        {
+            MuseTask.STRUCTURE: [reply(json.dumps(leaky)), reply(STRUCTURED)],
+            MuseTask.JUDGE: [reply(VERDICT)],
+        }
+    )
+    with _client(settings, muse) as client:
+        report_id = client.post("/reports", data={"text": TEXT, **INSIDE}).json()["id"]
+        detail = client.get(f"/reports/{report_id}").json()
+    assert [a["reasons"] for a in detail["attempts"]] == [["dato_personal"], []]
+    assert detail["status"] == "verificado"

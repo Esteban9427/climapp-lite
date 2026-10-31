@@ -62,7 +62,11 @@ paths:
             application/json:
               schema: {$ref: "#/components/schemas/Error"}
     get:
-      summary: Listar reportes (para el mapa)
+      summary: Listar reportes (para el mapa y la lista)
+      description: >
+        Solo campos estructurados: tipo de evento, intensidad, hora observada, ubicación
+        redondeada, estado y confianza. Sin `id` ni `claims`: las afirmaciones solo se ven en
+        `GET /reports/{id}`, que conoce quien envió el reporte (UUID4, no adivinable).
       parameters:
         - name: status
           in: query
@@ -83,7 +87,7 @@ paths:
             application/json:
               schema:
                 type: array
-                items: {$ref: "#/components/schemas/Report"}
+                items: {$ref: "#/components/schemas/ReportSummary"}
         "422":
           description: Parámetros inválidos
           content:
@@ -212,7 +216,7 @@ components:
           type: array
           items:
             type: string
-            enum: [respuesta_incompleta, respuesta_vacia, esquema_invalido, cifra_no_coincide, herramienta_no_permitida, afirmacion_sin_evidencia]
+            enum: [respuesta_incompleta, respuesta_vacia, esquema_invalido, cifra_no_coincide, dato_personal, herramienta_no_permitida, afirmacion_sin_evidencia]
         finish_reason: {type: string}
         tokens_in: {type: integer}
         tokens_out: {type: integer}
@@ -237,8 +241,26 @@ components:
           type: array
           items: {$ref: "#/components/schemas/ConfidenceSource"}
         independent_sources: {type: integer}
+    ReportSummary:
+      type: object
+      description: Reporte para la lista y el mapa, sin id, texto ni afirmaciones (privacidad).
+      required: [event_type, intensity, observed_at, lat, lon, status, confidence, fallback]
+      additionalProperties: false
+      properties:
+        event_type: {type: [string, "null"], enum: [lluvia, crecida, deslizamiento, granizo, sin_lluvia, otro, null]}
+        intensity: {type: [string, "null"], enum: [ninguna, debil, moderada, fuerte, null]}
+        observed_at: {type: [string, "null"], format: date-time}
+        lat: {type: number}
+        lon: {type: number}
+        status: {$ref: "#/components/schemas/ReportStatus"}
+        confidence:
+          oneOf:
+            - {$ref: "#/components/schemas/Confidence"}
+            - {type: "null"}
+        fallback: {type: boolean}
     Report:
       type: object
+      description: Detalle de un reporte (`POST /reports` y `GET /reports/{id}`), con sus afirmaciones.
       required: [id, received_at, lat, lon, status, attempts, fallback]
       properties:
         id: {type: string, format: uuid}
