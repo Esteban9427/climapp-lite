@@ -50,6 +50,7 @@ class Settings(BaseSettings):
     accum3_threshold_mm: float = Field(gt=0)
     target_rule: TargetRule
     station_group_min_r: float = Field(ge=0, le=1)
+    station_group_min_overlap_days: int = Field(ge=2)
 
     local_timezone: ZoneInfo
     counter_sensors: list[str] = Field(min_length=1)
@@ -78,6 +79,7 @@ class Settings(BaseSettings):
     rf_random_state: int
     evaluation_file: Path
     forecasts_file: Path
+    station_groups_file: Path
 
     official_channels_url: str
     demo_fallback: bool

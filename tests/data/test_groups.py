@@ -129,7 +129,8 @@ def test_build_groups_writes_the_artifact(env_file: Path) -> None:
         DAILY_STATIONS_FILE="derived/daily.csv",
         TRAIN_START="2015-01-01",
         CALIBRATION_START="2015-06-01",
-        VALID_END="2016-12-31",
+        VALID_END="2015-12-31",
+        TEST_END="2016-12-31",
         STATION_GROUP_MIN_OVERLAP_DAYS="30",
     )
     out = build_groups(Settings(_env_file=env_file))

@@ -15,11 +15,13 @@ dependencies = [
     "numpy>=2.5.4",
     "fastapi>=0.162.0",
     "uvicorn>=0.54.0",
+    "openai>=3.42.0",
 ]
 
 [project.scripts]
 climapp-daily = "climapp.data.cli:main"
 climapp-train = "climapp.forecast.cli:main"
+climapp-groups = "climapp.data.groups:main"
 
 [dependency-groups]
 dev = [
@@ -34,6 +36,7 @@ dev = [
     "pyyaml>=6.0.3",
     "types-pyyaml>=6.0.12.20261030",
     "types-jsonschema>=4.26.0.20261006",
+    "hypothesis>=6.170.14",
 ]
 
 [build-system]
