@@ -193,7 +193,7 @@ def test_muse_failure_sends_the_report_to_human_review(settings: Settings) -> No
 
     app = create_app()
     app.dependency_overrides[get_settings] = lambda: settings
-    app.dependency_overrides[get_muse_client] = lambda: Down()
+    app.dependency_overrides[get_muse_client] = Down
     with TestClient(app) as client:
         report_id = client.post("/reports", data={"text": TEXT, **INSIDE}).json()["id"]
         assert client.get(f"/reports/{report_id}").json()["status"] == "requiere_revision_humana"
