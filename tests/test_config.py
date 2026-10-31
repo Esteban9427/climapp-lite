@@ -125,3 +125,19 @@ def test_periods_must_be_chronological(env_file: Path) -> None:
     rewrite_env(env_file, VALID_END="2019-06-30")
     with pytest.raises(ValidationError, match="CALIBRATION_START"):
         Settings(_env_file=env_file)
+
+
+@pytest.mark.parametrize(
+    "key", ["OFFICIAL_CHANNELS_URL", "IDEAM_ALERTS_URL", "MAP_ATTRIBUTION_URL"]
+)
+def test_public_links_must_be_http_urls(env_file: Path, key: str) -> None:
+    rewrite_env(env_file, **{key: "javascript:alert(1)"})
+    with pytest.raises(ValidationError, match="http"):
+        Settings(_env_file=env_file)
+
+
+def test_empty_official_channels_url_is_allowed(env_file: Path) -> None:
+    assert (
+        Settings(_env_file=rewrite_env(env_file, OFFICIAL_CHANNELS_URL="")).official_channels_url
+        == ""
+    )

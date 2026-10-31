@@ -2,6 +2,7 @@
 
 import json
 import re
+from pathlib import Path
 
 from climapp.config import Settings
 from climapp.verification.muse import MuseTask
@@ -101,3 +102,36 @@ def test_without_evaluation_or_polygon_the_map_still_renders(
     html = make_client().get("/mapa", params={"replay_date": "2024-12-31"}).text
     assert "aún sin resultado observado" in html
     assert _map_data(html)["center"] is None
+
+
+def test_map_page_lists_the_markers_as_accessible_text(make_client: MakeClient) -> None:
+    """Respaldo de docs/design.md: si el mapa base no carga, los reportes siguen en una lista."""
+    muse = ScriptedMuse(
+        {
+            MuseTask.STRUCTURE: [
+                reply(
+                    json.dumps(
+                        {
+                            "event_type": "lluvia",
+                            "intensity": "fuerte",
+                            "observed_at": "2024-12-31T16:30:00-05:00",
+                            "claims": CLAIMS,
+                            "numbers_cited": [],
+                        }
+                    )
+                )
+            ],
+            MuseTask.JUDGE: [reply(VERDICT)],
+        }
+    )
+    client = make_client(muse)
+    client.post("/web/reports", data={"text": TEXT, **INSIDE})
+    html = client.get("/mapa", params={"replay_date": "2024-12-31"}).text
+    listing = re.search(r'<ul class="reports" id="map-list">(.*?)</ul>', html, re.S)
+    assert listing and "lluvia fuerte" in listing.group(1)
+
+
+def test_popups_are_built_as_text_not_html() -> None:
+    script = (Path(__file__).resolve().parents[2] / "src/climapp/web/static/map.js").read_text()
+    assert "textContent = m.label" in script
+    assert "bindPopup(m.label)" not in script
