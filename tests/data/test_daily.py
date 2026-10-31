@@ -22,6 +22,7 @@ from climapp.data.daily import (
     write_daily_csv,
 )
 from climapp.data.models import DailyPrecip, Reading
+from climapp.data.outages import KnownOutage
 
 TZ = ZoneInfo("America/Bogota")
 STEP = timedelta(minutes=10)
@@ -230,6 +231,16 @@ def test_build_station_daily_maps_ids_and_hashes_sources(tmp_path: Path) -> None
     row = next(r for r in rows if r.date == DAY)
     assert row.series_id == "EST-A"
     assert len(row.source_hash) == 64  # SHA-256 del archivo crudo
+
+
+def test_build_station_daily_applies_known_outages(tmp_path: Path) -> None:
+    export = _write_export(tmp_path / "e.csv", _with_opening(_day_readings(100)))
+    outage = KnownOutage(
+        series_id="EST-A", desde=DAY, hasta=DAY, motivo="falla sintética", fuente="test"
+    )
+    rows = build_station_daily([export], {"raw-a": "EST-A"}, CONFIG, outages=[outage])
+    row = next(r for r in rows if r.date == DAY)
+    assert (row.valid, row.precip_mm) == (False, None)
 
 
 def test_unmapped_station_is_rejected(tmp_path: Path) -> None:

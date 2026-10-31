@@ -17,13 +17,16 @@ raw-a,P,01/01/2025 00:00,11
 """
 
 
-def _prepare(env_file: Path) -> Path:
+def _prepare(env_file: Path, outage_records: tuple[dict[str, str], ...] = ()) -> Path:
     data_dir = env_file.parent / "data"
     (data_dir / "raw").mkdir(parents=True)
     (data_dir / "raw" / "e.csv").write_text(EXPORT, encoding="ascii")
     (data_dir / "map.json").write_text(json.dumps({"raw-a": "EST-A"}), encoding="utf-8")
+    outages = env_file.parent / "known_outages.json"
+    outages.write_text(json.dumps(list(outage_records)), encoding="utf-8")
     return rewrite_env(
         env_file,
+        KNOWN_OUTAGES_FILE=str(outages),
         STATION_EXPORTS='["raw/e.csv"]',
         STATION_MAP_FILE="map.json",
         DAILY_STATIONS_FILE="derived/daily.csv",
@@ -38,6 +41,19 @@ def test_build_daily_writes_the_table_under_data_dir(env_file: Path) -> None:
     (row,) = csv.DictReader(out.open(encoding="utf-8"))
     assert (row["date"], row["series_id"], row["valid"]) == ("2024-12-31", "EST-A", "true")
     assert float(row["precip_mm"]) == pytest.approx(1.0)
+
+
+def test_build_daily_marks_days_of_known_outages_invalid(env_file: Path) -> None:
+    record = {
+        "series_id": "EST-A",
+        "desde": "2024-12-31",
+        "hasta": "2024-12-31",
+        "motivo": "falla sintética",
+        "fuente": "test",
+    }
+    out = build_daily(Settings(_env_file=_prepare(env_file, (record,))))
+    (row,) = csv.DictReader(out.open(encoding="utf-8"))
+    assert (row["valid"], row["precip_mm"]) == ("false", "")
 
 
 def test_main_reads_settings_from_environment(
