@@ -16,7 +16,7 @@ REPORT = {
     "numbers_cited": [],
 }
 EXPLANATION = {
-    "text": "La probabilidad de 20 mm o más mañana es 15 %; el acumulado de 3 días es 40,8 mm.",
+    "text": "La probabilidad de 20 mm o más mañana es 15 %; el acumulado de tres días es 40,8 mm.",
     "numbers_cited": [15, 40.8, 20],
 }
 ALLOWED = {15.0, 40.8, 20.0}
