@@ -2,7 +2,6 @@
 
 import json
 import re
-from collections.abc import Sequence
 from datetime import UTC, date, datetime
 from pathlib import Path
 
@@ -15,13 +14,14 @@ from climapp.verification.explain import (
     forecast_figures,
 )
 from climapp.verification.muse import (
-    Message,
     MuseError,
     MuseReply,
     MuseTask,
-    RecordedMuseClient,
     load_recordings,
+    prompt_version,
+    request_hash,
 )
+from climapp.verification.prompts import judge_messages
 from climapp.verification.schemas import ForecastExplanation
 from tests.conftest import ROOT, env_example_items, rewrite_env
 from tests.verification.fakes import ScriptedMuse, reply
@@ -102,12 +102,19 @@ def test_muse_failure_gives_null_explanation() -> None:
     assert explain_forecast(Down(), FORECAST, max_attempts=3) is None  # type: ignore[arg-type]
 
 
-def _recorded(tmp_path: Path, *entries: tuple[str, str]) -> Path:
-    path = tmp_path / "rec.json"
+def _recorded(tmp_path: Path, forecast: Forecast, explanation: str, verdict: str) -> Path:
+    """Grabación exacta del explicador y del juez para `forecast`."""
+    request = _request(forecast)
+    judge = judge_messages([TEXT], request.evidence)
+    entries = [
+        (MuseTask.EXPLAIN, list(request.messages), explanation),
+        (MuseTask.JUDGE, judge, verdict),
+    ]
     recs = [
         {
-            "task": task,
-            "request_hash": None,
+            "task": task.value,
+            "prompt_version": prompt_version(msgs),
+            "request_hash": request_hash(task, msgs),
             "model": "m",
             "recorded_at": "2026-10-31T12:00:00-05:00",
             "content": content,
@@ -117,14 +124,15 @@ def _recorded(tmp_path: Path, *entries: tuple[str, str]) -> Path:
             "tokens_out": 2,
             "latency_ms": 3,
         }
-        for task, content in entries
+        for task, msgs, content in entries
     ]
+    path = tmp_path / "rec.json"
     path.write_text(json.dumps({"recordings": recs}, ensure_ascii=False), encoding="utf-8")
     return path
 
 
 def test_demo_explainer_uses_recordings_once_per_emission(env_file: Path, tmp_path: Path) -> None:
-    rec = _recorded(tmp_path, ("explicar", _explanation()), ("juez", _ok_verdict()))
+    rec = _recorded(tmp_path, FORECAST, _explanation(), _ok_verdict())
     rewrite_env(env_file, DEMO_FALLBACK="1", MUSE_FALLBACK_FILE=str(rec))
     explainer = build_explainer(Settings(_env_file=env_file))
     assert explainer is not None
@@ -185,22 +193,41 @@ def test_changed_figure_is_still_rejected_with_the_new_evidence() -> None:
 
 def test_flood_alert_explanation_is_rejected_by_the_real_judge() -> None:
     """Veredicto real de Muse (grabado el 2026-10-31) ante una explicación incorrecta."""
-    recorded = RecordedMuseClient(load_recordings(FIXTURES / "juez_rechaza_alerta.json"))
-
-    class Probe:
-        def complete(self, task: MuseTask, messages: Sequence[Message]) -> MuseReply:
-            if task is MuseTask.EXPLAIN:
-                return reply(_explanation(ALERT_TEXT, [13, 20, 40.8]))
-            return recorded.complete(task, messages)
-
-    assert explain_forecast(Probe(), E1, max_attempts=1) is None
+    (verdict,) = _historic(FIXTURES / "juez_rechaza_alerta.json")
+    probe = ScriptedMuse(
+        {
+            MuseTask.EXPLAIN: [reply(_explanation(ALERT_TEXT, [13, 20, 40.8]))],
+            MuseTask.JUDGE: [verdict],
+        }
+    )
+    assert explain_forecast(probe, E1, max_attempts=1) is None
 
 
 def test_first_real_run_is_blocked_by_the_gate() -> None:
     """Ejemplo para el video: la corrida real del 2026-10-31 que el juez rechazó 3 veces."""
-    recordings = load_recordings(FIXTURES / "e1_rechazada_2026-10-31.json")
-    assert [r.task for r in recordings] == [MuseTask.EXPLAIN, MuseTask.JUDGE] * 3
-    assert explain_forecast(RecordedMuseClient(recordings), E1, max_attempts=3) is None
+    replies = _historic(FIXTURES / "e1_rechazada_2026-10-31.json")
+    sequence = ScriptedMuse({MuseTask.EXPLAIN: replies[0::2], MuseTask.JUDGE: replies[1::2]})
+    assert explain_forecast(sequence, E1, max_attempts=3) is None
+    assert len(sequence.requests) == 6  # las 6 respuestas reales, en orden
+
+
+def _historic(path: Path) -> list[MuseReply]:
+    """Respuestas reales de una grabación histórica, en el orden en que llegaron.
+
+    Son evidencia para el video, no fallback: no pasan por la búsqueda exacta.
+    """
+    entries = json.loads(path.read_text(encoding="utf-8"))["recordings"]
+    return [reply(e["content"], e["finish_reason"]) for e in entries]
+
+
+def test_fallback_without_a_recording_for_this_forecast_gives_null(
+    env_file: Path, tmp_path: Path
+) -> None:
+    rec = tmp_path / "rec.json"
+    rec.write_text(json.dumps({"recordings": []}), encoding="utf-8")
+    rewrite_env(env_file, DEMO_FALLBACK="1", MUSE_FALLBACK_FILE=str(rec))
+    explainer = build_explainer(Settings(_env_file=env_file))
+    assert explainer is not None and explainer(FORECAST) is None
 
 
 # --- la probabilidad se escribe con "%" (decisión 2026-10-31) -----------------------

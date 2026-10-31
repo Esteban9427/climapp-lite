@@ -16,7 +16,14 @@ from PIL import Image
 from climapp.api.main import create_app, get_settings
 from climapp.api.reports import get_muse_client
 from climapp.config import Settings
-from climapp.verification.muse import MuseError, MuseTask, RecordedMuseClient
+from climapp.verification.muse import (
+    MuseError,
+    MuseTask,
+    RecordedMuseClient,
+    prompt_version,
+    request_hash,
+)
+from climapp.verification.prompts import judge_messages, structure_messages
 from tests.api.contract import assert_matches, documented_statuses
 from tests.conftest import rewrite_env
 from tests.verification.fakes import ScriptedMuse, reply
@@ -258,3 +265,97 @@ def test_claims_with_personal_data_are_rejected_and_retried(settings: Settings) 
         detail = client.get(f"/reports/{report_id}").json()
     assert [a["reasons"] for a in detail["attempts"]] == [["dato_personal"], []]
     assert detail["status"] == "verificado"
+
+
+# --- fallback de la demo: solo coincidencia exacta, falla cerrado (2026-10-31) ------
+
+DEMO_TIME = "2024-12-31T16:30:00-05:00"
+
+
+def _exact_recordings(path: Path, text: str) -> Path:
+    """Grabación exacta (estructurar + juez) de un reporte con la hora fija de la demo."""
+    structure = structure_messages(text, DEMO_TIME)
+    judge = judge_messages(CLAIMS, f"Texto del ciudadano: {text}")
+    entries = [(MuseTask.STRUCTURE, structure, STRUCTURED), (MuseTask.JUDGE, judge, VERDICT)]
+    recs = [
+        {
+            "task": t.value,
+            "prompt_version": prompt_version(m),
+            "request_hash": request_hash(t, m),
+            "model": "m",
+            "recorded_at": "2026-10-31T12:00:00-05:00",
+            "content": c,
+            "finish_reason": "stop",
+            "tool_calls": [],
+            "tokens_in": 1,
+            "tokens_out": 2,
+            "latency_ms": 3,
+        }
+        for t, m, c in entries
+    ]
+    path.write_text(json.dumps({"recordings": recs}, ensure_ascii=False), encoding="utf-8")
+    return path
+
+
+@pytest.fixture
+def demo_client(env_file: Path) -> Iterator[TestClient]:
+    recordings = _exact_recordings(env_file.parent / "rec.json", TEXT)
+    rewrite_env(
+        env_file, DEMO_FALLBACK="1", MUSE_FALLBACK_FILE=str(recordings), DEMO_REPORT_TIME=DEMO_TIME
+    )
+    settings = Settings(_env_file=env_file)
+    path = settings.data_dir / settings.basin_polygon_file
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(json.dumps({"type": "Polygon", "coordinates": [SQUARE]}), encoding="utf-8")
+    app = create_app()
+    app.dependency_overrides[get_settings] = lambda: settings
+    with TestClient(app) as client:
+        yield client
+
+
+def test_demo_report_with_an_exact_recording_is_verified(demo_client: TestClient) -> None:
+    report_id = demo_client.post("/reports", data={"text": TEXT, **INSIDE}).json()["id"]
+    detail = demo_client.get(f"/reports/{report_id}").json()
+    assert (detail["status"], detail["fallback"]) == ("verificado", True)
+    assert detail["structured"]["claims"] == CLAIMS
+    assert detail["review_reason"] is None
+
+
+def test_a_different_report_in_fallback_never_gets_claims_of_another(
+    demo_client: TestClient,
+) -> None:
+    demo_client.post("/reports", data={"text": TEXT, **INSIDE})
+    other = "Granizo en la vereda de abajo, se cayó un árbol"
+    report_id = demo_client.post("/reports", data={"text": other, **INSIDE}).json()["id"]
+    detail = demo_client.get(f"/reports/{report_id}").json()
+    assert_matches(detail, "Report")
+    assert (detail["status"], detail["review_reason"]) == (
+        "requiere_revision_humana",
+        "sin_grabacion",
+    )
+    assert detail["structured"] is None and detail["confidence"] is None
+    assert detail["fallback"] is True
+    assert not any(c in json.dumps(detail, ensure_ascii=False) for c in CLAIMS)
+
+
+def test_review_reasons_for_photo_only_and_muse_down(settings: Settings) -> None:
+    class Down:
+        def complete(self, task: MuseTask, messages: object) -> object:
+            raise MuseError("sin red")
+
+    app = create_app()
+    app.dependency_overrides[get_settings] = lambda: settings
+    app.dependency_overrides[get_muse_client] = Down
+    with TestClient(app) as client:
+        down = client.post("/reports", data={"text": TEXT, **INSIDE}).json()["id"]
+        files = {"photo": ("foto.jpg", _jpeg(), "image/jpeg")}
+        photo = client.post("/reports", data=INSIDE, files=files).json()["id"]
+        assert client.get(f"/reports/{down}").json()["review_reason"] == "muse_no_disponible"
+        assert client.get(f"/reports/{photo}").json()["review_reason"] == "solo_foto"
+
+
+def test_live_mode_uses_the_reception_time_in_the_prompt(settings: Settings) -> None:
+    muse = _verifying_muse()
+    with _client(settings, muse) as client:
+        client.post("/reports", data={"text": TEXT, **INSIDE})
+    assert DEMO_TIME not in muse.requests[0][1][-1]["content"]

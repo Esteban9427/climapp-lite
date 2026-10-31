@@ -2,11 +2,15 @@
 
 import re
 
+from climapp.web.demo import load_demo_reports
+
+from climapp.api.main import get_settings
 from climapp.api.schemas import Forecast
 from climapp.config import Settings
 from climapp.verification.explain import VerifiedExplanation
 from climapp.verification.muse import MuseTask
 from tests.api.test_reports_api import INSIDE, OUTSIDE, TEXT
+from tests.conftest import ROOT, env_example_items
 from tests.verification.fakes import ScriptedMuse, reply
 from tests.web.conftest import OFFICIAL, MakeClient
 
@@ -121,3 +125,18 @@ def test_invalid_input_shows_an_error_message(make_client: MakeClient) -> None:
 def test_unknown_report_status_shows_the_error_state(make_client: MakeClient) -> None:
     html = make_client().get("/web/reports/00000000-0000-4000-8000-000000000000/estado").text
     assert "No se pudo consultar el estado" in html
+
+
+def test_demo_examples_are_offered_only_in_fallback_mode(
+    make_client: MakeClient, web_settings: Settings
+) -> None:
+    assert "Ejemplos de la demo" not in make_client().get("/").text
+    demo = web_settings.model_copy(update={"demo_fallback": True})
+    app_client = make_client()
+    app_client.app.dependency_overrides[get_settings] = lambda: demo  # type: ignore[attr-defined]
+    html = app_client.get("/").text
+    assert "Ejemplos de la demo" in html
+    examples = load_demo_reports(ROOT / env_example_items()["DEMO_REPORTS_FILE"])
+    for example in examples:
+        assert f'data-text="{example.text}"' in html
+    assert 'data-lat="1.5"' in html and 'data-lon="-1.5"' in html  # centro de la cuenca

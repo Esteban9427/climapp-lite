@@ -10,14 +10,18 @@ from pydantic import ValidationError
 from climapp.config import Settings
 from climapp.verification.muse import (
     LiveMuseClient,
+    MissingRecordingError,
     MuseError,
     MuseParams,
     MuseTask,
     RecordedMuseClient,
     build_client,
     load_recordings,
+    prompt_version,
+    prompt_version_of,
     request_hash,
 )
+from climapp.verification.prompts import SYSTEM_PROMPTS
 from tests.conftest import ROOT, env_example_items, rewrite_env
 from tests.verification.fakes import FakeCompletions, completion
 
@@ -87,10 +91,18 @@ def _recordings(tmp_path: Path, *entries: dict[str, object]) -> Path:
     return path
 
 
-def _entry(task: str, content: str, key: str | None = None) -> dict[str, object]:
+SYSTEM = {"role": "system", "content": "instrucciones v1"}
+REQUEST = [SYSTEM, *MESSAGES]
+
+
+def _entry(
+    task: str, content: str, request: list[dict[str, str]] | None = None
+) -> dict[str, object]:
+    req = request or REQUEST
     return {
         "task": task,
-        "request_hash": key,
+        "prompt_version": prompt_version(req),
+        "request_hash": request_hash(MuseTask(task), req),
         "model": "muse-spark-1.3",
         "recorded_at": "2026-10-31T12:00:00-05:00",
         "content": content,
@@ -102,32 +114,43 @@ def _entry(task: str, content: str, key: str | None = None) -> dict[str, object]
     }
 
 
-def test_recorded_client_returns_the_exact_recording_marked_fallback(tmp_path: Path) -> None:
-    key = request_hash(MuseTask.JUDGE, MESSAGES)
-    path = _recordings(tmp_path, _entry("juez", "otro"), _entry("juez", "exacta", key))
-    out = RecordedMuseClient(load_recordings(path)).complete(MuseTask.JUDGE, MESSAGES)
+def test_recorded_client_returns_only_the_exact_recording_marked_fallback(tmp_path: Path) -> None:
+    other = [SYSTEM, {"role": "user", "content": "otro reporte"}]
+    path = _recordings(tmp_path, _entry("juez", "de otro", other), _entry("juez", "exacta"))
+    out = RecordedMuseClient(load_recordings(path)).complete(MuseTask.JUDGE, REQUEST)
     assert out.content == "exacta"
     assert out.fallback is True
     assert (out.tokens_in, out.tokens_out, out.latency_ms) == (10, 20, 900)
 
 
-def test_recorded_client_falls_back_to_the_first_recording_of_the_task(tmp_path: Path) -> None:
-    path = _recordings(tmp_path, _entry("estructurar", "e1"), _entry("juez", "j1"))
-    client = RecordedMuseClient(load_recordings(path))
-    assert client.complete(MuseTask.JUDGE, [{"role": "user", "content": "otro"}]).content == "j1"
-
-
-def test_recorded_client_without_recording_for_the_task_fails(tmp_path: Path) -> None:
+def test_without_exact_match_the_recorded_client_fails_closed(tmp_path: Path) -> None:
     client = RecordedMuseClient(load_recordings(_recordings(tmp_path, _entry("juez", "j"))))
-    with pytest.raises(MuseError, match="explicar"):
-        client.complete(MuseTask.EXPLAIN, MESSAGES)
+    with pytest.raises(MissingRecordingError, match="sin grabación"):
+        client.complete(MuseTask.JUDGE, [SYSTEM, {"role": "user", "content": "otro"}])
+    with pytest.raises(MissingRecordingError):
+        client.complete(MuseTask.EXPLAIN, REQUEST)  # misma entrada, otra tarea
+    assert issubclass(MissingRecordingError, MuseError)
 
 
-def test_request_hash_depends_on_task_and_messages() -> None:
-    other = [{"role": "user", "content": "otro"}]
-    assert request_hash(MuseTask.JUDGE, MESSAGES) == request_hash(MuseTask.JUDGE, list(MESSAGES))
-    assert request_hash(MuseTask.JUDGE, MESSAGES) != request_hash(MuseTask.EXPLAIN, MESSAGES)
-    assert request_hash(MuseTask.JUDGE, MESSAGES) != request_hash(MuseTask.JUDGE, other)
+def test_a_prompt_change_invalidates_the_recording(tmp_path: Path) -> None:
+    client = RecordedMuseClient(load_recordings(_recordings(tmp_path, _entry("juez", "j"))))
+    changed = [{"role": "system", "content": "instrucciones v2"}, *MESSAGES]
+    assert request_hash(MuseTask.JUDGE, changed) == request_hash(MuseTask.JUDGE, REQUEST)
+    assert prompt_version(changed) != prompt_version(REQUEST)
+    with pytest.raises(MissingRecordingError, match="prompt"):
+        client.complete(MuseTask.JUDGE, changed)
+
+
+def test_request_hash_covers_task_and_input_but_not_the_system_prompt() -> None:
+    other = [SYSTEM, {"role": "user", "content": "otro"}]
+    assert request_hash(MuseTask.JUDGE, REQUEST) == request_hash(MuseTask.JUDGE, list(REQUEST))
+    assert request_hash(MuseTask.JUDGE, REQUEST) != request_hash(MuseTask.EXPLAIN, REQUEST)
+    assert request_hash(MuseTask.JUDGE, REQUEST) != request_hash(MuseTask.JUDGE, other)
+
+
+def test_prompt_version_is_the_hash_of_the_system_prompt() -> None:
+    assert prompt_version(REQUEST) == prompt_version_of("instrucciones v1")
+    assert prompt_version(MESSAGES) == prompt_version_of("")
 
 
 def test_invalid_recording_file_is_rejected(tmp_path: Path) -> None:
@@ -149,4 +172,10 @@ def test_build_client_is_live_without_demo_fallback(env_file: Path) -> None:
 def test_versioned_fallback_file_is_valid_and_covers_every_task() -> None:
     recordings = load_recordings(ROOT / env_example_items()["MUSE_FALLBACK_FILE"])
     assert {r.task for r in recordings} == set(MuseTask)
-    assert all(r.request_hash for r in recordings)  # grabadas de una corrida real, con su clave
+
+
+def test_fallback_recordings_match_the_current_prompts() -> None:
+    """Si cambia un prompt, este test falla hasta volver a grabar (invalidación explícita)."""
+    recordings = load_recordings(ROOT / env_example_items()["MUSE_FALLBACK_FILE"])
+    for rec in recordings:
+        assert rec.prompt_version == prompt_version_of(SYSTEM_PROMPTS[rec.task]), rec.task

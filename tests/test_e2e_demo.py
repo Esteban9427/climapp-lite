@@ -21,6 +21,7 @@ from tests.api.test_forecast_api import EVALUATION
 from tests.api.test_reports_api import INSIDE, SQUARE
 from tests.conftest import ROOT, env_example_items, rewrite_env
 
+DEMO_TEXT = json.loads((ROOT / "config/demo_reports.json").read_text(encoding="utf-8"))[0]["text"]
 E1_FORECAST = {
     "variant": "historica",
     "issue_date": "2024-12-31",
@@ -87,9 +88,7 @@ def test_e1_replay_end_to_end_without_network(demo: TestClient) -> None:
     api = demo.get("/forecast", params={"replay_date": "2024-12-31"}).json()
     assert (api["replay"], api["variant"], api["explanation_fallback"]) == (True, "historica", True)
 
-    partial = demo.post(
-        "/web/reports", data={"text": "Llueve fuerte en la parte alta", **INSIDE}
-    ).text
+    partial = demo.post("/web/reports", data={"text": DEMO_TEXT, **INSIDE}).text
     poll = re.search(r'hx-get="/web/reports/([0-9a-f-]+)/estado"', partial)
     assert poll
     status = demo.get(f"/web/reports/{poll.group(1)}/estado").text
@@ -102,3 +101,14 @@ def test_e1_replay_end_to_end_without_network(demo: TestClient) -> None:
     assert "Pronóstico para el 2025-01-01: falsa alarma" in mapa
     data = json.loads(re.search(r'id="map-data">(.*?)</script>', mapa, re.S).group(1))  # type: ignore[union-attr]
     assert len(data["markers"]) == 1  # el reporte grabado se observó el 2024-12-31
+
+
+def test_a_text_without_recording_fails_closed_in_the_demo(demo: TestClient) -> None:
+    form = {"text": "Este texto no está grabado", **INSIDE}
+    partial = demo.post("/web/reports", data=form).text
+    poll = re.search(r'hx-get="/web/reports/([0-9a-f-]+)/estado"', partial)
+    assert poll
+    status = demo.get(f"/web/reports/{poll.group(1)}/estado").text
+    assert "Requiere revisión humana" in status and "sin grabación" in status
+    detail = demo.get(f"/reports/{poll.group(1)}").json()
+    assert detail["structured"] is None and detail["review_reason"] == "sin_grabacion"

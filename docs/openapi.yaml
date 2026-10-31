@@ -269,6 +269,10 @@ components:
         lon: {type: number}
         status: {$ref: "#/components/schemas/ReportStatus"}
         reject_reason: {type: [string, "null"], enum: [fuera_de_cuenca, entrada_invalida, null]}
+        review_reason:
+          type: [string, "null"]
+          description: Por qué quedó en `requiere_revision_humana` sin pasar por la compuerta (null si la compuerta corrió).
+          enum: [solo_foto, muse_no_disponible, sin_grabacion, null]
         structured:
           oneOf:
             - {$ref: "#/components/schemas/ReportStructured"}
