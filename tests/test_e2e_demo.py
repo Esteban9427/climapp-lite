@@ -190,9 +190,21 @@ def test_demo_replay_end_to_end_without_network(demo: TestClient) -> None:
 def test_every_demo_example_has_an_exact_recording(demo: TestClient) -> None:
     for example in DEMO_REPORTS:
         status, detail = _report(demo, example.text)
-        assert "Respuesta grabada (demo)" in status, example.titulo
-        assert detail["fallback"] is True and detail["structured"] is not None, example.titulo
+        assert "sin grabación" not in status, example.titulo
         assert detail["review_reason"] != "sin_grabacion", example.titulo
+        assert detail["attempts"], example.titulo
+
+
+def test_the_exaggerated_report_goes_to_human_review_as_in_the_real_run(
+    demo: TestClient,
+) -> None:
+    """En la corrida real (2026-11-01) el juez no encontró respaldo en el texto para lo
+    que Muse estructuró, en los 3 intentos: la compuerta lo manda a revisión humana."""
+    _, exaggerated, _ = DEMO_REPORTS
+    status, detail = _report(demo, exaggerated.text)
+    assert "Requiere revisión humana" in status
+    assert (detail["status"], detail["structured"]) == ("requiere_revision_humana", None)
+    assert len(detail["attempts"]) == 3
 
 
 def test_the_true_report_is_backed_by_the_river_level(demo: TestClient) -> None:
@@ -211,9 +223,10 @@ def test_the_true_report_is_backed_by_the_river_level(demo: TestClient) -> None:
 def test_the_map_shows_the_demo_reports_of_the_target_day(demo: TestClient) -> None:
     for example in DEMO_REPORTS:
         _report(demo, example.text)
-    mapa = demo.get("/mapa", params={"replay_date": DEMO_ISSUE}).text
+    # El mapa muestra los reportes del día pedido: los de la demo se observaron el 10-02
+    mapa = demo.get("/mapa", params={"replay_date": DEMO_TARGET}).text
     data = json.loads(re.search(r'id="map-data">(.*?)</script>', mapa, re.S).group(1))  # type: ignore[union-attr]
-    assert len(data["markers"]) >= 1  # los reportes grabados se observaron el 2026-10-02
+    assert len(data["markers"]) == 2  # el verdadero y el falso; el exagerado no se verificó
 
 
 # --- E1: caso de falsa alarma, se conserva ------------------------------------------

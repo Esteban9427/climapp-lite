@@ -1,5 +1,5 @@
 [
-  {"titulo": "Lluvia fuerte y río crecido", "text": "Está lloviendo muy fuerte desde hace una hora en la parte alta de la cuenca y el río viene crecido y de color café."},
-  {"titulo": "Llovizna suave", "text": "Cae una llovizna suave en el sendero de la parte media; el río se ve normal."},
-  {"titulo": "Sin lluvia", "text": "Aquí abajo no está lloviendo, pero se ven nubes muy oscuras hacia la montaña."}
+  {"titulo": "Simulado: el río creció (parte media)", "text": "Reporte simulado para la demo. En la parte media de la cuenca el río creció en la última hora: viene café, con palos y mucho más alto que al mediodía. Llovió fuerte toda la tarde."},
+  {"titulo": "Simulado: reporte exagerado", "text": "Reporte simulado para la demo. ¡El río Pance se desbordó y arrasó con todas las casas de la vereda! El agua subió más de cinco metros y no para de llover."},
+  {"titulo": "Simulado: reporte falso (día seco)", "text": "Reporte simulado para la demo. Aquí en la parte media no ha caído ni una gota en todo el día y el río está bajito, como en verano."}
 ]
