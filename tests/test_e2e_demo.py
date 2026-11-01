@@ -71,6 +71,7 @@ STATIONS_CSV = (
     f"{DEMO_TARGET},EST-A,30.0,144,true,false,h,0,0.0,0\n"
     f"{DEMO_TARGET},EST-C,25.0,144,true,false,h,0,0.0,0\n"
 )
+IMERG_CSV = f"date,precip_mm\n{DEMO_ISSUE},4.0\n{DEMO_TARGET},12.0\n"  # sintético
 LEVEL_CSV = (
     "series_id,date,n_readings,level_min_m,level_max_m,rise_24h_max_m\n"
     f"EST-A,{DEMO_TARGET},144,0.40,0.90,0.50\n"
@@ -103,6 +104,7 @@ def _write_artifacts(
     (data / settings.basin_polygon_file).write_text(json.dumps(basin), encoding="utf-8")
     (data / settings.daily_stations_file).write_text(STATIONS_CSV, encoding="utf-8")
     (data / settings.level_daily_file).write_text(LEVEL_CSV, encoding="utf-8")
+    (data / settings.imerg_early_file).write_text(IMERG_CSV, encoding="utf-8")
     groups = {"groups": [["EST-A"], ["EST-B", "EST-C"]]}
     (data / settings.station_groups_file).write_text(json.dumps(groups), encoding="utf-8")
 
@@ -180,6 +182,7 @@ def test_demo_replay_end_to_end_without_network(demo: TestClient) -> None:
     assert "13 %" in home
     assert re.search(r"Explicación</h2>\s*<p>[^<]*\b13 %", home)  # explicación real grabada
     assert "respuesta grabada" in home
+    assert f"{DEMO_ISSUE}: 4 mm" in home and f"{DEMO_TARGET}: 12 mm" in home  # IMERG Early
 
     api = demo.get("/forecast", params={"replay_date": DEMO_ISSUE}).json()
     assert (api["replay"], api["variant"], api["explanation_fallback"]) == (True, "historica", True)
@@ -216,6 +219,8 @@ def test_the_true_report_is_backed_by_the_river_level(demo: TestClient) -> None:
     assert detail["structured"]["event_type"] == "crecida"
     level = [s for s in detail["confidence"]["sources"] if s["kind"] == "river_level"]
     assert [s["agrees"] for s in level] == [True]
+    satellite = [s for s in detail["confidence"]["sources"] if s["kind"] == "satellite"]
+    assert [s["agrees"] for s in satellite] == [True]  # IMERG Early del 10-02
 
     dry_status, dry = _report(demo, false_report.text)
     assert dry["structured"]["event_type"] == "sin_lluvia"

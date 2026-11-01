@@ -6,6 +6,7 @@ from pathlib import Path
 from zoneinfo import ZoneInfo
 
 from climapp.data.daily import write_daily_csv
+from climapp.data.imerg import write_imerg_csv
 from climapp.data.level import DailyLevel, write_level_csv
 from climapp.data.models import DailyPrecip
 from climapp.verification.evidence import EvidenceSources, report_says_rain
@@ -106,6 +107,7 @@ def _sources(tmp_path: Path) -> EvidenceSources:
         level_file=level,
         level_series="EST-A",
         tz=TZ,
+        imerg_file=write_imerg_csv({DAY: 9.5, date(2024, 12, 30): 0.0}, tmp_path / "imerg.csv"),
     )
 
 
@@ -113,7 +115,13 @@ def test_evidence_uses_valid_stations_of_the_observed_local_day(tmp_path: Path) 
     evidence = _sources(tmp_path).evidence_for(_structured())
     assert evidence.station_mm == {"EST-A": 14.0}
     assert evidence.report_rain is True
-    assert evidence.satellite_mm is None  # IMERG Early aún no está (TASK-009)
+
+
+def test_evidence_uses_imerg_early_of_the_observed_day(tmp_path: Path) -> None:
+    """TASK-009b: la celda de la cuenca, por fecha (el día de IMERG es UTC, SUPUESTO)."""
+    assert _sources(tmp_path).evidence_for(_structured()).satellite_mm == 9.5
+    other_day = _structured().model_copy(update={"observed_at": datetime(2025, 1, 5, 9, tzinfo=TZ)})
+    assert _sources(tmp_path).evidence_for(other_day).satellite_mm is None
 
 
 def test_evidence_uses_the_operational_forecast_and_its_calibrated_threshold(
@@ -125,10 +133,11 @@ def test_evidence_uses_the_operational_forecast_and_its_calibrated_threshold(
 
 def test_missing_artifacts_give_empty_evidence(tmp_path: Path) -> None:
     sources = EvidenceSources(
-        tmp_path / "a", tmp_path / "b", tmp_path / "c", tmp_path / "d", "EST-A", TZ
+        tmp_path / "a", tmp_path / "b", tmp_path / "c", tmp_path / "d", "EST-A", TZ, tmp_path / "e"
     )
     evidence = sources.evidence_for(_structured("crecida"))
     assert (evidence.station_mm, evidence.forecast_prob, evidence.level_rise_m) == ({}, None, None)
+    assert evidence.satellite_mm is None
 
 
 def test_report_says_rain_only_with_rain_and_some_intensity() -> None:

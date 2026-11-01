@@ -140,3 +140,19 @@ def test_demo_examples_are_offered_only_in_fallback_mode(
     for example in examples:
         assert f'data-text="{example.text}"' in html
     assert 'data-lat="1.5"' in html and 'data-lon="-1.5"' in html  # centro de la cuenca
+
+
+def test_replay_shows_imerg_early_of_the_issue_and_target_days(
+    make_client: MakeClient, web_settings: Settings
+) -> None:
+    """TASK-009b: en la reproducción se ve el satélite de esos días, si existe."""
+    path = web_settings.data_dir / web_settings.imerg_early_file
+    path.write_text("date,precip_mm\n2024-12-31,5.085\n", encoding="utf-8")
+    html = make_client().get("/?replay_date=2024-12-31").text
+    assert "IMERG Early" in html
+    assert "2024-12-31: 5,1 mm" in html and "2025-01-01: sin dato" in html
+    assert "IMERG Early" not in make_client().get("/").text  # en vivo no se muestra
+
+
+def test_replay_without_imerg_file_says_nothing_about_it(make_client: MakeClient) -> None:
+    assert "IMERG Early" not in make_client().get("/?replay_date=2024-12-31").text
