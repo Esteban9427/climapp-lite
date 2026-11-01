@@ -13,6 +13,7 @@ from climapp.data.level import (
     LevelPoint,
     build_level_daily,
     daily_level,
+    drop_single_spikes,
     read_level_csv,
     read_level_xlsx,
     write_level_csv,
@@ -151,6 +152,39 @@ def test_days_without_readings_are_not_invented() -> None:
     ]
 
 
+# --- picos de una sola lectura (NIVEL_MAX_STEP_M, SUPUESTO) ------------------------
+
+
+def test_a_single_reading_jump_and_return_is_dropped() -> None:
+    points = _points([0.50, 0.52, 13.0, 0.51, 0.50])
+    kept = drop_single_spikes(points, max_step_m=1.0)
+    assert [p.level_m for p in kept] == [0.50, 0.52, 0.51, 0.50]
+
+
+def test_a_single_reading_dip_and_return_is_dropped() -> None:
+    kept = drop_single_spikes(_points([0.90, 0.88, -0.30, 0.89]), max_step_m=1.0)
+    assert [p.level_m for p in kept] == [0.90, 0.88, 0.89]
+
+
+def test_a_real_rise_that_stays_up_is_kept() -> None:
+    points = _points([0.40, 1.60, 1.70, 1.50])
+    assert drop_single_spikes(points, max_step_m=1.0) == points
+
+
+def test_steps_equal_to_the_limit_and_the_series_edges_are_kept() -> None:
+    inside = _points([0.40, 1.40, 0.40])  # salto y regreso de exactamente 1,0 m
+    assert drop_single_spikes(inside, max_step_m=1.0) == inside
+    edges = _points([9.0, 0.40, 0.41, 9.0])  # sin vecino a un lado no hay "regreso"
+    assert drop_single_spikes(edges, max_step_m=1.0) == edges
+
+
+def test_spikes_are_found_in_time_order_after_dropping_duplicates() -> None:
+    points = _points([0.50, 13.0, 0.50])
+    shuffled = [points[2], points[0], points[1], LevelPoint(points[1].ts, 0.50)]
+    kept = drop_single_spikes(shuffled, max_step_m=1.0)
+    assert [p.level_m for p in kept] == [0.50, 0.50]
+
+
 # --- csv y comando ---------------------------------------------------------------
 
 
@@ -189,3 +223,24 @@ def test_unmapped_station_is_rejected(env_file: Path, tmp_path: Path) -> None:
     )
     with pytest.raises(ValueError, match="sin correspondencia"):
         build_level_daily(settings)
+
+
+def test_build_drops_single_reading_spikes(env_file: Path, tmp_path: Path) -> None:
+    data = tmp_path / "data"
+    data.mkdir()
+    levels = [0.40, 0.42, 9.50, 0.41]
+    rows = [(RAW, "NIVEL", f"01/01/2025 00:{15 * i:02d}", m) for i, m in enumerate(levels)]
+    _book(data, rows)
+    (data / "map.json").write_text(f'{{"{RAW}": "EST-A"}}', encoding="utf-8")
+    settings = Settings(
+        _env_file=rewrite_env(
+            env_file,
+            LEVEL_EXPORTS='["nivel.xlsx"]',
+            STATION_MAP_FILE="map.json",
+            LEVEL_DAILY_FILE="derived/nivel.csv",
+            NIVEL_MAX_STEP_M="1.0",
+        )
+    )
+    (row,) = read_level_csv(build_level_daily(settings))
+    assert (row.n_readings, row.level_max_m) == (3, 0.42)
+    assert row.rise_24h_max_m == pytest.approx(0.02)
