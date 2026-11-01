@@ -81,6 +81,7 @@ class Report(BaseModel):
     confidence: Confidence | None
     attempts: list[VerificationAttemptOut]
     fallback: bool
+    duplicate: bool = False  # mismo texto en menos de DUPLICATE_WINDOW_MIN (no se guarda)
 
 
 class ReportSummary(BaseModel):

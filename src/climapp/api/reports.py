@@ -6,7 +6,7 @@ al LLM. La foto se guarda sin metadatos y nunca se publica el texto del ciudadan
 lista no lleva id ni afirmaciones; el detalle por id (UUID4) lo ve quien envió el reporte.
 """
 
-from datetime import UTC, date, datetime
+from datetime import UTC, date, datetime, timedelta
 from typing import Annotated
 from uuid import UUID, uuid4
 
@@ -143,6 +143,26 @@ def _save_photo(settings: Settings, record: ReportRecord, photo: tuple[bytes, st
     return record.model_copy(update={"photo_file": name})
 
 
+def _normalized(text: str) -> str:
+    """Texto para comparar duplicados: sin mayúsculas ni espacios repetidos."""
+    return " ".join(text.split()).casefold()
+
+
+def _duplicate(
+    settings: Settings, store: ReportStore, text: str | None, now: datetime
+) -> Report | None:
+    """Reporte con el mismo texto recibido en la ventana, marcado `duplicate`; o `None`."""
+    if not text:
+        return None
+    since = now - timedelta(minutes=settings.duplicate_window_min)
+    key = _normalized(text)
+    for record in store.received_since(since):
+        if record.text and _normalized(record.text) == key:
+            public = record.public(settings.public_coord_decimals)
+            return public.model_copy(update={"duplicate": True})
+    return None
+
+
 @router.post("/reports", status_code=202, response_model=Report)
 async def post_report(  # noqa: PLR0913 - campos del formulario del contrato (ReportIn)
     *,
@@ -164,6 +184,10 @@ async def post_report(  # noqa: PLR0913 - campos del formulario del contrato (Re
     if not text and photo is None:
         raise ApiError(422, "entrada_invalida", "envía un texto o una foto")
     clean = await _clean_photo(photo, settings)
+    duplicate = _duplicate(settings, store, text, now)
+    if duplicate is not None:
+        log.info("report.duplicate", report_id=str(duplicate.id))
+        return duplicate
     record = _new_record(lat, lon, text, now)
     if not _inside_basin(settings, lat, lon):
         record = _rejected(record, "fuera_de_cuenca")

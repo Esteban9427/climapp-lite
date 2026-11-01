@@ -13,11 +13,11 @@ from pathlib import Path
 import pytest
 from fastapi.testclient import TestClient
 
+from climapp.api.demo_reset import main as demo_reset
 from climapp.api.main import create_app, get_now, get_settings
 from climapp.api.reports import get_muse_client
 from climapp.api.store import ReportStore
 from climapp.config import Settings
-from climapp.api.demo_reset import main as demo_reset
 from climapp.verification.muse import MuseTask
 from tests.api.contract import assert_matches
 from tests.api.test_reports_api import INSIDE, SQUARE, STRUCTURED, TEXT, VERDICT

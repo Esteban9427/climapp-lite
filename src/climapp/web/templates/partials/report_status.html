@@ -1,3 +1,6 @@
+{% if report and report.duplicate %}
+  <p class="badge badge-info">Reporte duplicado: ya lo recibimos hace menos de {{ duplicate_window_min }} min; no se vuelve a pintar.</p>
+{% endif %}
 {% if error %}
   <p class="error" role="alert">{{ error }}</p>
 {% elif report.status == "verificando" %}

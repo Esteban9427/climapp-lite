@@ -65,6 +65,7 @@ def _base(settings: Settings) -> dict[str, object]:
         "ideam_url": settings.ideam_alerts_url,
         "demo_replay_date": settings.demo_replay_date,
         "agreement": AgreementThresholds.from_settings(settings),
+        "duplicate_window_min": settings.duplicate_window_min,
     }
 
 

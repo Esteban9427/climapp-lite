@@ -7,13 +7,14 @@ cursores.
 
 import sqlite3
 from contextlib import closing
-from datetime import date
+from datetime import UTC, date, datetime
 from pathlib import Path
 from uuid import UUID
 from zoneinfo import ZoneInfo
 
 from climapp.api.schemas import ReportRecord, ReportStatus
 
+MAX_ROWS = 1_000_000  # tope de filas al vaciar la base local
 SCHEMA = """CREATE TABLE IF NOT EXISTS reports (
     id TEXT PRIMARY KEY, received_at TEXT NOT NULL, local_day TEXT NOT NULL,
     status TEXT NOT NULL, record TEXT NOT NULL)"""
@@ -60,6 +61,22 @@ class ReportStore:
                 "SELECT record FROM reports WHERE id=?", (str(report_id),)
             ).fetchone()
         return ReportRecord.model_validate_json(found[0]) if found else None
+
+    def received_since(self, since: datetime) -> list[ReportRecord]:
+        """Reportes recibidos desde `since` (incluido), el más reciente primero."""
+        with closing(self._connect()) as conn:
+            rows = conn.execute(
+                "SELECT record FROM reports WHERE received_at>=? ORDER BY received_at DESC",
+                (since.astimezone(UTC).isoformat(),),
+            ).fetchall()
+        return [ReportRecord.model_validate_json(r[0]) for r in rows]
+
+    def clear(self) -> list[ReportRecord]:
+        """Borra todos los reportes y devuelve los borrados (para limpiar sus fotos)."""
+        removed = self.list(None, None, None, MAX_ROWS)
+        with closing(self._connect()) as conn, conn:
+            conn.execute("DELETE FROM reports")
+        return removed
 
     def list(
         self, status: ReportStatus | None, date_from: date | None, date_to: date | None, limit: int
