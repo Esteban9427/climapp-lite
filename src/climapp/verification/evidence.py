@@ -55,6 +55,7 @@ class EvidenceSources:
     forecasts_file: Path
     evaluation_file: Path
     level_file: Path
+    level_series: str
     tz: ZoneInfo
 
     def _stations(self, day: date) -> dict[str, float]:
@@ -88,13 +89,15 @@ class EvidenceSources:
         return float(probs[0]), float(thresholds[0])
 
     def _level_rise(self, day: date) -> float | None:
-        """Subida máxima de nivel en 24 h del día, o `None` si no hay dato."""
+        """Subida máxima en 24 h de la serie `level_series` en el día, o `None` si no hay dato."""
         try:
             rows = read_level_csv(self.level_file)
         except (OSError, KeyError, ValueError) as err:
             log.warning("evidence.level_missing", error=type(err).__name__)
             return None
-        rises = [r.rise_24h_max_m for r in rows if r.date == day]
+        rises = [
+            r.rise_24h_max_m for r in rows if r.date == day and r.series_id == self.level_series
+        ]
         return max(rises) if rises else None
 
     def evidence_for(self, structured: ReportStructured) -> Evidence:

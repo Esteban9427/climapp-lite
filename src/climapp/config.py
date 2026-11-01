@@ -75,6 +75,7 @@ class Settings(BaseSettings):
     level_exports: list[Path] = Field(min_length=1)
     level_sensor: str = Field(min_length=1)
     level_daily_file: Path
+    level_series_id: str = Field(pattern=r"^EST-[A-Z]$")
     known_outages_file: Path
     min_readings: int = Field(ge=1, le=READINGS_PER_DAY)
 
