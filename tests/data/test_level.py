@@ -21,7 +21,7 @@ from tests.conftest import rewrite_env
 
 TZ = ZoneInfo("America/Bogota")
 HEADER = ("STATION_ID", "SENSORNAME", "FECHAYHRA", "ED_VALUE")
-RAW = "ESTACION SINTETICA"
+RAW = "raw-a"
 T0 = datetime(2025, 1, 1, 0, 0, tzinfo=TZ)
 
 Row = tuple[object, ...]
@@ -123,6 +123,13 @@ def test_minimum_older_than_24_hours_does_not_count() -> None:
     ]
     rows = {r.date: r for r in daily_level("EST-A", points, TZ)}
     assert rows[date(2025, 1, 2)].rise_24h_max_m == pytest.approx(0.10)
+
+
+def test_minimum_exactly_24_hours_old_still_counts() -> None:
+    """La ventana es cerrada: la lectura de hace exactamente 24 h entra."""
+    points = [LevelPoint(T0, 0.20), LevelPoint(T0 + timedelta(hours=24), 0.50)]
+    rows = {r.date: r for r in daily_level("EST-A", points, TZ)}
+    assert rows[date(2025, 1, 2)].rise_24h_max_m == pytest.approx(0.30)
 
 
 def test_falling_level_has_zero_rise() -> None:
