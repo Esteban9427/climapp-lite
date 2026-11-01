@@ -20,6 +20,7 @@ main { max-width: 40rem; margin: 0 auto; padding: var(--space-4); display: grid;
 .badge { display: inline-block; border-radius: var(--radius); padding: var(--space-1) var(--space-3); font-weight: 700; }
 .badge-info { background: var(--color-info-bg); color: var(--color-info-text); }
 .badge-ok { background: var(--color-success-bg); color: var(--color-success-text); }
+.badge-partial { background: var(--color-warning-bg); color: var(--color-warning-text); }
 .badge-danger { background: var(--color-danger-bg); color: var(--color-danger-text); }
 .badge-review { background: var(--color-review-bg); color: var(--color-review-text); }
 .error { background: var(--color-danger-bg); color: var(--color-danger-text); border-radius: var(--radius); padding: var(--space-3); }

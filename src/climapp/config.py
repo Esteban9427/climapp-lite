@@ -58,6 +58,8 @@ class Settings(BaseSettings):
     confidence_weight_satellite: float = Field(ge=0)
     confidence_weight_forecast: float = Field(ge=0)
     confidence_weight_level: float = Field(ge=0)
+    agreement_high: float = Field(gt=0, le=1)
+    agreement_low: float = Field(ge=0, lt=1)
     level_rise_threshold_m: float = Field(gt=0)
     rain_day_mm: float = Field(gt=0)
 
@@ -140,6 +142,14 @@ class Settings(BaseSettings):
         """Exige `SUSPECT_STEP_MM` < `MAX_STEP_MM`: un salto sobre el máximo ya es un pico."""
         if self.suspect_step_mm >= self.max_step_mm:
             msg = "SUSPECT_STEP_MM debe ser menor que MAX_STEP_MM (SP-12)"
+            raise ValueError(msg)
+        return self
+
+    @model_validator(mode="after")
+    def _agreement_ordered(self) -> Self:
+        """Exige `AGREEMENT_LOW` < `AGREEMENT_HIGH` (etiqueta de confianza, ADR-002 §4)."""
+        if self.agreement_low >= self.agreement_high:
+            msg = "AGREEMENT_LOW debe ser menor que AGREEMENT_HIGH"
             raise ValueError(msg)
         return self
 

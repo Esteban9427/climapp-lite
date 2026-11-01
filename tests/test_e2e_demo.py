@@ -26,6 +26,7 @@ from climapp.web.demo import load_demo_reports
 from tests.api.test_forecast_api import EVALUATION
 from tests.api.test_reports_api import INSIDE, SQUARE
 from tests.conftest import ROOT, env_example_items, rewrite_env
+from tests.web.test_agreement import VERIFIED_LABEL
 
 DEMO_REPORTS = load_demo_reports(ROOT / env_example_items()["DEMO_REPORTS_FILE"])
 NOW = datetime(2026, 11, 2, 15, 0, tzinfo=UTC)
@@ -209,14 +210,16 @@ def test_the_exaggerated_report_goes_to_human_review_as_in_the_real_run(
 
 def test_the_true_report_is_backed_by_the_river_level(demo: TestClient) -> None:
     true_report, _, false_report = DEMO_REPORTS
-    _, detail = _report(demo, true_report.text)
+    status, detail = _report(demo, true_report.text)
     assert detail["status"] == "verificado"
+    assert "Coincide con los datos · confianza 100 %" in status
     assert detail["structured"]["event_type"] == "crecida"
     level = [s for s in detail["confidence"]["sources"] if s["kind"] == "river_level"]
     assert [s["agrees"] for s in level] == [True]
 
-    _, dry = _report(demo, false_report.text)
+    dry_status, dry = _report(demo, false_report.text)
     assert dry["structured"]["event_type"] == "sin_lluvia"
+    assert "No coincide con los datos · confianza 0 %" in dry_status  # verificado, pero falso
     assert dry["confidence"]["score"] < detail["confidence"]["score"]
 
 
@@ -238,7 +241,7 @@ def test_e1_replay_is_kept_as_a_false_alarm(e1: TestClient) -> None:
     assert "respuesta grabada" in home
 
     status, report = _report(e1, E1_TEXT)
-    assert re.search(r"Verificado · confianza \d+ %", status)
+    assert re.search(VERIFIED_LABEL, status)
     assert report["fallback"] is True and report["status"] == "verificado"
 
     mapa = e1.get("/mapa", params={"replay_date": E1_ISSUE}).text

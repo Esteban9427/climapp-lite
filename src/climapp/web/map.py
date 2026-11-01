@@ -14,6 +14,7 @@ from climapp.api.schemas import ReportSummary
 from climapp.api.store import ReportStore
 from climapp.config import Settings
 from climapp.verification.basin import BasinError, load_basin
+from climapp.web.agreement import AgreementThresholds, agreement_label
 
 OUTCOME_TEXT = {
     "acierto": "acierto",
@@ -46,14 +47,17 @@ def _outcome(settings: Settings, target: date) -> str | None:
     return OUTCOME_TEXT.get(found[0]) if found else None
 
 
-def _marker(report: ReportSummary, day: date, tz: ZoneInfo) -> dict[str, object] | None:
+def _marker(
+    report: ReportSummary, day: date, tz: ZoneInfo, thresholds: AgreementThresholds
+) -> dict[str, object] | None:
     """Marcador de un reporte verificado observado en `day`; `None` si no corresponde."""
     if report.observed_at is None or report.confidence is None:
         return None
     if report.observed_at.astimezone(tz).date() != day:
         return None
     score = round(report.confidence.score * PERCENT)
-    label = f"{report.event_type} {report.intensity} · confianza {score} %"
+    agreement = agreement_label(report.confidence.score, thresholds).text
+    label = f"{report.event_type} {report.intensity} · {agreement} · confianza {score} %"
     return {"lat": report.lat, "lon": report.lon, "label": label}
 
 
@@ -71,6 +75,7 @@ def map_view(settings: Settings, store: ReportStore, now: datetime, replay: date
     target = day + timedelta(days=1)
     verified = store.list("verificado", None, None, MAP_LIST_LIMIT)
     public = (r.summary(settings.public_coord_decimals) for r in verified)
-    candidates = (_marker(r, day, settings.local_timezone) for r in public)
+    thresholds = AgreementThresholds.from_settings(settings)
+    candidates = (_marker(r, day, settings.local_timezone, thresholds) for r in public)
     markers = [m for m in candidates if m is not None]
     return MapView(day, target, _outcome(settings, target), markers, _center(settings))

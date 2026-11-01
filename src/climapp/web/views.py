@@ -20,6 +20,7 @@ from climapp.api.reports import MAX_TEXT_CHARS, MuseDep, StoreDep, post_report
 from climapp.api.schemas import Forecast, Report
 from climapp.config import Settings
 from climapp.verification.basin import BasinError, load_basin
+from climapp.web.agreement import AgreementThresholds, agreement_label
 from climapp.web.demo import DemoReport, load_demo_reports
 from climapp.web.map import map_view
 
@@ -41,6 +42,7 @@ def _local_time(value: datetime) -> str:
 
 TEMPLATES.env.filters["mm"] = _mm
 TEMPLATES.env.filters["local_time"] = _local_time
+TEMPLATES.env.filters["agreement"] = agreement_label
 
 
 def _base(settings: Settings) -> dict[str, object]:
@@ -49,6 +51,7 @@ def _base(settings: Settings) -> dict[str, object]:
         "official_url": settings.official_channels_url,
         "ideam_url": settings.ideam_alerts_url,
         "demo_replay_date": settings.demo_replay_date,
+        "agreement": AgreementThresholds.from_settings(settings),
     }
 
 
@@ -99,9 +102,11 @@ def index(  # noqa: PLR0913 - dependencias de la vista
     return TEMPLATES.TemplateResponse(request, "index.html", context)
 
 
-def _status(request: Request, report: Report | None, error: str = "") -> HTMLResponse:
+def _status(
+    request: Request, settings: Settings, report: Report | None, error: str = ""
+) -> HTMLResponse:
     """Fragmento con el estado del reporte (o un error)."""
-    context = {"report": report, "error": error}
+    context = {"report": report, "error": error} | _base(settings)
     return TEMPLATES.TemplateResponse(request, "partials/report_status.html", context)
 
 
@@ -135,8 +140,8 @@ async def web_post_report(  # noqa: PLR0913 - campos del formulario
             photo=photo,
         )
     except ApiError as err:
-        return _status(request, None, f"{err.message[:1].upper()}{err.message[1:]}.")
-    return _status(request, report)
+        return _status(request, settings, None, f"{err.message[:1].upper()}{err.message[1:]}.")
+    return _status(request, settings, report)
 
 
 @router.get("/web/reports/{report_id}/estado", response_class=HTMLResponse)
@@ -146,8 +151,8 @@ def web_report_status(
     """Estado actual del reporte; el sondeo se detiene en un estado final."""
     record = store.get(report_id)
     if record is None:
-        return _status(request, None, "No se pudo consultar el estado; reintenta.")
-    return _status(request, record.public(settings.public_coord_decimals))
+        return _status(request, settings, None, "No se pudo consultar el estado; reintenta.")
+    return _status(request, settings, record.public(settings.public_coord_decimals))
 
 
 @router.get("/mapa", response_class=HTMLResponse)

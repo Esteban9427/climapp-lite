@@ -102,15 +102,19 @@ Todos los estados usan texto, además del color (WCAG 1.4.1). Las regiones que c
 | **Explicación** | Texto verificado + "Verificado por la compuerta" (+ "respuesta grabada" si `explanation_fallback`) | — | — | "Sin explicación verificada": nunca se muestra un texto que no pasó la compuerta | — | — | — | — |
 | **Formulario de reporte** | Campos y botón principal | Botón "Enviando…" deshabilitado | Mensaje bajo el campo (p. ej. "La foto supera 5 MB") con `aria-describedby` | — | Botón con colores de deshabilitado mientras falta texto o foto, o ubicación | — | — | — |
 | **Estado del reporte** | — | — | "No se pudo consultar el estado; reintenta" | — | — | Insignia info "Verificando…" y sondeo cada 2 s | Insignia de error "Rechazado: fuera de la cuenca" o el motivo | Insignia violeta "Requiere revisión humana", con los motivos de cada intento |
-| **Insignia verificado** | Insignia "Verificado", la confianza en % y el desglose por fuente | — | — | — | — | — | — | — |
+| **Insignia verificado** | Etiqueta según la confianza ("Coincide con los datos", "Coincidencia parcial" o "No coincide con los datos"), la confianza en %, el desglose por fuente y "Texto revisado por la compuerta de verificación" | — | — | — | — | — | — | — |
 | **Lista de reportes** | Tarjetas con tipo, intensidad, hora y confianza | "Cargando reportes…" | "No se pudo cargar la lista" | "Aún no hay reportes verificados" | — | — | — | — |
 | **Mapa** | Marcadores de reportes verificados y leyenda con el resultado del día | Contenedor gris con "Cargando mapa…" | "No se pudo cargar el mapa base"; los reportes siguen en la lista | "No hay reportes verificados para este día" en la leyenda | — | — | — | — |
 
 ### Textos de los estados de reporte
+> **Etiqueta según la confianza (2026-11-01, SUPUESTO, ADR-002 §4):** `verificado` solo dice que el texto pasó la compuerta, así que nunca se muestra solo. Un reporte verificado con confianza baja no puede leerse como confirmado. Los umbrales (`AGREEMENT_HIGH` = 0,7 y `AGREEMENT_LOW` = 0,3) son un SUPUESTO del equipo; cada corte pertenece al tramo de arriba. Solo cambia la vista (lista, estado y mapa): el contrato de la API no cambia.
+
 | Estado | Texto visible |
 |--------|---------------|
 | `verificando` | "Verificando tu reporte…" |
-| `verificado` | "Verificado · confianza N %" |
+| `verificado`, confianza ≥ `AGREEMENT_HIGH` (0,7) | "Coincide con los datos · confianza N %" (insignia de éxito) |
+| `verificado`, confianza ≥ `AGREEMENT_LOW` (0,3) y < 0,7 | "Coincidencia parcial · confianza N %" (insignia de advertencia) |
+| `verificado`, confianza < `AGREEMENT_LOW` (0,3) | "No coincide con los datos · confianza N %" (insignia de error) |
 | `rechazado` + `fuera_de_cuenca` | "Rechazado: la ubicación está fuera de la cuenca del río Pance" |
 | `rechazado` + `entrada_invalida` | "Rechazado: revisa el texto o la foto" |
 | `requiere_revision_humana` | "Requiere revisión humana: no pudimos verificarlo automáticamente" |

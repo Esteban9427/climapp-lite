@@ -6,7 +6,9 @@
   </div>
 {% elif report.status == "verificado" %}
   <div>
-    <span class="badge badge-ok">Verificado · confianza {{ (report.confidence.score * 100) | round | int }} %</span>
+    {% set label = report.confidence.score | agreement(agreement) %}
+    <span class="badge {{ label.css }}">{{ label.text }} · confianza {{ (report.confidence.score * 100) | round | int }} %</span>
+    <p class="muted">Texto revisado por la compuerta de verificación; la etiqueta dice si los datos lo respaldan.</p>
     <ul class="muted">
       {% for s in report.confidence.sources %}
         <li>{{ s.source_id }}: {{ "concuerda" if s.agrees else "no concuerda" }} (peso {{ s.weight }})</li>

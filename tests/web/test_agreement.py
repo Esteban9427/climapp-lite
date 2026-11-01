@@ -17,6 +17,9 @@ from tests.conftest import rewrite_env
 from tests.web.conftest import MakeClient
 
 THRESHOLDS = AgreementThresholds(high=0.7, low=0.3)
+VERIFIED_LABEL = (
+    r"(?:Coincide con los datos|Coincidencia parcial|No coincide con los datos) · confianza \d+ %"
+)
 HEADER = (
     "date,series_id,precip_mm,n_readings,valid,imputed,source_hash,n_suspect,suspect_mm,n_gap\n"
 )

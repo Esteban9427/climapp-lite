@@ -2,17 +2,17 @@
 
 import re
 
-from climapp.web.demo import load_demo_reports
-
 from climapp.api.main import get_settings
 from climapp.api.schemas import Forecast
 from climapp.config import Settings
 from climapp.verification.explain import VerifiedExplanation
 from climapp.verification.muse import MuseTask
+from climapp.web.demo import load_demo_reports
 from tests.api.test_reports_api import INSIDE, OUTSIDE, TEXT
 from tests.conftest import ROOT, env_example_items
 from tests.verification.fakes import ScriptedMuse, reply
 from tests.web.conftest import OFFICIAL, MakeClient
+from tests.web.test_agreement import VERIFIED_LABEL
 
 IDEAM = "https://www.ideam.gov.co/nuestra-entidad/servicio-de-pronosticos-y-alertas"
 
@@ -94,7 +94,7 @@ def test_submitting_shows_verifying_then_verified_with_confidence(make_client: M
     poll = re.search(r'hx-get="(/web/reports/[0-9a-f-]+/estado)"', partial)
     assert poll and 'hx-trigger="every 2s"' in partial
     done = client.get(poll.group(1)).text
-    assert re.search(r"Verificado · confianza \d+ %", done)
+    assert re.search(VERIFIED_LABEL, done)
     assert "hx-trigger" not in done  # el sondeo se detiene en un estado final
     assert "lluvia" in client.get("/").text  # aparece en la lista
 
