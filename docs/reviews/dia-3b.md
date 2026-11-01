@@ -16,7 +16,13 @@
 | `DEMO_FORECASTS` replica cifras de los artefactos publicados: un reentrenamiento las desincroniza | Se mantiene | Igual que E1; no se reentrena (ADR-001 §1). Si se reentrena, se regraba |
 | Las 8 grabaciones anteriores intactas: no verificable sin git | **Verificado fuera de la copia** | `git diff` del fallback en `c98903a`: solo inserciones; comparación de las 8 primeras entradas contra la versión anterior: idénticas |
 | Cifras del nivel y de E3 sin prueba automática | Se mantiene | Por la regla 9 los tests usan datos sintéticos; las cifras salen del inventario del 2026-11-01 (scripts de solo lectura fuera del repo) |
-| `.env.example` versiona una ruta de la entrega del 2026-10-29 con las iniciales de una persona | Para el equipo | No es nombre de estación y es anterior a hoy; se deja para decisión de JE |
+| `.env.example` versiona una ruta de la entrega del 2026-10-29 con las iniciales de una persona | **Corregido** (decisión de JE) | `STATION_EXPORTS` usa rutas genéricas (`raw/<entrega>/estaciones.xls` y `.csv`); las reales quedan solo en `.env` |
+
+## Incidente: nombre de una estación en el historial público (2026-11-01)
+- **Qué pasó:** el commit `eee52a0` (docs de E3) citó en `docs/PRD.md`, 3 veces, el nombre del archivo de eventos de nivel de la entrega de JM. Ese nombre incluye el de una estación (regla 10, ADR-004). El commit se subió al repositorio público.
+- **Por qué no se detuvo:** el chequeo previo (`gitleaks` más la búsqueda de `.forbidden-terms` en lo preparado) sí lo detectó (`forbidden-terms = 3`), pero se corrió como `bash leaks.sh | tail -4 && git commit ...`. El código de salida de la tubería era el de `tail` (0), así que el commit y el push siguieron igual.
+- **Arreglo:** `09eb177` reemplaza el nombre del archivo por una descripción; el árbol vuelve a dar 0. Desde entonces el chequeo se corre con `set -o pipefail` y sin `tail`, y un fallo detiene el commit. También se revisaron los mensajes de commit y los archivos de los commits de ese día: el término solo aparece en `eee52a0`.
+- **Decisión de JE: no se reescribe el historial ni se hace force-push.** Reescribirlo cambiaría los hashes de los commits del evento, que son la evidencia de lo construido durante el evento (R10). D-03 está cerrado (la CVC autorizó el uso de los datos el 2026-10-31) y la fuente CVC ya es pública. El nombre queda en `eee52a0` como incidente documentado.
 
 ## Salida (rutas absolutas de la copia reemplazadas por rutas del repo; sin las líneas de arranque del CLI)
 
