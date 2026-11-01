@@ -5,7 +5,7 @@ Reutiliza las mismas funciones que la API, así que la vista y el contrato no di
 El aviso "No es una alerta oficial" está en la plantilla base: aparece siempre.
 """
 
-from datetime import date, datetime
+from datetime import date, datetime, timedelta
 from pathlib import Path
 from typing import Annotated
 from uuid import UUID
@@ -19,6 +19,7 @@ from climapp.api.forecast_routes import ExplainerDep, forecast
 from climapp.api.reports import MAX_TEXT_CHARS, MuseDep, StoreDep, post_report
 from climapp.api.schemas import Forecast, Report
 from climapp.config import Settings
+from climapp.data.imerg import read_imerg_csv
 from climapp.verification.basin import BasinError, load_basin
 from climapp.web.agreement import AgreementThresholds, agreement_label
 from climapp.web.demo import DemoReport, load_demo_reports
@@ -67,6 +68,18 @@ def _demo_examples(settings: Settings) -> tuple[list[DemoReport], tuple[float, f
     return examples, center
 
 
+def _imerg_days(settings: Settings, replay: date | None) -> list[tuple[date, float | None]]:
+    """IMERG Early de los días de emisión y objetivo de una reproducción; vacío sin archivo."""
+    if replay is None:
+        return []
+    try:
+        values = read_imerg_csv(settings.data_dir / settings.imerg_early_file)
+    except (OSError, KeyError, ValueError):
+        return []
+    days = (replay, replay + timedelta(days=1))
+    return [(day, values.get(day)) for day in days]
+
+
 def _forecast_or_error(
     settings: Settings, now: datetime, explainer: ExplainerDep, replay_date: date | None
 ) -> tuple[Forecast | None, str]:
@@ -96,6 +109,7 @@ def index(  # noqa: PLR0913 - dependencias de la vista
         "forecast_error": error,
         "replay_date": replay_date,
         "reports": reports,
+        "imerg": _imerg_days(settings, replay_date),
     }
     examples, center = _demo_examples(settings)
     context |= {"demo_examples": examples, "demo_center": center}

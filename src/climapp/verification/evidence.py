@@ -1,7 +1,8 @@
 """Evidencia de un reporte para la confianza (ADR-002 §4), leída de los artefactos.
 
 - Estaciones: tabla diaria (`DAILY_STATIONS_FILE`), días válidos del día local observado.
-- Satélite: IMERG Early todavía no está (TASK-009), así que queda sin dato.
+- Satélite: IMERG Early en la celda de la cuenca (`IMERG_EARLY_FILE`, TASK-009b), por fecha;
+  el día de IMERG es UTC (SUPUESTO: se compara con el día local del reporte).
 - Pronóstico: emisión `operativa` para ese día y el umbral de decisión del RF calibrado,
   fijado fuera de la prueba (`EVALUATION_FILE`).
 - Nivel del río: subida máxima en 24 h del día (`LEVEL_DAILY_FILE`, TASK-038), solo
@@ -19,6 +20,7 @@ from zoneinfo import ZoneInfo
 from pydantic import ValidationError
 
 from climapp.data.daily import read_daily_csv
+from climapp.data.imerg import read_imerg_csv
 from climapp.data.level import read_level_csv
 from climapp.logging import get_logger
 from climapp.verification.confidence import Evidence
@@ -57,6 +59,7 @@ class EvidenceSources:
     level_file: Path
     level_series: str
     tz: ZoneInfo
+    imerg_file: Path
 
     def _stations(self, day: date) -> dict[str, float]:
         """Lluvia de las estaciones válidas y no imputadas en el día."""
@@ -100,6 +103,14 @@ class EvidenceSources:
         ]
         return max(rises) if rises else None
 
+    def _satellite(self, day: date) -> float | None:
+        """IMERG Early de la celda de la cuenca en el día, o `None` si no hay dato."""
+        try:
+            return read_imerg_csv(self.imerg_file).get(day)
+        except (OSError, KeyError, ValueError) as err:
+            log.warning("evidence.imerg_missing", error=type(err).__name__)
+            return None
+
     def evidence_for(self, structured: ReportStructured) -> Evidence:
         """Evidencia para el día local en que el ciudadano dice haber observado."""
         day = structured.observed_at.astimezone(self.tz).date()
@@ -107,7 +118,7 @@ class EvidenceSources:
         return Evidence(
             report_rain=report_says_rain(structured),
             station_mm=self._stations(day),
-            satellite_mm=None,
+            satellite_mm=self._satellite(day),
             forecast_prob=prob,
             forecast_threshold=threshold,
             report_flood=report_says_flood(structured),

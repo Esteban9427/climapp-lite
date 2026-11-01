@@ -209,7 +209,8 @@ Dentro de cada día, **el orden es el de la lista** (hay dependencias intradía:
 - Fuente aparte de la lluvia en la confianza, solo para reportes que afirman creciente (ADR-002 §4). Peso y umbral de subida: SUPUESTO para JM, fijados antes de evaluar la demo.
 - **Hecho cuando:** tests de propiedades verifican que sin nivel ese día, o en un reporte que no afirma creciente, la confianza no cambia.
 
-### TASK-009b — Cliente IMERG Early NRT (PPS)
+### TASK-009b — Cliente IMERG Early NRT (GES DISC; antes PPS)
+> **Hecha el 2026-11-01:** `climapp-imerg` por OPeNDAP de GES DISC con `EARTHDATA_TOKEN` (reemplaza a PPS y a `~/.netrc`). Latencia real ~4,5 h (SP-9).
 - **Estimación:** 3 h · **MoSCoW:** Should · **Responsable:** JE · **Depende de:** TASK-001
 - Descarga de IMERG Early casi en tiempo real del servidor NRT de PPS, recortada a la celda o celdas de la cuenca, con caché, reintentos y sin duplicados; mide la latencia real (SP-9). Solo evidencia en la verificación de reportes, no en el modelo.
 - **Hecho cuando:** un test con un servidor falso cubre credenciales desde `.env` o `~/.netrc`, el recorte, la caché, el reintento y los duplicados.
@@ -254,3 +255,4 @@ Sequía e incendios · audio · cuentas · notificaciones · app nativa · plata
 - 2026-10-31: **TASK-002 pasa a JE**, porque JM dedica sus 8 h a los eventos y a los ~30 reportes de ejemplo (TASK-021). Solo se implementa lo que necesita TASK-014: grupos de estaciones con r ≥ `STATION_GROUP_MIN_R` sobre la tabla diaria (`climapp-groups`, `STATION_GROUPS_FILE`). El inventario completo (periodos, días válidos, duplicados e `inventory.json`) queda fuera del sprint. Por decisión del equipo, los grupos se calculan con toda la tabla y no solo con el entrenamiento (ADR-002 §4): [EST-A], [EST-B, EST-C] (r = 0,874) y [EST-D]. Los 12 días válidos extra de EST-A y EST-B frente al inventario (Cambios, 2026-10-30) siguen sin revisar.
 - 2026-11-01 (fuente: entrega de JM del 2026-11-01 y pedido de JE): se agregan TASK-038 (lector de nivel), TASK-039 (subida de nivel como evidencia de crecientes) y TASK-009b (cliente IMERG Early NRT), las tres Should de JE. El nivel nunca entra al modelo.
 - 2026-11-01: **D-03 cerrado el 2026-10-31** (CVC; TASK-035 no se activa). **La demo pasa a E3** (2026-09-30 → 2026-10-02, emisión 2026-10-01), decisión de JE con los eventos de nivel de JM; E1 queda como caso de falsa alarma (PRD SP-5). TASK-038 suma el filtro de picos de una sola lectura (`NIVEL_MAX_STEP_M`, SUPUESTO) y TASK-011 la reproducción en orden de las grabaciones repetidas.
+- 2026-11-01: TASK-009b usa OPeNDAP de GES DISC con `EARTHDATA_TOKEN` en vez de PPS (decisión de JE, que autorizó la aplicación GES DISC). Solo evidencia de los reportes; el modelo sigue congelado y TASK-028 queda fuera del congelamiento.

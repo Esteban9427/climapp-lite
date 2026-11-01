@@ -78,6 +78,14 @@ class Settings(BaseSettings):
     level_sensor: str = Field(min_length=1)
     level_daily_file: Path
     level_series_id: str = Field(pattern=r"^EST-[A-Z]$")
+    imerg_opendap_url: str = Field(pattern=r"^https://")
+    imerg_file_versions: list[str] = Field(min_length=1)
+    imerg_grid_deg: float = Field(gt=0)
+    imerg_days: int = Field(ge=1)
+    imerg_early_file: Path
+    imerg_retries: int = Field(ge=1)
+    imerg_backoff_s: float = Field(ge=0)
+    imerg_timeout_s: float = Field(gt=0)
     nivel_max_step_m: float = Field(gt=0)
     known_outages_file: Path
     min_readings: int = Field(ge=1, le=READINGS_PER_DAY)

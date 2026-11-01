@@ -66,6 +66,7 @@ def _verifier(settings: Settings, client: MuseClient) -> ReportVerifier:
         data / settings.level_daily_file,
         settings.level_series_id,
         settings.local_timezone,
+        data / settings.imerg_early_file,
     )
     try:
         groups = load_station_groups(data / settings.station_groups_file)

@@ -19,6 +19,7 @@ dependencies = [
     "python-multipart>=0.0.33",
     "pillow>=13.0.0",
     "jinja2>=3.1.6",
+    "httpx>=0.28.1",
 ]
 
 [project.scripts]
@@ -26,6 +27,7 @@ climapp-daily = "climapp.data.cli:main"
 climapp-train = "climapp.forecast.cli:main"
 climapp-groups = "climapp.data.groups:main"
 climapp-level = "climapp.data.level:main"
+climapp-imerg = "climapp.data.imerg:main"
 
 [dependency-groups]
 dev = [

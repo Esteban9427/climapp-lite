@@ -32,6 +32,7 @@ CONFIG = ImergConfig(
     backoff_s=0.0,
     timeout_s=5.0,
 )
+FAKE_TOKEN = "token-falso"  # noqa: S105 - token sintético del servidor falso
 CELL = (1033, 933)  # (lon, lat) de una celda sintética
 SQUARE = [[-76.70, 3.30], [-76.60, 3.30], [-76.60, 3.40], [-76.70, 3.40], [-76.70, 3.30]]
 
@@ -40,16 +41,15 @@ def _ascii(value: float) -> str:
     return (
         "Dataset: 3B-DAY-E.MS.MRG.3IMERG.20261001-S000000-E235959.V07C.nc4\n"
         "precipitation.lat, 3.35\n"
-        f"precipitation.precipitation[precipitation.time=17070][precipitation.lon=-76.65], {value}\n"
+        "precipitation.precipitation[precipitation.time=17070][precipitation.lon=-76.65], "
+        f"{value}\n"
     )
 
 
 Handler = Callable[[httpx.Request], httpx.Response]
 
 
-def _client(
-    handler: Handler, token: str = "token-falso"
-) -> tuple[ImergClient, list[httpx.Request]]:
+def _client(handler: Handler, token: str = FAKE_TOKEN) -> tuple[ImergClient, list[httpx.Request]]:
     seen: list[httpx.Request] = []
 
     def record(request: httpx.Request) -> httpx.Response:
@@ -75,7 +75,7 @@ def test_requests_only_the_basin_cell_with_the_bearer_token() -> None:
     client, seen = _client(lambda _: httpx.Response(200, text=_ascii(18.465)))
     assert client.fetch(date(2026, 10, 2), CELL) == pytest.approx(18.465)
     (request,) = seen
-    assert request.headers["Authorization"] == "Bearer token-falso"
+    assert request.headers["Authorization"] == f"Bearer {FAKE_TOKEN}"
     url = str(request.url)
     assert url.startswith(f"{BASE}/2026/10/3B-DAY-E.MS.MRG.3IMERG.20261002-S000000-E235959.V07C")
     assert url.endswith(".nc4.ascii?precipitation%5B0%5D%5B1033%5D%5B933%5D")
@@ -134,7 +134,7 @@ def test_bad_token_fails_without_retrying() -> None:
 
 @pytest.fixture
 def imerg_settings(env_file: Path, tmp_path: Path) -> Settings:
-    rewrite_env(env_file, EARTHDATA_TOKEN="token-falso", IMERG_DAYS="3")
+    rewrite_env(env_file, EARTHDATA_TOKEN=FAKE_TOKEN, IMERG_DAYS="3")
     settings = Settings(_env_file=env_file)
     basin = settings.data_dir / settings.basin_polygon_file
     basin.parent.mkdir(parents=True, exist_ok=True)

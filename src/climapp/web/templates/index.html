@@ -7,6 +7,10 @@
   <section class="card" aria-labelledby="forecast-title">
     <h1 id="forecast-title">Lluvia en la cuenca del río Pance</h1>
     {% include "partials/forecast.html" %}
+    {% if imerg %}
+      <p class="muted">IMERG Early (satélite, celda de la cuenca, día UTC; solo evidencia de los reportes, no entra al modelo):
+        {% for day, mm in imerg %}{{ day.isoformat() }}: {{ mm | mm if mm is not none else "sin dato" }}{% if not loop.last %} · {% endif %}{% endfor %}.</p>
+    {% endif %}
   </section>
   <section class="card" aria-labelledby="report-title">
     <h2 id="report-title">Reportar lo que ves</h2>
