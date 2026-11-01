@@ -11,7 +11,9 @@ import re
 from climapp.api.main import get_settings
 from climapp.config import Settings
 from climapp.verification.muse import MuseTask
-from climapp.web.report_view import event_title
+from climapp.verification.confidence import Confidence, ConfidenceSource
+from climapp.verification.evidence import DayValues
+from climapp.web.report_view import event_title, evidence_rows, support_text
 from tests.api.test_reports_api import CLAIMS, INSIDE, TEXT, VERDICT
 from tests.conftest import ROOT
 from tests.verification.fakes import ScriptedMuse, reply
@@ -82,7 +84,7 @@ def test_verified_report_shows_the_result_why_and_the_evidence_values(
     html = _status(make_client())
     assert "Lluvia fuerte" in html
     assert "Coincidencia parcial" in html
-    assert "Lo respaldan 1 de 2 fuentes con dato" in html
+    assert "Lo respaldan 1 de 2 fuentes observadas" in html
     assert re.search(r"Lluvia en estaciones[^<]*EST-A: 30 mm[^<]*✓", html)
     assert re.search(r"Satélite IMERG Early[^<]*0,4 mm[^<]*✗", html)
     assert "peso" not in html
@@ -170,3 +172,34 @@ def test_event_title_without_structured_fields_is_generic() -> None:
     assert event_title(None, None) == "Reporte"
     assert event_title("crecida", "fuerte") == "Crecida fuerte"
     assert event_title("sin_lluvia", "ninguna") == "Sin lluvia"
+
+
+# --- el pronóstico es una expectativa, no una fuente observada (2026-11-01) ------------
+
+
+def _source(kind: str, agrees: bool, sid: str = "x") -> ConfidenceSource:
+    return ConfidenceSource(source_id=sid, kind=kind, members=["EST-A"], agrees=agrees, weight=1.0)  # type: ignore[arg-type]
+
+
+CONF = Confidence(
+    score=0.8,
+    sources=[
+        _source("station_group", True, "EST-A"),
+        _source("forecast", True, "pronostico"),
+        _source("river_level", False, "nivel"),
+    ],
+    independent_sources=3,
+)
+VALUES = DayValues({"EST-A": 43.6}, None, 0.149, 0.1316, 0.12)
+
+
+def test_support_counts_only_observed_sources() -> None:
+    assert support_text(CONF) == "Lo respaldan 1 de 2 fuentes observadas."
+    only_forecast = Confidence(score=1.0, sources=[CONF.sources[1]], independent_sources=1)
+    assert support_text(only_forecast) == "No hay fuentes observadas para ese día."
+
+
+def test_forecast_row_is_labelled_as_expectation_and_goes_last() -> None:
+    rows = evidence_rows(CONF, VALUES)
+    assert rows[0].startswith("Lluvia en estaciones") and rows[1].startswith("Nivel del río")
+    assert rows[-1] == "Pronóstico (expectativa, no es una observación) · 15 % ✓"
