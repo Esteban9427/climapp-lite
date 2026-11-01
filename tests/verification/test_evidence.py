@@ -6,6 +6,7 @@ from pathlib import Path
 from zoneinfo import ZoneInfo
 
 from climapp.data.daily import write_daily_csv
+from climapp.data.level import DailyLevel, write_level_csv
 from climapp.data.models import DailyPrecip
 from climapp.verification.evidence import EvidenceSources, report_says_rain
 from climapp.verification.schemas import ReportStructured
@@ -90,8 +91,19 @@ def _sources(tmp_path: Path) -> EvidenceSources:
         ),
         encoding="utf-8",
     )
+    level = write_level_csv(
+        [
+            DailyLevel("EST-A", DAY, 96, 0.40, 0.95, 0.55),
+            DailyLevel("EST-A", date(2024, 12, 30), 96, 0.40, 0.42, 0.02),
+        ],
+        tmp_path / "level.csv",
+    )
     return EvidenceSources(
-        daily_file=daily, forecasts_file=forecasts, evaluation_file=evaluation, tz=TZ
+        daily_file=daily,
+        forecasts_file=forecasts,
+        evaluation_file=evaluation,
+        level_file=level,
+        tz=TZ,
     )
 
 
@@ -110,9 +122,9 @@ def test_evidence_uses_the_operational_forecast_and_its_calibrated_threshold(
 
 
 def test_missing_artifacts_give_empty_evidence(tmp_path: Path) -> None:
-    sources = EvidenceSources(tmp_path / "a", tmp_path / "b", tmp_path / "c", TZ)
-    evidence = sources.evidence_for(_structured())
-    assert (evidence.station_mm, evidence.forecast_prob) == ({}, None)
+    sources = EvidenceSources(tmp_path / "a", tmp_path / "b", tmp_path / "c", tmp_path / "d", TZ)
+    evidence = sources.evidence_for(_structured("crecida"))
+    assert (evidence.station_mm, evidence.forecast_prob, evidence.level_rise_m) == ({}, None, None)
 
 
 def test_report_says_rain_only_with_rain_and_some_intensity() -> None:
@@ -120,3 +132,24 @@ def test_report_says_rain_only_with_rain_and_some_intensity() -> None:
     assert report_says_rain(_structured("granizo", "moderada"))
     assert not report_says_rain(_structured("sin_lluvia", "ninguna"))
     assert not report_says_rain(_structured("lluvia", "ninguna"))
+
+
+def test_flood_report_gets_the_level_rise_of_the_observed_local_day(tmp_path: Path) -> None:
+    evidence = _sources(tmp_path).evidence_for(_structured("crecida"))
+    assert (evidence.report_flood, evidence.level_rise_m) == (True, 0.55)
+
+
+def test_rain_report_is_not_a_flood_report(tmp_path: Path) -> None:
+    evidence = _sources(tmp_path).evidence_for(_structured("lluvia"))
+    assert evidence.report_flood is False
+
+
+def test_day_without_level_gives_no_level_evidence(tmp_path: Path) -> None:
+    structured = ReportStructured(
+        event_type="crecida",
+        intensity="fuerte",
+        observed_at=datetime(2025, 1, 5, 9, 0, tzinfo=TZ),
+        claims=["el río creció"],
+        numbers_cited=[],
+    )
+    assert _sources(tmp_path).evidence_for(structured).level_rise_m is None

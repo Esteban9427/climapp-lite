@@ -15,8 +15,11 @@ from climapp.verification.confidence import (
     load_station_groups,
 )
 
-# Pesos SUPUESTO del equipo (2026-10-31, ADR-002 §4): estaciones > satélite > pronóstico
-WEIGHTS = ConfidenceWeights(station=1.0, satellite=0.5, forecast=0.25, rain_mm=1.0)
+# Pesos SUPUESTO del equipo (2026-10-31, ADR-002 §4): estaciones > satélite > pronóstico.
+# Nivel del río (TASK-039, 2026-11-01): peso 1,0 y subida de 0,30 m en 24 h, SUPUESTO para JM
+WEIGHTS = ConfidenceWeights(
+    station=1.0, satellite=0.5, forecast=0.25, rain_mm=1.0, level=1.0, level_rise_m=0.30
+)
 GROUPS = (("EST-A",), ("EST-B", "EST-C"), ("EST-D",))
 
 
@@ -179,3 +182,82 @@ def test_station_groups_outweigh_satellite_and_forecast_together() -> None:
         WEIGHTS,
     )
     assert conf.score > 0.5
+
+
+# --- nivel del río como evidencia de crecientes (TASK-039) ---------------------
+
+
+def _flood(rise: float | None, **kw: object) -> Evidence:
+    return _evidence(
+        station_mm={},
+        satellite_mm=None,
+        forecast_prob=None,
+        report_flood=True,
+        level_rise_m=rise,
+        **kw,
+    )
+
+
+def test_flood_report_agrees_when_the_level_rose_at_least_the_threshold() -> None:
+    conf = compute_confidence(_flood(0.30), GROUPS, WEIGHTS)
+    assert [(s.source_id, s.kind, s.members, s.agrees, s.weight) for s in conf.sources] == [
+        ("nivel", "river_level", [], True, 1.0)
+    ]
+    assert conf.score == 1.0
+
+
+def test_flood_report_disagrees_when_the_level_barely_moved() -> None:
+    conf = compute_confidence(_flood(0.29), GROUPS, WEIGHTS)
+    assert [(s.kind, s.agrees) for s in conf.sources] == [("river_level", False)]
+    assert conf.score == 0.0
+
+
+def test_level_is_a_source_apart_from_the_rain_sources() -> None:
+    conf = compute_confidence(_evidence(report_flood=True, level_rise_m=0.5), GROUPS, WEIGHTS)
+    kinds = [s.kind for s in conf.sources]
+    assert kinds.count("river_level") == 1
+    assert conf.independent_sources == 6  # 3 grupos + satélite + pronóstico + nivel
+
+
+def test_report_that_does_not_claim_a_flood_ignores_the_level() -> None:
+    with_level = _evidence(report_flood=False, level_rise_m=2.0)
+    assert compute_confidence(with_level, GROUPS, WEIGHTS) == compute_confidence(
+        _evidence(), GROUPS, WEIGHTS
+    )
+
+
+def test_level_weights_come_from_settings(env_file: Path) -> None:
+    weights = ConfidenceWeights.from_settings(Settings(_env_file=env_file))
+    assert (weights.level, weights.level_rise_m) == (1.0, 0.30)
+
+
+def _with(evidence: Evidence, **changes: object) -> Evidence:
+    fields = {
+        "report_rain": evidence.report_rain,
+        "station_mm": evidence.station_mm,
+        "satellite_mm": evidence.satellite_mm,
+        "forecast_prob": evidence.forecast_prob,
+        "forecast_threshold": evidence.forecast_threshold,
+        "report_flood": evidence.report_flood,
+        "level_rise_m": evidence.level_rise_m,
+    }
+    return Evidence(**(fields | changes))  # type: ignore[arg-type]
+
+
+@given(evidences, st.booleans())
+def test_without_level_that_day_the_confidence_does_not_change(
+    evidence: Evidence, flood: bool
+) -> None:
+    """Un día sin dato de nivel deja la confianza igual, afirme o no el reporte una creciente."""
+    no_level = _with(evidence, report_flood=flood, level_rise_m=None)
+    assert compute_confidence(no_level, GROUPS, WEIGHTS) == compute_confidence(
+        _with(evidence, report_flood=False, level_rise_m=None), GROUPS, WEIGHTS
+    )
+
+
+@given(evidences, st.floats(min_value=0, max_value=5, allow_nan=False))
+def test_level_only_matters_for_reports_that_claim_a_flood(evidence: Evidence, rise: float) -> None:
+    not_flood = _with(evidence, report_flood=False, level_rise_m=rise)
+    assert compute_confidence(not_flood, GROUPS, WEIGHTS) == compute_confidence(
+        _with(evidence, report_flood=False, level_rise_m=None), GROUPS, WEIGHTS
+    )
