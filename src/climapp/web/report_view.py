@@ -50,9 +50,11 @@ class ReportResult:
     why: str
 
 
-def event_title(event_type: str, intensity: str) -> str:
-    """Tipo e intensidad con mayúscula inicial: "Crecida fuerte", "Sin lluvia"."""
-    words = [EVENT_TEXT.get(event_type, event_type), INTENSITY_TEXT.get(intensity, intensity)]
+def event_title(event_type: str | None, intensity: str | None) -> str:
+    """Tipo e intensidad con mayúscula: "Crecida fuerte", "Sin lluvia"; sin tipo, "Reporte"."""
+    if event_type is None:
+        return "Reporte"
+    words = [EVENT_TEXT.get(event_type, event_type), INTENSITY_TEXT.get(intensity or "", intensity)]
     return " ".join(w for w in words if w)
 
 
