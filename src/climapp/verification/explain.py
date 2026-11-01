@@ -1,9 +1,9 @@
 """Explicación del pronóstico con Muse Spark, verificada por la compuerta (TASK-022).
 
 Las cifras se le entregan al modelo ya redondeadas como las compara la compuerta
-(probabilidad en % entero, milímetros con 1 decimal; ADR-002 §3) y el texto solo puede
-citarlas a ellas. Si la explicación no pasa la compuerta, o Muse no responde, el
-pronóstico sale con `explanation=null`.
+(probabilidad en % entero, milímetros con 1 decimal; ADR-002 §3) y escritas en es-CO
+(coma decimal, sin ",0"). El texto solo puede citarlas a ellas. Si la explicación no
+pasa la compuerta, o Muse no responde, el pronóstico sale con `explanation=null`.
 """
 
 import json
@@ -14,6 +14,7 @@ from pydantic import ValidationError
 
 from climapp.api.schemas import Forecast
 from climapp.config import Settings
+from climapp.formatting import es_number
 from climapp.logging import get_logger
 from climapp.verification.gate import GateRequest, run_gate
 from climapp.verification.muse import MuseClient, MuseError, MuseTask, build_client
@@ -44,47 +45,59 @@ def forecast_figures(forecast: Forecast) -> dict[str, float]:
     }
     if forecast.accum_3d_mm is not None:
         figures["acumulado_3d_mm"] = round(forecast.accum_3d_mm, MM_DECIMALS)
+    if forecast.accum_3d_percentile is not None:
+        figures["percentil_acumulado_pct"] = forecast.accum_3d_percentile
+    if forecast.climatology_prob is not None:
+        figures["climatologia_pct"] = round(forecast.climatology_prob * PERCENT)
     return figures
 
 
 VARIANT_MEANING = {
     "operativa": "operativa: pronóstico con las estaciones disponibles al día siguiente",
-    "historica": "historica: modelo con estaciones y CHIRPS, que llega con semanas de retraso",
+    "historica": "histórica: modelo con estaciones y CHIRPS, que llega con semanas de retraso",
 }
 NOT_OFFICIAL = "No es una alerta oficial: es un pronóstico experimental e informativo de lluvia."
+
+
+def _figure(value: float, meaning: str) -> dict[str, str]:
+    """Cifra en es-CO con su significado."""
+    return {"valor": es_number(value), "significado": meaning}
+
+
+def _optional_context(forecast: Forecast, figures: dict[str, float]) -> dict[str, object]:
+    """Acumulado con su percentil, climatología del día y riesgo, si hay dato."""
+    extra: dict[str, object] = {}
+    if "acumulado_3d_mm" in figures:
+        meaning = "lluvia acumulada en la cuenca en los últimos tres días, en mm"
+        extra["acumulado_3d_mm"] = _figure(figures["acumulado_3d_mm"], meaning)
+    if "percentil_acumulado_pct" in figures:
+        meaning = "ese acumulado es mayor que el de este % de los días del entrenamiento"
+        extra["percentil_acumulado_pct"] = _figure(figures["percentil_acumulado_pct"], meaning)
+    if "climatologia_pct" in figures:
+        meaning = "lo normal para esta época: % de días con 20 mm o más en el entrenamiento"
+        extra["climatologia_pct"] = _figure(figures["climatologia_pct"], meaning)
+    if forecast.risk is not None:
+        extra["riesgo"] = f"riesgo {forecast.risk} frente al umbral de aviso de la variante"
+    return extra
 
 
 def _context(forecast: Forecast) -> dict[str, object]:
     """Cifras con su significado, iguales para el explicador y para el juez."""
     figures = forecast_figures(forecast)
     target = f"regla {forecast.target_rule}: lluvia media de las estaciones de la cuenca"
-    context: dict[str, object] = {
-        "probabilidad_pct": {
-            "valor": figures["probabilidad_pct"],
-            "significado": (
-                "probabilidad, en %, de que mañana (el día siguiente a la emisión) la lluvia en "
-                f"la cuenca del río Pance llegue a umbral_mm o lo supere ({target})"
-            ),
-        },
-        "umbral_mm": {
-            "valor": figures["umbral_mm"],
-            "significado": "umbral de lluvia diaria del pronóstico, en mm",
-        },
+    probability = (
+        "probabilidad, en %, de que mañana (el día siguiente a la emisión) la lluvia en "
+        f"la cuenca del río Pance llegue a umbral_mm o lo supere ({target})"
+    )
+    replay = "es una reproducción histórica para la demo, no el pronóstico de hoy"
+    return {
+        "probabilidad_pct": _figure(figures["probabilidad_pct"], probability),
+        "umbral_mm": _figure(figures["umbral_mm"], "umbral de lluvia diaria del pronóstico, en mm"),
         "variante": VARIANT_MEANING[forecast.variant],
-        "reproduccion": "es una reproducción histórica para la demo, no el pronóstico de hoy"
-        if forecast.replay
-        else "es el pronóstico vigente",
+        "reproduccion": replay if forecast.replay else "es el pronóstico vigente",
         "aviso": NOT_OFFICIAL,
+        **_optional_context(forecast, figures),
     }
-    if "acumulado_3d_mm" in figures:
-        context["acumulado_3d_mm"] = {
-            "valor": figures["acumulado_3d_mm"],
-            "significado": (
-                "lluvia acumulada en la cuenca en los últimos tres días, en mm; nivel "
-                f"{forecast.accum_3d_level}"
-            ),
-        }
-    return context
 
 
 def _request(forecast: Forecast) -> GateRequest[ForecastExplanation]:

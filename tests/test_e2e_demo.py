@@ -13,7 +13,7 @@ import json
 import re
 import socket
 from collections.abc import Callable, Iterator
-from datetime import UTC, datetime
+from datetime import UTC, date, datetime, timedelta
 from pathlib import Path
 from typing import Any
 
@@ -22,6 +22,7 @@ from fastapi.testclient import TestClient
 
 from climapp.api.main import create_app, get_now, get_settings
 from climapp.config import Settings
+from climapp.forecast.context import ForecastContext
 from climapp.web.demo import load_demo_reports
 from tests.api.test_forecast_api import EVALUATION
 from tests.api.test_reports_api import INSIDE, SQUARE
@@ -77,6 +78,17 @@ LEVEL_CSV = (
     f"EST-A,{DEMO_TARGET},144,0.40,0.90,0.50\n"
 )
 
+# Contexto sintético con las cifras de la grabación real: 93,7 mm supera al 98 % de los
+# acumulados y 9 de 100 días cerca del 10-02 tuvieron 20 mm o más
+TRAIN_DAYS = [
+    date(year, 9, 20) + timedelta(days=i) for year in range(2014, 2018) for i in range(25)
+]
+DEMO_CONTEXT = ForecastContext(
+    accum3_train=tuple([10.0] * 98 + [100.0, 120.0]),
+    observed_train={d: n < 9 for n, d in enumerate(TRAIN_DAYS)},
+    window_days=15,
+)
+
 MakeDemo = Callable[..., TestClient]
 
 
@@ -110,8 +122,11 @@ def _write_artifacts(
 
 
 @pytest.fixture
-def make_demo(env_file: Path, no_network: None) -> Iterator[MakeDemo]:
+def make_demo(
+    env_file: Path, no_network: None, monkeypatch: pytest.MonkeyPatch
+) -> Iterator[MakeDemo]:
     clients: list[TestClient] = []
+    monkeypatch.setattr("climapp.api.forecast_routes.load_context", lambda _: DEMO_CONTEXT)
 
     def _make(forecasts: list[dict[str, Any]], daily: dict[str, Any], **env: str) -> TestClient:
         fallback = ROOT / env_example_items()["MUSE_FALLBACK_FILE"]

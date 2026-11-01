@@ -283,7 +283,7 @@ def test_recorded_demo_explanation_writes_the_probability_with_percent_sign() ->
     recordings = load_recordings(ROOT / env_example_items()["MUSE_FALLBACK_FILE"])
     explained = [r for r in recordings if r.task is MuseTask.EXPLAIN]
     text = ForecastExplanation.model_validate_json(explained[-1].content or "").text
-    assert re.search(r"\b13\s?%", text), text
+    assert re.search(r"\b15\s?%", text), text  # operativa de la emisión 2026-10-01
 
 
 def test_numbers_cited_as_es_co_text_are_parsed_as_numbers() -> None:
@@ -299,3 +299,11 @@ def test_a_cited_text_that_is_not_a_number_is_still_invalid() -> None:
         ForecastExplanation.model_validate_json(
             json.dumps({"text": "Hay 15 %.", "numbers_cited": ["quince"]})
         )
+
+
+def test_real_run_6_explanations_now_pass_the_schema() -> None:
+    """Las 3 respuestas reales de la corrida 6 (evidencia): con el arreglo, son válidas."""
+    entries = json.loads((FIXTURES / "explicacion_cifras_texto_2026-11-01.json").read_text())
+    for entry in entries["recordings"]:
+        parsed = ForecastExplanation.model_validate_json(entry["content"])
+        assert 93.7 in parsed.numbers_cited and "93,7" in parsed.text

@@ -47,6 +47,7 @@ Todo lo que está en este repositorio se construyó durante el evento. La lista 
 - [x] 2026-11-01: la web muestra, para cada reporte verificado, si los datos lo respaldan: "Coincide con los datos", "Coincidencia parcial" o "No coincide con los datos" (umbrales 0,7 y 0,3, SUPUESTO), en el estado, la lista y el mapa; el contrato de la API no cambia (TASK-017, TDD).
 - [x] 2026-11-01: en una reproducción, el mapa muestra por defecto los reportes del día objetivo, el mismo que evalúa la leyenda (TASK-018, TDD).
 - [x] 2026-11-01: cliente de IMERG Early diario (`climapp-imerg`) por OPeNDAP de GES DISC: pide solo la celda de la cuenca (~190 bytes por día), con caché, reintentos y el token de Earthdata. Es evidencia satelital de los reportes y se ve en la reproducción; no entra al modelo. Latencia real medida: ~4,5 h (TASK-009b, TDD).
+- [x] 2026-11-01: contexto del pronóstico calculado por código: percentil del acumulado de 3 días frente al entrenamiento, climatología del día y riesgo frente al umbral de aviso; la reproducción usa la variante operativa. Muse recibe las cifras en es-CO y la compuerta las compara como números; la explicación de la emisión 2026-10-01 se regrabó con Muse Spark real (TASK-015 y TASK-022, TDD).
 
 ## Herramientas previas al evento, no parte del entregable
 Las usamos para trabajar, pero no forman parte de lo que se juzga y ningún archivo suyo está en este repositorio:

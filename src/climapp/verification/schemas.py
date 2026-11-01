@@ -7,7 +7,7 @@ import re
 from datetime import datetime
 from typing import Annotated, Literal
 
-from pydantic import BaseModel, ConfigDict, Field, StringConstraints
+from pydantic import BaseModel, BeforeValidator, ConfigDict, Field, StringConstraints
 
 EXPLANATION_MAX_CHARS = 600  # ADR-002 §2
 NUMBER = re.compile(r"\d+(?:[.,]\d+)?")
@@ -15,6 +15,17 @@ NUMBER = re.compile(r"\d+(?:[.,]\d+)?")
 EventType = Literal["lluvia", "crecida", "deslizamiento", "granizo", "sin_lluvia", "otro"]
 Intensity = Literal["ninguna", "debil", "moderada", "fuerte"]  # descriptiva, SUPUESTO
 Claim = Annotated[str, StringConstraints(strip_whitespace=True, min_length=1)]
+
+
+def _es_number(value: object) -> object:
+    """Cifra citada como texto es-CO ("93,7") a número; lo demás lo valida Pydantic."""
+    if isinstance(value, str) and NUMBER.fullmatch(value.strip()):
+        return float(value.strip().replace(",", "."))
+    return value
+
+
+# Muse puede citar las cifras como texto cuando las recibe en es-CO (corrida real 6)
+CitedNumber = Annotated[float, BeforeValidator(_es_number)]
 
 
 def numbers_in(text: str) -> list[float]:
@@ -31,7 +42,7 @@ class ReportStructured(BaseModel):
     intensity: Intensity
     observed_at: datetime
     claims: list[Claim]
-    numbers_cited: list[float]
+    numbers_cited: list[CitedNumber]
 
     def cited_numbers(self) -> list[float]:
         """Cifras que deben coincidir con las del sistema."""
@@ -48,7 +59,7 @@ class ForecastExplanation(BaseModel):
     model_config = ConfigDict(extra="forbid", frozen=True)
 
     text: Annotated[str, StringConstraints(min_length=1, max_length=EXPLANATION_MAX_CHARS)]
-    numbers_cited: list[float]
+    numbers_cited: list[CitedNumber]
 
     def cited_numbers(self) -> list[float]:
         """Cifras declaradas y cifras escritas en el texto: todas deben coincidir."""
