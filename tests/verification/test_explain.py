@@ -5,6 +5,9 @@ import re
 from datetime import UTC, date, datetime
 from pathlib import Path
 
+import pytest
+from pydantic import ValidationError
+
 from climapp.api.schemas import Forecast
 from climapp.config import Settings
 from climapp.verification.explain import (
@@ -115,7 +118,7 @@ def test_verified_explanation_is_returned_with_its_fallback_flag() -> None:
     assert result is not None
     assert (result.text, result.fallback) == (TEXT, False)
     prompt = muse.requests[0][1][-1]["content"]
-    assert '"valor": 15' in prompt and '"valor": 40.8' in prompt
+    assert '"valor": "15"' in prompt and '"valor": "40,8"' in prompt  # es-CO
 
 
 def test_altered_figure_is_rejected_and_explanation_is_null() -> None:
@@ -204,7 +207,7 @@ def test_judge_evidence_states_what_each_figure_means() -> None:
         "cuenca del río Pance",
         "basin_mean",
         "últimos tres días",
-        "historica",
+        "histórica",
         "reproducción",
         "No es una alerta oficial",
     ):
@@ -281,3 +284,18 @@ def test_recorded_demo_explanation_writes_the_probability_with_percent_sign() ->
     explained = [r for r in recordings if r.task is MuseTask.EXPLAIN]
     text = ForecastExplanation.model_validate_json(explained[-1].content or "").text
     assert re.search(r"\b13\s?%", text), text
+
+
+def test_numbers_cited_as_es_co_text_are_parsed_as_numbers() -> None:
+    """Corrida real 6 (2026-11-01): Muse devolvió "93,7" como texto al recibir cifras es-CO."""
+    parsed = ForecastExplanation.model_validate_json(
+        json.dumps({"text": "Hay 15 % y 93,7 mm.", "numbers_cited": ["15", "93,7", 20]})
+    )
+    assert parsed.numbers_cited == [15.0, 93.7, 20.0]
+
+
+def test_a_cited_text_that_is_not_a_number_is_still_invalid() -> None:
+    with pytest.raises(ValidationError):
+        ForecastExplanation.model_validate_json(
+            json.dumps({"text": "Hay 15 %.", "numbers_cited": ["quince"]})
+        )

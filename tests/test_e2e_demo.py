@@ -186,9 +186,7 @@ def test_demo_replay_end_to_end_without_network(demo: TestClient) -> None:
 
     api = demo.get("/forecast", params={"replay_date": DEMO_ISSUE}).json()
     assert (api["replay"], api["variant"]) == (True, "operativa")
-    # la grabación del 2026-11-01 (corrida 5) es de la variante histórica
-    hist = demo.get("/forecast", params={"replay_date": DEMO_ISSUE, "variant": "historica"}).json()
-    assert hist["explanation_fallback"] is True and "13 %" in hist["explanation"]
+    assert api["explanation_fallback"] is True and "15 %" in api["explanation"]
 
     mapa = demo.get("/mapa", params={"replay_date": DEMO_ISSUE}).text
     assert f"Pronóstico para el {DEMO_TARGET}: acierto" in mapa
@@ -245,9 +243,10 @@ def test_the_map_shows_the_demo_reports_of_the_target_day(demo: TestClient) -> N
 
 
 def test_e1_replay_is_kept_as_a_false_alarm(e1: TestClient) -> None:
-    params = {"replay_date": E1_ISSUE, "variant": "historica"}  # grabada el 2026-10-31
-    api = e1.get("/forecast", params=params).json()
-    assert api["explanation_fallback"] is True and "13 %" in api["explanation"]
+    # La explicación de E1 se grabó el 2026-10-31 con el contexto anterior: la grabación se
+    # conserva, pero ya no coincide con el pedido actual, así que el fallback falla cerrado.
+    api = e1.get("/forecast", params={"replay_date": E1_ISSUE, "variant": "historica"}).json()
+    assert api["explanation"] is None
 
     status, report = _report(e1, E1_TEXT)
     assert re.search(VERIFIED_LABEL, status)
