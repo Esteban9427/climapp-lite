@@ -10,9 +10,9 @@ import re
 
 from climapp.api.main import get_settings
 from climapp.config import Settings
-from climapp.verification.muse import MuseTask
 from climapp.verification.confidence import Confidence, ConfidenceSource
 from climapp.verification.evidence import DayValues
+from climapp.verification.muse import MuseTask
 from climapp.web.report_view import event_title, evidence_rows, support_text
 from tests.api.test_reports_api import CLAIMS, INSIDE, TEXT, VERDICT
 from tests.conftest import ROOT

@@ -58,15 +58,20 @@ def event_title(event_type: str | None, intensity: str | None) -> str:
     return " ".join(w for w in words if w)
 
 
-def _support(confidence: Confidence) -> str:
-    """Cuántas fuentes con dato respaldan el reporte."""
-    total = len(confidence.sources)
-    agree = sum(1 for s in confidence.sources if s.agrees)
-    if not total:
-        return "No hay fuentes con dato para ese día."
+def _observed(confidence: Confidence) -> list[ConfidenceSource]:
+    """Fuentes observadas (estaciones, nivel y satélite); el pronóstico es una expectativa."""
+    return [s for s in confidence.sources if s.kind != "forecast"]
+
+
+def support_text(confidence: Confidence) -> str:
+    """Cuántas fuentes observadas respaldan el reporte (el pronóstico no cuenta aquí)."""
+    observed = _observed(confidence)
+    agree = sum(1 for s in observed if s.agrees)
+    if not observed:
+        return "No hay fuentes observadas para ese día."
     if not agree:
-        return f"Ninguna de las {total} fuentes con dato lo respalda."
-    return f"Lo respaldan {agree} de {total} fuentes con dato."
+        return f"Ninguna de las {len(observed)} fuentes observadas lo respalda."
+    return f"Lo respaldan {agree} de {len(observed)} fuentes observadas."
 
 
 def _review(report: Report) -> ReportResult:
@@ -84,7 +89,7 @@ def report_result(report: Report, thresholds: AgreementThresholds) -> ReportResu
     """Resultado de un reporte verificado o en revisión; `None` en los demás estados."""
     if report.status == "verificado" and report.confidence is not None:
         label = agreement_label(report.confidence.score, thresholds)
-        return ReportResult(label.text, label.css, _support(report.confidence))
+        return ReportResult(label.text, label.css, support_text(report.confidence))
     if report.status == "requiere_revision_humana":
         return _review(report)
     return None
@@ -104,9 +109,11 @@ def _source_value(source: ConfidenceSource, values: DayValues) -> str:
         return f"Nivel del río · subida de {rise} m en 24 h"
     prob = values.forecast_prob
     pct = "sin dato" if prob is None else f"{round(prob * PERCENT)} %"
-    return f"Pronóstico del día · {pct}"
+    return f"Pronóstico (expectativa, no es una observación) · {pct}"
 
 
 def evidence_rows(confidence: Confidence, values: DayValues) -> list[str]:
-    """Una línea por fuente con su valor y ✓ si concuerda o ✗ si no."""
-    return [f"{_source_value(s, values)} {'✓' if s.agrees else '✗'}" for s in confidence.sources]
+    """Una línea por fuente con su valor y ✓/✗: primero las observadas, al final el pronóstico."""
+    forecast = [s for s in confidence.sources if s.kind == "forecast"]
+    ordered = [*_observed(confidence), *forecast]
+    return [f"{_source_value(s, values)} {'✓' if s.agrees else '✗'}" for s in ordered]
