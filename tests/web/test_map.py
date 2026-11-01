@@ -70,7 +70,7 @@ def test_markers_are_the_verified_reports_observed_that_day(make_client: MakeCli
     markers = data["markers"]
     assert isinstance(markers, list) and len(markers) == 1
     assert (markers[0]["lat"], markers[0]["lon"]) == (1.512, -1.499)
-    assert "lluvia" in markers[0]["label"] and "%" in markers[0]["label"]
+    assert markers[0]["label"].startswith("Lluvia fuerte · ") and "%" in markers[0]["label"]
 
 
 def test_legend_shows_the_forecast_outcome_of_the_target_day(make_client: MakeClient) -> None:
@@ -139,10 +139,47 @@ def test_map_page_lists_the_markers_as_accessible_text(make_client: MakeClient) 
     client.post("/web/reports", data={"text": TEXT, **INSIDE})
     html = client.get("/mapa", params={"replay_date": "2024-12-30"}).text
     listing = re.search(r'<ul class="reports" id="map-list">(.*?)</ul>', html, re.S)
-    assert listing and "lluvia fuerte" in listing.group(1)
+    assert listing and "Lluvia fuerte" in listing.group(1)
 
 
 def test_popups_are_built_as_text_not_html() -> None:
     script = (Path(__file__).resolve().parents[2] / "src/climapp/web/static/map.js").read_text()
     assert "textContent = m.label" in script
     assert "bindPopup(m.label)" not in script
+
+
+# --- revisión visual del 2026-11-01 ----------------------------------------------------
+
+
+def test_map_draws_the_provisional_basin_outline_with_its_label(make_client: MakeClient) -> None:
+    html = make_client().get("/mapa").text
+    assert "zona aproximada de la cuenca (provisional)" in html
+    outline = _map_data(html)["basin"]
+    assert outline == [
+        [[1.0, -2.0], [1.0, -1.0], [2.0, -1.0], [2.0, -2.0], [1.0, -2.0]]
+    ]  # [lat, lon]
+
+
+def test_popup_details_show_each_evidence_value(
+    make_client: MakeClient, web_settings: Settings
+) -> None:
+    header = (
+        "date,series_id,precip_mm,n_readings,valid,imputed,source_hash,n_suspect,suspect_mm,n_gap\n"
+    )
+    path = web_settings.data_dir / web_settings.daily_stations_file
+    path.write_text(header + "2024-12-31,EST-A,30.0,144,true,false,h,0,0.0,0\n")
+    client = make_client()
+    client.post("/web/reports", data={"text": TEXT, **INSIDE})
+    (marker,) = _map_data(client.get("/mapa", params={"replay_date": "2024-12-30"}).text)["markers"]
+    assert any("EST-A: 30 mm" in d and d.endswith("✓") for d in marker["details"])
+
+
+def test_map_frames_the_basin_and_builds_popups_as_text() -> None:
+    root = Path(__file__).resolve().parents[2] / "src/climapp/web/static"
+    script = (root / "map.js").read_text()
+    assert "L.polygon(data.basin" in script and "fitBounds(outline.getBounds()" in script
+    assert "innerHTML" not in script
+    css = (root / "app.css").read_text()
+    rule = re.search(r"\.leaflet-top, \.leaflet-bottom \{ z-index: (\d+);", css)
+    aviso = re.search(r"\.aviso \{[^}]*z-index: (\d+);", css)
+    assert rule and aviso and int(rule.group(1)) < int(aviso.group(1))  # bajo el aviso fijo
