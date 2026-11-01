@@ -178,6 +178,17 @@ def test_steps_equal_to_the_limit_and_the_series_edges_are_kept() -> None:
     assert drop_single_spikes(edges, max_step_m=1.0) == edges
 
 
+def test_a_good_reading_between_two_spikes_is_kept() -> None:
+    """Revisión de Muse del día 3b: cada lectura se compara con la última conservada."""
+    kept = drop_single_spikes(_points([0.50, 13.0, 0.51, 13.1, 0.50]), max_step_m=1.0)
+    assert [p.level_m for p in kept] == [0.50, 0.51, 0.50]
+
+
+def test_a_two_reading_spike_is_kept_by_design() -> None:
+    points = _points([0.50, 13.0, 13.1, 0.50])
+    assert drop_single_spikes(points, max_step_m=1.0) == points
+
+
 def test_spikes_are_found_in_time_order_after_dropping_duplicates() -> None:
     points = _points([0.50, 13.0, 0.50])
     shuffled = [points[2], points[0], points[1], LevelPoint(points[1].ts, 0.50)]
