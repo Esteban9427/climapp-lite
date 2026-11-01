@@ -65,7 +65,8 @@ def test_markers_are_the_verified_reports_observed_that_day(make_client: MakeCli
     client.post("/web/reports", data={"text": TEXT, **INSIDE})
     client.post("/web/reports", data={"text": TEXT, **INSIDE})  # observado otro día
     client.post("/web/reports", data={"text": TEXT, **OUTSIDE})  # rechazado: no va al mapa
-    data = _map_data(client.get("/mapa", params={"replay_date": "2024-12-31"}).text)
+    # reproducción de la emisión 2024-12-30: el día objetivo es el 2024-12-31
+    data = _map_data(client.get("/mapa", params={"replay_date": "2024-12-30"}).text)
     markers = data["markers"]
     assert isinstance(markers, list) and len(markers) == 1
     assert (markers[0]["lat"], markers[0]["lon"]) == (1.512, -1.499)
@@ -76,6 +77,16 @@ def test_legend_shows_the_forecast_outcome_of_the_target_day(make_client: MakeCl
     html = make_client().get("/mapa", params={"replay_date": "2024-12-31"}).text
     assert "Pronóstico para el 2025-01-01: falsa alarma" in html
     assert "Reproducción histórica" in html
+
+
+def test_replay_shows_by_default_the_reports_of_the_target_day(make_client: MakeClient) -> None:
+    html = make_client().get("/mapa", params={"replay_date": "2024-12-31"}).text
+    assert "Reportes observados el 2025-01-01" in html
+    assert "Pronóstico para el 2025-01-01: falsa alarma" in html
+
+
+def test_live_map_shows_the_reports_of_today(make_client: MakeClient) -> None:
+    assert "Reportes observados el 2026-10-23" in make_client().get("/mapa").text
 
 
 def test_day_without_reports_says_so_in_the_legend(make_client: MakeClient) -> None:
@@ -126,7 +137,7 @@ def test_map_page_lists_the_markers_as_accessible_text(make_client: MakeClient) 
     )
     client = make_client(muse)
     client.post("/web/reports", data={"text": TEXT, **INSIDE})
-    html = client.get("/mapa", params={"replay_date": "2024-12-31"}).text
+    html = client.get("/mapa", params={"replay_date": "2024-12-30"}).text
     listing = re.search(r'<ul class="reports" id="map-list">(.*?)</ul>', html, re.S)
     assert listing and "lluvia fuerte" in listing.group(1)
 

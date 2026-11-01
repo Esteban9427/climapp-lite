@@ -226,8 +226,9 @@ def test_the_true_report_is_backed_by_the_river_level(demo: TestClient) -> None:
 def test_the_map_shows_the_demo_reports_of_the_target_day(demo: TestClient) -> None:
     for example in DEMO_REPORTS:
         _report(demo, example.text)
-    # El mapa muestra los reportes del día pedido: los de la demo se observaron el 10-02
-    mapa = demo.get("/mapa", params={"replay_date": DEMO_TARGET}).text
+    # En la reproducción, el mapa muestra por defecto los reportes del día objetivo (10-02)
+    mapa = demo.get("/mapa", params={"replay_date": DEMO_ISSUE}).text
+    assert f"Reportes observados el {DEMO_TARGET}: 2" in mapa
     data = json.loads(re.search(r'id="map-data">(.*?)</script>', mapa, re.S).group(1))  # type: ignore[union-attr]
     assert len(data["markers"]) == 2  # el verdadero y el falso; el exagerado no se verificó
 

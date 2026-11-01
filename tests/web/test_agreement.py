@@ -86,5 +86,5 @@ def test_map_marker_label_says_whether_the_data_agree(
     _stations(web_settings, {"EST-A": 0.0})
     client = make_client()
     _status_and_list(client)
-    html = client.get("/mapa", params={"replay_date": "2024-12-31"}).text
+    html = client.get("/mapa", params={"replay_date": "2024-12-30"}).text
     assert "No coincide con los datos · confianza 0 %" in html
