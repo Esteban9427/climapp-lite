@@ -50,6 +50,25 @@ def _json(path: Path) -> Any:
 
 
 @dataclass(frozen=True, slots=True)
+class DayValues:
+    """Valores ya calculados de un día local, para la confianza y para mostrarlos.
+
+    Attributes:
+        station_mm: lluvia de las estaciones válidas.
+        satellite_mm: IMERG Early de la celda de la cuenca (`None` sin dato).
+        forecast_prob: probabilidad operativa para ese día (`None` sin pronóstico).
+        forecast_threshold: umbral de aviso del RF calibrado.
+        level_rise_m: subida máxima de nivel en 24 h (`None` sin dato).
+    """
+
+    station_mm: dict[str, float]
+    satellite_mm: float | None
+    forecast_prob: float | None
+    forecast_threshold: float
+    level_rise_m: float | None
+
+
+@dataclass(frozen=True, slots=True)
 class EvidenceSources:
     """Artefactos de donde sale la evidencia y la zona horaria del día local."""
 
@@ -111,16 +130,26 @@ class EvidenceSources:
             log.warning("evidence.imerg_missing", error=type(err).__name__)
             return None
 
-    def evidence_for(self, structured: ReportStructured) -> Evidence:
-        """Evidencia para el día local en que el ciudadano dice haber observado."""
-        day = structured.observed_at.astimezone(self.tz).date()
+    def day_values(self, day: date) -> DayValues:
+        """Valores de los artefactos para el día local `day`."""
         prob, threshold = self._forecast(day)
-        return Evidence(
-            report_rain=report_says_rain(structured),
+        return DayValues(
             station_mm=self._stations(day),
             satellite_mm=self._satellite(day),
             forecast_prob=prob,
             forecast_threshold=threshold,
-            report_flood=report_says_flood(structured),
             level_rise_m=self._level_rise(day),
+        )
+
+    def evidence_for(self, structured: ReportStructured) -> Evidence:
+        """Evidencia para el día local en que el ciudadano dice haber observado."""
+        values = self.day_values(structured.observed_at.astimezone(self.tz).date())
+        return Evidence(
+            report_rain=report_says_rain(structured),
+            station_mm=values.station_mm,
+            satellite_mm=values.satellite_mm,
+            forecast_prob=values.forecast_prob,
+            forecast_threshold=values.forecast_threshold,
+            report_flood=report_says_flood(structured),
+            level_rise_m=values.level_rise_m,
         )

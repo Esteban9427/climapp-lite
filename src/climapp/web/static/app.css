@@ -39,3 +39,6 @@ button:disabled { background: var(--color-disabled-bg); color: var(--color-disab
 #map { height: 60vh; border-radius: var(--radius); background: var(--color-surface); }
 @media (min-width: 720px) { main.two { max-width: 64rem; grid-template-columns: 1fr 1fr; } }
 @media (prefers-reduced-motion: reduce) { * { transition: none !important; animation: none !important; } }
+.result-title { font-size: var(--font-size-lg); font-weight: 700; margin: 0; }
+.result-badge { font-size: var(--font-size-base); }
+.evidence { padding-left: var(--space-4); margin: var(--space-2) 0; }

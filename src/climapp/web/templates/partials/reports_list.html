@@ -2,7 +2,7 @@
   <ul class="reports">
     {% for r in reports %}
       <li>
-        <strong>{{ r.event_type }}</strong> · {{ r.intensity }}
+        <strong>{{ event_title(r.event_type, r.intensity) }}</strong>
         {% set label = r.confidence.score | agreement(agreement) %}
         · <span class="badge {{ label.css }}">{{ label.text }} · confianza {{ (r.confidence.score * 100) | round | int }} %</span>
         <br><span class="muted">{{ r.observed_at | local_time }}{% if r.fallback %} · respuesta grabada (demo){% endif %}</span>

@@ -4,20 +4,8 @@
   <div hx-get="/web/reports/{{ report.id }}/estado" hx-trigger="every 2s" hx-swap="outerHTML">
     <span class="badge badge-info">Verificando tu reporte…</span>
   </div>
-{% elif report.status == "verificado" %}
-  <div>
-    {% set label = report.confidence.score | agreement(agreement) %}
-    <span class="badge {{ label.css }}">{{ label.text }} · confianza {{ (report.confidence.score * 100) | round | int }} %</span>
-    <p class="muted">Texto revisado por la compuerta de verificación; la etiqueta dice si los datos lo respaldan.</p>
-    <ul class="muted">
-      {% for s in report.confidence.sources %}
-        <li>{{ s.source_id }}: {{ "concuerda" if s.agrees else "no concuerda" }} (peso {{ s.weight }})</li>
-      {% endfor %}
-    </ul>
-    {% if report.fallback %}<p class="muted">Respuesta grabada (demo).</p>{% endif %}
-  </div>
 {% elif report.status == "rechazado" %}
-  <div>
+  <div class="result">
     {% if report.reject_reason == "fuera_de_cuenca" %}
       <span class="badge badge-danger">Rechazado: la ubicación está fuera de la cuenca del río Pance</span>
     {% else %}
@@ -25,15 +13,22 @@
     {% endif %}
   </div>
 {% else %}
-  <div>
-    <span class="badge badge-review">Requiere revisión humana: no pudimos verificarlo automáticamente</span>
-    {% if report.review_reason == "sin_grabacion" %}<p class="muted">Modo demo: este texto no tiene una respuesta grabada (sin grabación), así que no se verifica.</p>
-    {% elif report.review_reason == "muse_no_disponible" %}<p class="muted">El verificador no respondió.</p>
-    {% elif report.review_reason == "solo_foto" %}<p class="muted">Las fotos sin texto las revisa una persona.</p>{% endif %}
-    <ul class="muted">
-      {% for a in report.attempts %}
-        <li>Intento {{ a.n }}: {{ a.reasons | join(", ") }}</li>
-      {% endfor %}
-    </ul>
+  <div class="result">
+    {% if title %}<p class="result-title">{{ title }}</p>{% endif %}
+    <p><span class="badge {{ result.css }} result-badge">{{ result.headline }}{% if report.status == "verificado" %} · confianza {{ report.confidence.score | pct }}{% endif %}</span></p>
+    <p>{{ result.why }}</p>
+    {% if rows %}
+      <ul class="evidence">
+        {% for row in rows %}<li>{{ row }}</li>{% endfor %}
+      </ul>
+    {% endif %}
+    {% if report.status == "verificado" %}
+      <p class="muted">Texto revisado por la compuerta de verificación; la etiqueta dice si los datos lo respaldan.</p>
+    {% else %}
+      <ul class="muted">
+        {% for a in report.attempts %}<li>Intento {{ a.n }}: {{ a.reasons | join(", ") }}</li>{% endfor %}
+      </ul>
+    {% endif %}
+    {% if report.fallback %}<p class="muted">Respuesta grabada (demo).</p>{% endif %}
   </div>
 {% endif %}

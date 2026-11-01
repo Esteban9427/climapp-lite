@@ -118,6 +118,8 @@ class Settings(BaseSettings):
     demo_fallback: bool
     demo_replay_date: date | None
     demo_report_time: datetime
+    demo_example_lat: float = Field(ge=-90, le=90)
+    demo_example_lon: float = Field(ge=-180, le=180)
     demo_reports_file: Path
     scope_freeze_date: date
 

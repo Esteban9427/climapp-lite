@@ -56,10 +56,10 @@ MuseDep = Annotated[MuseClient, Depends(get_muse_client)]
 StoreDep = Annotated[ReportStore, Depends(get_store)]
 
 
-def _verifier(settings: Settings, client: MuseClient) -> ReportVerifier:
-    """Verificador con los artefactos y pesos de la configuración."""
+def evidence_sources(settings: Settings) -> EvidenceSources:
+    """Artefactos de la evidencia según la configuración (también los lee la web)."""
     data = settings.data_dir
-    sources = EvidenceSources(
+    return EvidenceSources(
         data / settings.daily_stations_file,
         data / settings.forecasts_file,
         data / settings.evaluation_file,
@@ -68,6 +68,12 @@ def _verifier(settings: Settings, client: MuseClient) -> ReportVerifier:
         settings.local_timezone,
         data / settings.imerg_early_file,
     )
+
+
+def _verifier(settings: Settings, client: MuseClient) -> ReportVerifier:
+    """Verificador con los artefactos y pesos de la configuración."""
+    data = settings.data_dir
+    sources = evidence_sources(settings)
     try:
         groups = load_station_groups(data / settings.station_groups_file)
     except (OSError, ValueError, KeyError) as err:

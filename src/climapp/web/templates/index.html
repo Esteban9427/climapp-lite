@@ -34,7 +34,7 @@
         <p class="muted">Textos grabados con Muse Spark: solo estos se verifican sin red (respuesta grabada).</p>
         {% for ex in demo_examples %}
           <button type="button" class="btn-secondary demo-example" data-text="{{ ex.text }}"
-                  data-lat="{{ demo_center[0] }}" data-lon="{{ demo_center[1] }}">{{ ex.titulo }}</button>
+                  data-lat="{{ demo_point[0] }}" data-lon="{{ demo_point[1] }}">{{ ex.titulo }}</button>
         {% endfor %}
       </div>
     {% endif %}

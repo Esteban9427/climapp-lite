@@ -16,24 +16,32 @@ from fastapi.templating import Jinja2Templates
 
 from climapp.api.deps import ApiError, NowDep, SettingsDep
 from climapp.api.forecast_routes import ExplainerDep, forecast
-from climapp.api.reports import MAX_TEXT_CHARS, MuseDep, StoreDep, post_report
+from climapp.api.reports import MAX_TEXT_CHARS, MuseDep, StoreDep, evidence_sources, post_report
 from climapp.api.schemas import Forecast, Report
 from climapp.config import Settings
 from climapp.data.imerg import read_imerg_csv
+from climapp.formatting import es_number
 from climapp.verification.basin import BasinError, load_basin
 from climapp.web.agreement import AgreementThresholds, agreement_label
 from climapp.web.demo import DemoReport, load_demo_reports
 from climapp.web.map import map_view
+from climapp.web.report_view import event_title, evidence_rows, report_result
 
 TEMPLATES = Jinja2Templates(directory=Path(__file__).resolve().parent / "templates")
 LIST_LIMIT = 20
+PERCENT = 100
+VARIANT_TEXT = {"operativa": "operativa", "historica": "histórica"}
 router = APIRouter()
 
 
 def _mm(value: float) -> str:
-    """Milímetros con coma decimal y sin ",0" sobrante: 20 mm, 50,4 mm."""
-    text = f"{value:.1f}".rstrip("0").rstrip(".")
-    return f"{text.replace('.', ',')} mm"
+    """Milímetros en es-CO, sin ",0" sobrante: 20 mm, 50,4 mm."""
+    return f"{es_number(value)} mm"
+
+
+def _pct(value: float) -> str:
+    """Probabilidad (0-1) como porcentaje entero: 15 %."""
+    return f"{round(value * PERCENT)} %"
 
 
 def _local_time(value: datetime) -> str:
@@ -44,6 +52,9 @@ def _local_time(value: datetime) -> str:
 TEMPLATES.env.filters["mm"] = _mm
 TEMPLATES.env.filters["local_time"] = _local_time
 TEMPLATES.env.filters["agreement"] = agreement_label
+TEMPLATES.env.filters["pct"] = _pct
+TEMPLATES.env.filters["es"] = es_number
+TEMPLATES.env.globals["event_title"] = event_title
 
 
 def _base(settings: Settings) -> dict[str, object]:
@@ -80,6 +91,16 @@ def _imerg_days(settings: Settings, replay: date | None) -> list[tuple[date, flo
     return [(day, values.get(day)) for day in days]
 
 
+def _historical(settings: Settings, now: datetime, replay: date | None) -> Forecast | None:
+    """Variante histórica de la reproducción, para la línea secundaria; `None` en vivo."""
+    if replay is None:
+        return None
+    try:
+        return forecast(settings, now, None, replay_date=replay, variant="historica")
+    except ApiError:
+        return None
+
+
 def _forecast_or_error(
     settings: Settings, now: datetime, explainer: ExplainerDep, replay_date: date | None
 ) -> tuple[Forecast | None, str]:
@@ -110,17 +131,33 @@ def index(  # noqa: PLR0913 - dependencias de la vista
         "replay_date": replay_date,
         "reports": reports,
         "imerg": _imerg_days(settings, replay_date),
+        "historical": _historical(settings, now, replay_date),
+        "variant_text": VARIANT_TEXT,
     }
     examples, center = _demo_examples(settings)
     context |= {"demo_examples": examples, "demo_center": center}
+    context |= {"demo_point": (settings.demo_example_lat, settings.demo_example_lon)}
     return TEMPLATES.TemplateResponse(request, "index.html", context)
+
+
+def _report_view(settings: Settings, report: Report | None) -> dict[str, object]:
+    """Título, resultado y desglose de evidencia del reporte (solo lectura)."""
+    if report is None:
+        return {"title": "", "result": None, "rows": []}
+    result = report_result(report, AgreementThresholds.from_settings(settings))
+    structured, rows = report.structured, []
+    if structured is not None and report.confidence is not None:
+        day = structured.observed_at.astimezone(settings.local_timezone).date()
+        rows = evidence_rows(report.confidence, evidence_sources(settings).day_values(day))
+    title = event_title(structured.event_type, structured.intensity) if structured else ""
+    return {"title": title, "result": result, "rows": rows}
 
 
 def _status(
     request: Request, settings: Settings, report: Report | None, error: str = ""
 ) -> HTMLResponse:
     """Fragmento con el estado del reporte (o un error)."""
-    context = {"report": report, "error": error} | _base(settings)
+    context = {"report": report, "error": error} | _base(settings) | _report_view(settings, report)
     return TEMPLATES.TemplateResponse(request, "partials/report_status.html", context)
 
 

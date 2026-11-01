@@ -6,11 +6,18 @@
   {% if forecast.replay %}
     <p><span class="replay">Reproducción histórica · emisión {{ replay_date }}</span></p>
   {% endif %}
-  <p class="muted">Para el {{ forecast.target_date.strftime("%Y-%m-%d") }} · variante {{ forecast.variant }}{% if forecast.stale and not forecast.replay %} · emitido hace más de 24 h{% endif %}</p>
-  <p class="prob">{{ (forecast.prob_ge_threshold * 100) | round | int }} %</p>
-  <p>de probabilidad de {{ forecast.threshold_mm | mm }} o más mañana en la cuenca (media de las estaciones).</p>
+  <p class="muted">Para el {{ forecast.target_date.strftime("%Y-%m-%d") }} · variante {{ variant_text[forecast.variant] }}{% if forecast.stale and not forecast.replay %} · emitido hace más de 24 h{% endif %}</p>
+  <p class="prob">{{ forecast.prob_ge_threshold | pct }}</p>
+  {% if forecast.risk %}
+    <p><span class="badge {{ 'badge-partial' if forecast.risk == 'elevado' else 'badge-info' }}">Riesgo {{ forecast.risk }}</span>
+      <span class="muted">frente al umbral de aviso de la variante ({{ forecast.decision_threshold | pct }})</span></p>
+  {% endif %}
+  <p>de probabilidad de {{ forecast.threshold_mm | mm }} o más mañana en la cuenca (media de las estaciones){% if forecast.climatology_prob is not none %}; lo normal para esta época: {{ forecast.climatology_prob | pct }}{% endif %}.</p>
   {% if forecast.accum_3d_mm is not none %}
-    <p class="muted">Acumulado de los últimos tres días: {{ forecast.accum_3d_mm | mm }} ({{ forecast.accum_3d_level }}).</p>
+    <p class="muted">Acumulado de los últimos tres días: {{ forecast.accum_3d_mm | mm }}{% if forecast.accum_3d_percentile is not none %}: más que el {{ forecast.accum_3d_percentile }} % de los días del entrenamiento{% endif %}.</p>
+  {% endif %}
+  {% if historical %}
+    <p class="muted">Variante histórica (con CHIRPS, que llega con semanas de retraso; no existe en vivo): {{ historical.prob_ge_threshold | pct }}</p>
   {% endif %}
   <h2>Explicación</h2>
   {% if forecast.explanation %}

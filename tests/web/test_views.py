@@ -113,7 +113,8 @@ def test_human_review_state_lists_the_reasons(make_client: MakeClient) -> None:
     report_id = re.search(r"/web/reports/([0-9a-f-]+)/estado", partial)
     assert report_id
     done = client.get(f"/web/reports/{report_id.group(1)}/estado").text
-    assert "Requiere revisión humana" in done and "esquema_invalido" in done
+    assert "En revisión humana (no pasó la verificación tras 3 intentos)" in done
+    assert "esquema_invalido" in done and "formato esperado" in done
 
 
 def test_invalid_input_shows_an_error_message(make_client: MakeClient) -> None:
@@ -139,7 +140,8 @@ def test_demo_examples_are_offered_only_in_fallback_mode(
     examples = load_demo_reports(ROOT / env_example_items()["DEMO_REPORTS_FILE"])
     for example in examples:
         assert f'data-text="{example.text}"' in html
-    assert 'data-lat="1.5"' in html and 'data-lon="-1.5"' in html  # centro de la cuenca
+    point = (demo.demo_example_lat, demo.demo_example_lon)  # cauce del río (OSM)
+    assert f'data-lat="{point[0]}"' in html and f'data-lon="{point[1]}"' in html
 
 
 def test_replay_shows_imerg_early_of_the_issue_and_target_days(

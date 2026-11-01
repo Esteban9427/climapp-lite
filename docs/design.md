@@ -107,6 +107,8 @@ Todos los estados usan texto, además del color (WCAG 1.4.1). Las regiones que c
 | **Mapa** | Marcadores de reportes verificados y leyenda con el resultado del día | Contenedor gris con "Cargando mapa…" | "No se pudo cargar el mapa base"; los reportes siguen en la lista | "No hay reportes verificados para este día" en la leyenda | — | — | — | — |
 
 ### Textos de los estados de reporte
+> **Revisión visual del 2026-11-01:** el resultado de cada reporte se ve en grande con una frase de por qué ("Lo respaldan N de M fuentes con dato"), el título con mayúscula ("Crecida fuerte") y el desglose de evidencia con su valor y ✓/✗: lluvia en estaciones (mm), nivel del río (subida en m en 24 h), satélite IMERG Early (mm) y pronóstico del día (%). Solo se leen datos ya calculados. Las cifras van en es-CO (coma decimal, sin ",0"). La tarjeta del pronóstico muestra la variante operativa, el riesgo frente al umbral de aviso, lo normal para esta época y el percentil del acumulado; en la reproducción, la variante histórica va en una línea secundaria. Si falla la ubicación (por ejemplo, por http desde otra IP, que no es un contexto seguro), un mensaje lo explica y remite a los botones de ejemplo, que usan un punto del cauce del río Pance (OpenStreetMap, ODbL).
+
 > **Etiqueta según la confianza (2026-11-01, SUPUESTO, ADR-002 §4):** `verificado` solo dice que el texto pasó la compuerta, así que nunca se muestra solo. Un reporte verificado con confianza baja no puede leerse como confirmado. Los umbrales (`AGREEMENT_HIGH` = 0,7 y `AGREEMENT_LOW` = 0,3) son un SUPUESTO del equipo; cada corte pertenece al tramo de arriba. Solo cambia la vista (lista, estado y mapa): el contrato de la API no cambia.
 
 | Estado | Texto visible |
@@ -117,7 +119,8 @@ Todos los estados usan texto, además del color (WCAG 1.4.1). Las regiones que c
 | `verificado`, confianza < `AGREEMENT_LOW` (0,3) | "No coincide con los datos · confianza N %" (insignia de error) |
 | `rechazado` + `fuera_de_cuenca` | "Rechazado: la ubicación está fuera de la cuenca del río Pance" |
 | `rechazado` + `entrada_invalida` | "Rechazado: revisa el texto o la foto" |
-| `requiere_revision_humana` | "Requiere revisión humana: no pudimos verificarlo automáticamente" |
+| `requiere_revision_humana` tras la compuerta | "En revisión humana (no pasó la verificación tras N intentos)" y "Motivo del último intento: …" (2026-11-01) |
+| `requiere_revision_humana` por `review_reason` | "En revisión humana" y el motivo (sin grabación, verificador sin respuesta o solo foto) |
 
 ## Mapa (TASK-018)
 - Leaflet con teselas de OpenStreetMap y la atribución obligatoria "© OpenStreetMap contributors" (ODbL), siempre visible.

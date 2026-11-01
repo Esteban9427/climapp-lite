@@ -13,21 +13,26 @@
     submit.disabled = !(content && lat.value && lon.value);
   }
   document.getElementById("use-location").addEventListener("click", function () {
-    if (!navigator.geolocation) { where.textContent = "Tu navegador no comparte la ubicación."; return; }
+    var insecure = "Tu navegador solo comparte la ubicación en una conexión segura (https). " +
+      "En la demo, usa los botones de ejemplo.";
+    if (!window.isSecureContext) { where.textContent = insecure; return; }
+    if (!navigator.geolocation) { where.textContent = "Tu navegador no comparte la ubicación; usa los botones de ejemplo."; return; }
     where.textContent = "Buscando tu ubicación…";
     navigator.geolocation.getCurrentPosition(function (pos) {
       lat.value = pos.coords.latitude.toFixed(6);
       lon.value = pos.coords.longitude.toFixed(6);
       where.textContent = "Ubicación lista.";
       refresh();
-    }, function () { where.textContent = "No pudimos obtener tu ubicación."; });
+    }, function () {
+      where.textContent = "No pudimos obtener tu ubicación (permiso negado o sin señal). En la demo, usa los botones de ejemplo.";
+    });
   });
   document.querySelectorAll(".demo-example").forEach(function (button) {
     button.addEventListener("click", function () {
       text.value = button.dataset.text;
       lat.value = button.dataset.lat;
       lon.value = button.dataset.lon;
-      where.textContent = "Ubicación de ejemplo: centro de la cuenca.";
+      where.textContent = "Ubicación de ejemplo: cauce del río Pance, parte media (OpenStreetMap).";
       refresh();
     });
   });

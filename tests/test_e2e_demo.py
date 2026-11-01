@@ -222,7 +222,7 @@ def test_the_exaggerated_report_goes_to_human_review_as_in_the_real_run(
     que Muse estructuró, en los 3 intentos: la compuerta lo manda a revisión humana."""
     _, exaggerated, _ = DEMO_REPORTS
     status, detail = _report(demo, exaggerated.text)
-    assert "Requiere revisión humana" in status
+    assert "En revisión humana (no pasó la verificación tras 3 intentos)" in status
     assert (detail["status"], detail["structured"]) == ("requiere_revision_humana", None)
     assert len(detail["attempts"]) == 3
 
@@ -273,5 +273,5 @@ def test_e1_replay_is_kept_as_a_false_alarm(e1: TestClient) -> None:
 
 def test_a_text_without_recording_fails_closed_in_the_demo(demo: TestClient) -> None:
     status, detail = _report(demo, "Este texto no está grabado")
-    assert "Requiere revisión humana" in status and "sin grabación" in status
+    assert "En revisión humana" in status and "sin grabación" in status
     assert detail["structured"] is None and detail["review_reason"] == "sin_grabacion"
