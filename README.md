@@ -55,6 +55,9 @@ Las usamos para trabajar, pero no forman parte de lo que se juzga y ningún arch
 - [PRD](docs/PRD.md) · [Historias de usuario](docs/user-stories.md) · [Decisiones (ADR)](docs/adr/) · [Modelo de datos](docs/data-model.md) · [API (OpenAPI)](docs/openapi.yaml) · [Backlog](docs/backlog.md) · [MVP](docs/mvp-scope.md) · [DoD](docs/dod.md)
 
 ## Fuentes de datos
+- Estaciones (lluvia y nivel): CVC — Corporación Autónoma Regional del Valle del Cauca, datos de estaciones (lluvia y nivel) compartidos con autorización (2026-10-31).
+- Satélite y malla: NASA GPM IMERG y CHIRPS (UCSB), con sus términos.
+
 Ver [docs/data-sources.md](docs/data-sources.md). Los datos crudos no se versionan.
 
 ## Licencia
