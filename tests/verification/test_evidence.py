@@ -95,6 +95,7 @@ def _sources(tmp_path: Path) -> EvidenceSources:
         [
             DailyLevel("EST-A", DAY, 96, 0.40, 0.95, 0.55),
             DailyLevel("EST-A", date(2024, 12, 30), 96, 0.40, 0.42, 0.02),
+            DailyLevel("EST-X", DAY, 96, 0.10, 2.00, 1.90),  # otra serie: no cuenta
         ],
         tmp_path / "level.csv",
     )
@@ -103,6 +104,7 @@ def _sources(tmp_path: Path) -> EvidenceSources:
         forecasts_file=forecasts,
         evaluation_file=evaluation,
         level_file=level,
+        level_series="EST-A",
         tz=TZ,
     )
 
@@ -122,7 +124,9 @@ def test_evidence_uses_the_operational_forecast_and_its_calibrated_threshold(
 
 
 def test_missing_artifacts_give_empty_evidence(tmp_path: Path) -> None:
-    sources = EvidenceSources(tmp_path / "a", tmp_path / "b", tmp_path / "c", tmp_path / "d", TZ)
+    sources = EvidenceSources(
+        tmp_path / "a", tmp_path / "b", tmp_path / "c", tmp_path / "d", "EST-A", TZ
+    )
     evidence = sources.evidence_for(_structured("crecida"))
     assert (evidence.station_mm, evidence.forecast_prob, evidence.level_rise_m) == ({}, None, None)
 
