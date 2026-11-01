@@ -11,11 +11,14 @@ from datetime import date, datetime, timedelta
 from zoneinfo import ZoneInfo
 
 from climapp.api.artifacts import ArtifactInvalidError, ArtifactMissingError, load_evaluation
+from climapp.api.reports import evidence_sources
 from climapp.api.schemas import ReportSummary
 from climapp.api.store import ReportStore
 from climapp.config import Settings
 from climapp.verification.basin import BasinError, load_basin
+from climapp.verification.evidence import EvidenceSources
 from climapp.web.agreement import AgreementThresholds, agreement_label
+from climapp.web.report_view import event_title, evidence_rows
 
 OUTCOME_TEXT = {
     "acierto": "acierto",
@@ -36,6 +39,7 @@ class MapView:
     outcome: str | None
     markers: list[dict[str, object]]
     center: list[float] | None
+    basin: list[list[list[float]]]
 
 
 def _outcome(settings: Settings, target: date) -> str | None:
@@ -48,26 +52,38 @@ def _outcome(settings: Settings, target: date) -> str | None:
     return OUTCOME_TEXT.get(found[0]) if found else None
 
 
-def _marker(
-    report: ReportSummary, day: date, tz: ZoneInfo, thresholds: AgreementThresholds
-) -> dict[str, object] | None:
-    """Marcador de un reporte verificado observado en `day`; `None` si no corresponde."""
+@dataclass(frozen=True, slots=True)
+class _MarkerContext:
+    """Lo que necesita cada marcador: día, zona horaria, cortes y artefactos."""
+
+    day: date
+    tz: ZoneInfo
+    thresholds: AgreementThresholds
+    sources: EvidenceSources
+
+
+def _marker(report: ReportSummary, ctx: _MarkerContext) -> dict[str, object] | None:
+    """Marcador de un reporte verificado observado en `ctx.day`; `None` si no corresponde."""
     if report.observed_at is None or report.confidence is None:
         return None
-    if report.observed_at.astimezone(tz).date() != day:
+    if report.observed_at.astimezone(ctx.tz).date() != ctx.day:
         return None
     score = round(report.confidence.score * PERCENT)
-    agreement = agreement_label(report.confidence.score, thresholds).text
-    label = f"{report.event_type} {report.intensity} · {agreement} · confianza {score} %"
-    return {"lat": report.lat, "lon": report.lon, "label": label}
+    agreement = agreement_label(report.confidence.score, ctx.thresholds).text
+    title = event_title(report.event_type, report.intensity)
+    label = f"{title} · {agreement} · confianza {score} %"
+    details = evidence_rows(report.confidence, ctx.sources.day_values(ctx.day))
+    return {"lat": report.lat, "lon": report.lon, "label": label, "details": details}
 
 
-def _center(settings: Settings) -> list[float] | None:
-    """Centro de la cuenca, si el polígono existe."""
+def _center_and_outline(settings: Settings) -> tuple[list[float] | None, list[list[list[float]]]]:
+    """Centro y anillos exteriores `[lat, lon]` del polígono provisional, si existe."""
     try:
-        return list(load_basin(settings.data_dir / settings.basin_polygon_file).center())
+        basin = load_basin(settings.data_dir / settings.basin_polygon_file)
     except BasinError:
-        return None
+        return None, []
+    outline = [[[lat, lon] for lon, lat in outer] for outer, *_ in basin.polygons]
+    return list(basin.center()), outline
 
 
 def map_view(settings: Settings, store: ReportStore, now: datetime, replay: date | None) -> MapView:
@@ -81,7 +97,12 @@ def map_view(settings: Settings, store: ReportStore, now: datetime, replay: date
     day = target if replay else issue
     verified = store.list("verificado", None, None, MAP_LIST_LIMIT)
     public = (r.summary(settings.public_coord_decimals) for r in verified)
-    thresholds = AgreementThresholds.from_settings(settings)
-    candidates = (_marker(r, day, settings.local_timezone, thresholds) for r in public)
-    markers = [m for m in candidates if m is not None]
-    return MapView(day, target, _outcome(settings, target), markers, _center(settings))
+    ctx = _MarkerContext(
+        day,
+        settings.local_timezone,
+        AgreementThresholds.from_settings(settings),
+        evidence_sources(settings),
+    )
+    markers = [m for m in (_marker(r, ctx) for r in public) if m is not None]
+    center, outline = _center_and_outline(settings)
+    return MapView(day, target, _outcome(settings, target), markers, center, outline)

@@ -29,6 +29,7 @@ from climapp.web.report_view import event_title, evidence_rows, report_result
 
 TEMPLATES = Jinja2Templates(directory=Path(__file__).resolve().parent / "templates")
 LIST_LIMIT = 20
+BASIN_LABEL = "zona aproximada de la cuenca (provisional)"
 PERCENT = 100
 VARIANT_TEXT = {"operativa": "operativa", "historica": "histórica"}
 router = APIRouter()
@@ -219,6 +220,8 @@ def mapa(
     data = {
         "markers": view.markers,
         "center": view.center,
+        "basin": view.basin,
+        "basin_label": BASIN_LABEL,
         "tile_url": settings.map_tile_url,
         "attribution": settings.map_attribution,
         "attribution_url": settings.map_attribution_url,

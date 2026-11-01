@@ -144,7 +144,7 @@ def test_map_page_lists_the_markers_as_accessible_text(make_client: MakeClient) 
 
 def test_popups_are_built_as_text_not_html() -> None:
     script = (Path(__file__).resolve().parents[2] / "src/climapp/web/static/map.js").read_text()
-    assert "textContent = m.label" in script
+    assert "row.textContent = line" in script  # cada línea del popup es texto
     assert "bindPopup(m.label)" not in script
 
 

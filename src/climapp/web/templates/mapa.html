@@ -16,6 +16,7 @@
     {% endif %}
   </section>
   <div id="map" role="img" aria-label="Mapa de reportes verificados">Cargando mapa…</div>
+  {% if view.basin %}<p class="muted">El contorno punteado es la {{ map_data.basin_label }}: un rectángulo que envuelve el cauce (OpenStreetMap), no el límite hidrográfico.</p>{% endif %}
   {% if view.markers %}
     <ul class="reports" id="map-list">
       {% for m in view.markers %}<li>{{ m.label }}</li>{% endfor %}
