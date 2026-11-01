@@ -7,6 +7,9 @@ ClimApp Lite publica cada día la probabilidad de que mañana caiga lluvia de 20
 ## Tema
 **Build for Your World**: aplicamos los modelos de Meta al dominio hidroclimático que conocemos, en una cuenca concreta.
 
+## Limitación conocida
+El modelo tiende a avisar **el día después** de que empieza la lluvia: en los 13 eventos de nivel del río del periodo de prueba (2023-2026), acierta el primer día en 5 de 13. Por eso ClimApp Lite es un **pronóstico informativo, no una alerta**. Para alertas, consulte a la Gestión del Riesgo de Cali y al IDEAM. Detalle en `docs/PRD.md` (§Resultados del modelo y §Eventos documentados).
+
 ## Modelos de Meta usados
 - **Muse Spark**, vía Meta Model API: estructura los reportes ciudadanos y explica el pronóstico.
 

@@ -33,7 +33,7 @@ En la cuenca, entre el 6 % y el 13 % de los días registran ≥20 mm en alguna e
 7. **Lista y mapa mínimo** (marcadores) con los reportes verificados y el acierto del pronóstico por día (`GET /reports`, `GET /evaluation`). Pulido del mapa: Should.
 8. **Evaluación pública** del modelo contra climatología y persistencia, con y sin EST-B (`GET /evaluation`). Sensibilidades de umbral (10 y 50 mm) y de regla de objetivo, y contraste Early↔Final: Should.
 9. **Aviso visible "no es alerta oficial"** y enlace a los canales oficiales en cada vista con pronóstico.
-10. **Demo como reproducción histórica** de un evento documentado, sin depender de datos en vivo. Evento aprobado: E1, 2025-01-01 (SP-5, §Eventos documentados).
+10. **Demo como reproducción histórica** de un evento documentado, sin depender de datos en vivo. Evento aprobado: **E3, 2026-09-30 → 2026-10-02**, con la reproducción de la emisión 2026-10-01 (objetivo 2026-10-02). E1 (2025-01-01) queda como caso de falsa alarma (SP-5, §Eventos documentados).
 
 ### OUT (v1)
 Sequía e incendios · audio · cuentas de usuario · notificaciones · app nativa · plataforma de consulta histórica · usuarios investigadores · reentrenamiento automático.
@@ -70,7 +70,7 @@ Sequía e incendios · audio · cuentas de usuario · notificaciones · app nati
 | SP-2 | Día con lluvia = ≥1 mm | Con fuente: [OMM] pág. PDF 14 ("cantidad de días con precipitación ≥1 mm") |
 | SP-3 | Categorías de intensidad del IDEAM | **Horarias, no diarias** [JM]: ligera < 2 mm/h, moderada 2-15, fuerte 15-30, muy fuerte o torrencial > 30. Fuente: página del IDEAM, **URL pendiente** (se pide a JM). No se comparan con el umbral diario de 20 mm; se usan solo en el indicador descriptivo de intensidad horaria (ADR-001 §12, TASK-037). [IDEAM] GDI-I001 pág. 12 solo da rangos mensuales |
 | SP-4 | Regla de 3 días ≥100 mm | SUPUESTO, sin fuente |
-| SP-5 | Evento histórico de la demo | **Cerrado (2026-10-30): E1, 2025-01-01**, aprobado por el equipo (JE). Candidatos de JM: 2025-01-01 y 2022-02-27 (fechas corregidas con la prensa); E1 es el único en el periodo de prueba. E2 queda como ejemplo de lluvia de varios días, marcado como periodo de validación |
+| SP-5 | Evento histórico de la demo | **Cerrado (2026-11-01): E3, 2026-09-30 → 2026-10-02**, decisión del equipo (JE) con los eventos de nivel de JM (`LevelGrowChorreraIndio.csv`, entrega del 2026-11-01). Se reproduce la emisión 2026-10-01 (objetivo 2026-10-02, acierto en las dos variantes). Antes (2026-10-30): E1, 2025-01-01, que **se conserva en los tests como caso de falsa alarma**. Candidatos de JM del 2026-10-29: 2025-01-01 y 2022-02-27 (E2, periodo de validación) |
 | SP-6 | Regla del objetivo de cuenca (al menos una estación / media / estación de referencia) | SUPUESTO (JM no respondió); sigue `basin_mean` y se comparan las tres (ADR-001) |
 | SP-7 | Estaciones con r ≥ 0,8 agrupadas como una sola fuente | SUPUESTO (JM no respondió; ADR-002) |
 | SP-8 | Día válido con ≥ 100 de 144 lecturas | SUPUESTO; [OMM] (pág. PDF 18) e [IDEAM] (pág. 3) solo dan criterios mensuales (11/5 días faltantes; 80 % del mes) |
@@ -83,6 +83,7 @@ Sequía e incendios · audio · cuentas de usuario · notificaciones · app nati
 | SP-15 | Pesos de la confianza de los reportes: cada grupo de estaciones 1,0, IMERG Early 0,5 y pronóstico 0,25; lluvia desde 1 mm | SUPUESTO del equipo (2026-10-31), **pendiente de JM**, fijado antes de evaluar la demo (ADR-002 §4). Razones: las estaciones son la verdad de terreno; el satélite es una celda de 0,1° con r entre 0,46 y 0,64 frente a las estaciones; el pronóstico es expectativa, no evidencia. El umbral de 1 mm tiene fuente [OMM] (SP-2). La calibración de los pesos es TASK-021 [Should] |
 | SP-16 | Para la demo basta un rectángulo provisional que envuelva el cauce del río Pance (OpenStreetMap, ODbL) para decidir `fuera_de_cuenca` | SUPUESTO aprobado por el equipo (2026-10-31): `data/basin.geojson`, lat 3,266 a 3,369 y lon −76,705 a −76,507 (OSM, ODbL, consultado el 2026-10-31, margen de 0,02°), **en uso hasta que JM aporte el polígono oficial**. El rectángulo incluye zonas fuera de la cuenca, sobre todo en la parte baja y urbana, y puede dejar fuera partes altas de la cabecera; un reporte mal clasificado en el borde es el riesgo aceptado para la demo (ADR-004 §7) |
 | SP-17 | Nivel del río como evidencia de crecientes (TASK-039): peso 1,0 (igual que un grupo de estaciones, porque mide directamente lo que el reporte afirma) y subida mínima de 0,30 m en 24 h | SUPUESTO para JM. **Fijados el 2026-11-01 antes de evaluar la demo** y sin haber visto todavía la serie de nivel (la entrega del 2026-11-01 no estaba en `DATA_DIR`); no se ajustan mirando los resultados de la demo |
+| SP-18 | Calidad de la serie de nivel (inventario del 2026-11-01) | **Pregunta para JM.** (a) 3 383 lecturas negativas (mínimo −0,18 m): ¿cero del sensor desplazado o datos inválidos? (b) Tramos planos en 0,35 m de hasta 6 días (2026-08 y 2026-09, justo antes de E3): ¿es el piso del sensor (el agua por debajo de lo que mide) o el nivel real? Si es el piso, la subida de E3 está subestimada, no inflada. (c) Picos de una sola lectura: se descartan los que saltan y regresan más de `NIVEL_MAX_STEP_M` (**1,0 m, SUPUESTO**); en la serie real son 4 (2014-10-26, 2014-11-28, 2014-12-05 y 2019-03-20, hasta 13,68 m) y los días de E3 no cambian. Las lecturas negativas y el piso no se tocan hasta que JM responda |
 
 ## Resultados del modelo (TASK-008, 2026-10-30; regenerados el 2026-10-31 con las correcciones de SP-12 y SP-13)
 Periodo apartado de prueba 2023-01-01 → 2026-10-31: 1 388 días evaluables (objetivo observado y dato el día de emisión), 157 eventos (11,3 %). Regla `basin_mean`, umbral 20 mm, `DATA_PLAN=plan_b_earthdata`. Calibración isotónica fuera de muestra 2020-2022 (ADR-001 §1). Todos los modelos se evalúan sobre los mismos días; el umbral de decisión de cada uno se fija fuera de la prueba.
@@ -98,6 +99,7 @@ Periodo apartado de prueba 2023-01-01 → 2026-10-31: 1 388 días evaluables (ob
 
 - **Antes del cambio de calibración** (isotónica solo en 2022, ADR-001 §1): RF con CHIRPS AUC 0,691 y Brier 0,1009, peor en Brier que la climatología (0,0989) y la persistencia (0,0981). El cambio se decidió después de ver ese resultado; es el único y no se ajusta nada más con la prueba.
 - La mejora del RF operativo sobre las líneas base es pequeña en Brier (0,0977 frente a 0,0983) y clara en AUC (0,665 frente a 0,627 y 0,580). Con un 79 % de falsas alarmas, el producto se comunica como informativo (R9).
+- **Limitación (2026-11-01): el RF tiende a avisar el día después de que empieza la lluvia.** En los 13 eventos de nivel de JM dentro de la prueba (`LevelGrowChorreraIndio.csv`, desde 2023-01-01), la emisión del día anterior al primer día del evento supera el umbral en **5 de 13** con la variante `operativa` y en **4 de 13** con la `historica`. En los días siguientes del mismo evento acierta más, porque la lluvia ya está en las variables. Se comporta en parte como una persistencia; por eso es un **pronóstico informativo, no una alerta** (R9). Se midió con los artefactos publicados, sin reentrenar ni recalibrar (ADR-001 §1).
 - Frente a [PREV] (AUC 0,75 / 0,66 / 0,57): el orden RF > climatología > persistencia se mantiene; el AUC es menor con una partición distinta (prueba 2023-2026 en vez de 2015-2026), la regla `basin_mean` y sin IMERG.
 
 ### Cambio por correcciones de calidad de datos (2026-10-31)
@@ -112,7 +114,7 @@ Periodo apartado de prueba 2023-01-01 → 2026-10-31: 1 388 días evaluables (ob
 | Climatología (±15 días) | 0,626 → 0,627 | 0,0987 → 0,0987 | 0,74 → 0,74 | 0,85 → 0,85 | 0,15 → 0,15 |
 | Persistencia | 0,580 → 0,580 | 0,0983 → 0,0983 | 0,25 → 0,25 | 0,75 → 0,75 | 0,15 → 0,15 |
 
-**Reproducción de E1** (`GET /forecast?replay_date=2024-12-31`, objetivo 2025-01-01, media de la cuenca observada 11,2 mm, sin evento):
+**Reproducción de E1, caso de falsa alarma** (`GET /forecast?replay_date=2024-12-31`, objetivo 2025-01-01, media de la cuenca observada 11,2 mm, sin evento):
 
 | Variante | p antes (umbral) | p después (umbral) | Aviso antes → después | `accum_3d_mm` |
 |----------|------------------|--------------------|-----------------------|---------------|
@@ -128,10 +130,11 @@ Crecidas citadas por JM como candidatas para la demo. Solo se citan hechos verif
 |----|-----------------|------------------|--------|----------------------|
 | E1 | 2025-01-01 | Creciente súbita del río Pance tras las lluvias de los días anteriores; personas arrastradas por la corriente y operativo de rescate de los organismos de socorro | *El Tiempo*, publicado el 2025-01-02 | **Prueba** |
 | E2 | 2022-02-27 (año confirmado por la fuente) | Creciente del río Pance por fuertes lluvias; personas arrastradas por la corriente | *Q'hubo Cali*, publicado el 2022-03-07 | Validación y calibración (no es fuera de muestra) |
+| E3 | 2026-09-30 → 2026-10-02 | **Sin fuente de prensa** (búsqueda del 2026-11-01 en El País, El Tiempo, BluRadio y otros medios: la nota más reciente sobre una creciente del Pance es del 2026-04-14). Solo se afirma lo que está en los datos: lluvia en la cuenca y subida del nivel en EST-A (CVC) | Datos de estaciones y nivel (CVC); evento n.º 1 de `LevelGrowChorreraIndio.csv` (JM): 175,6 mm y +0,72 m | **Prueba** |
 
 JM había dado el 2025-01-02 para E1: es la fecha de publicación de la nota; el hecho ocurrió el 1 de enero.
 
-Lluvia diaria (mm, día local) por posición altitudinal (ADR-004) [EVT]. "inv." = día inválido (< 100/144 lecturas); "s/d" = la estación aún no existía. Tabla regenerada el 2026-10-31 con las correcciones de SP-12 y SP-13: el salto aislado de E1 ya no se suma (con él, EST-A el 2024-12-31 subía de 14,0 a 52,6 mm) y EST-B queda inválida en E2.
+Lluvia diaria (mm, día local) por posición altitudinal (ADR-004) [EVT]. "inv." = día inválido (< 100/144 lecturas); "s/d" = la estación aún no existía (en CHIRPS: la entrega termina el 2026-09-30); "n/d" = la serie de la estación ya terminó (EST-B el 2026-07-07, EST-D el 2025-03-15). Tabla regenerada el 2026-10-31 con las correcciones de SP-12 y SP-13: el salto aislado de E1 ya no se suma (con él, EST-A el 2024-12-31 subía de 14,0 a 52,6 mm) y EST-B queda inválida en E2.
 
 | Evento | Día | EST-C (alta) | EST-B (media-alta) | EST-A (media) | EST-D (piedemonte) | Media de la cuenca | CHIRPS (3 celdas) |
 |--------|-----|--------------|--------------------|---------------|--------------------|--------------------|-------------------|
@@ -141,9 +144,18 @@ Lluvia diaria (mm, día local) por posición altitudinal (ADR-004) [EVT]. "inv."
 | E2 | D-1 (2022-02-26) | s/d | inv. (SP-13) | 47,6 | s/d | 47,6 | 15,0-19,1 |
 | E2 | D (2022-02-27) | s/d | inv. (SP-13) | 39,4 | s/d | 39,4 | 24,1-30,0 |
 | E2 | D+1 (2022-02-28) | s/d | inv. (SP-13) | 6,6 | s/d | 6,6 | 28,5-33,9 |
+| E3 | D-1 (2026-09-29) | 0,0 | n/d | 0,0 | n/d | 0,0 | 0,9-2,0 |
+| E3 | D (2026-09-30) | 38,4 | n/d | 125,4 | n/d | 81,9 | 5,2-8,1 |
+| E3 | D+1 (2026-10-01) | 16,9 | n/d | 6,6 | n/d | 11,8 | s/d |
+| E3 | D+2 (2026-10-02) | 32,3 | n/d | 43,6 | n/d | 38,0 | s/d |
 
 - **Acumulado de 3 días (D-2 a D):** E1: 34,8 mm (EST-A), 47,2 (EST-B), 39,6 (EST-C); media de la cuenca 35,4. E2: 87,6 mm (EST-A); media de la cuenca 87,6 (solo EST-A: EST-B queda inválida por SP-13; antes, 43,9). Ninguno llega al umbral de 100 mm (SP-4).
 - **Máxima intensidad horaria** (ventana móvil de 6 lecturas de 10 min, D-1 a D+1): E1: 6,0 mm/h (EST-B), **moderada**; ninguna estación pasa de moderada. E2: 15,2 mm/h (EST-A, 2022-02-26), **fuerte**. Con el salto de SP-12, E1 aparecería como "torrencial" (38,6-40,2 mm/h): por eso el indicador excluye los saltos `suspect` y muestra también la lectura máxima de 10 min.
 - **CHIRPS:** cubre los dos eventos (las 3 celdas con dato). Agrega por día UTC (ADR-004 §1).
 - **Lectura honesta de E1:** la creciente ocurrió sin que la media de la cuenca llegara a 20 mm en D-1 ni en D. El producto pronostica lluvia, no crecientes, y la demo debe decirlo (R9).
-- **Recomendación:** E1 para la demo, porque es el único en el periodo de prueba (una reproducción de E2 usaría el año con el que se calibra el modelo y se fija el umbral de decisión). E2 sirve como ejemplo de lluvia de varios días, marcado como periodo de validación.
+- **E3, nivel del río en EST-A (subida máxima en 24 h, `climapp-level`):** 2026-09-29: 0,01 m (nivel 0,34-0,35 m); 2026-09-30: 0,16 m (0,35-0,51 m); 2026-10-01: 0,47 m (0,39-0,86 m); **2026-10-02: 0,68 m** (0,41 m a las 14:40 y **1,07 m a las 16:10**). JM mide +0,72 m sobre todo el evento; climapp-level usa una ventana de 24 h.
+- **E3, acumulado de 3 días hasta la emisión (2026-09-29 a 2026-10-01):** 93,7 mm de media en la cuenca: "normal", bajo el umbral de 100 mm (SP-4). CHIRPS ve 5,2-8,1 mm el 2026-09-30, frente a 81,9 mm de las estaciones.
+- **Reproducción de E3** (`GET /forecast?replay_date=2026-10-01`, objetivo 2026-10-02, media de la cuenca observada 38,0 mm): `historica` 0,1324 (umbral 0,1324, justo en el umbral) y `operativa` 0,149 (umbral 0,132): **acierto en las dos**. Lectura honesta: el primer día (2026-09-30, 81,9 mm) fue un **fallo** (emisión 2026-09-29: `operativa` 0,112 y `historica` 0,117, bajo el umbral), y el 2026-10-01 (11,8 mm) una **falsa alarma** (0,200 y 0,222). Es la limitación de §Resultados del modelo: el aviso llega el día después de que empieza la lluvia.
+- **Reportes de ejemplo de E3 (simulados, `config/demo_reports.json`), tarde del 2026-10-02 (`DEMO_REPORT_TIME` 16:30), grabados con Muse Spark real el 2026-11-01 (ADR-002, corrida 5):** el verdadero ("el río creció", parte media) queda `verificado` con confianza 100 %: las estaciones, el pronóstico y la subida de nivel concuerdan. El exagerado ("se desbordó y arrasó con todas las casas") va a `requiere_revision_humana`: el juez no encontró respaldo en el texto en los 3 intentos. El falso ("no ha caído ni una gota") queda `verificado` con confianza 0 %, porque nada lo respalda. La confianza mide si llovió o si el río subió, no cuánto; el exagerado no lo frenó la confianza sino la compuerta.
+- **Mapa de E3:** muestra los reportes observados el día pedido, así que los reportes de ejemplo aparecen en `/mapa?replay_date=2026-10-02`. La vista de la emisión (`/mapa?replay_date=2026-10-01`) muestra "Pronóstico para el 2026-10-02: acierto".
+- **Recomendación (2026-11-01):** E3 para la demo. Está en el periodo de prueba, es el de mayor lluvia entre los eventos de nivel de JM (175,6 mm) y el más reciente, con una subida clara del nivel (0,68 m en 24 h; otros eventos subieron más, hasta 1,14 m), y su reproducción es un acierto honesto, con el fallo del primer día dicho en voz alta. E1 se conserva como caso de falsa alarma: la creciente ocurrió sin llegar a 20 mm en la cuenca. E2 sigue como ejemplo de lluvia de varios días del periodo de validación.

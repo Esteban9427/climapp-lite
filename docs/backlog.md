@@ -46,7 +46,7 @@ JE compromete **32 h**; JM, **8 h**. El sprint arranca en `DATA_PLAN=plan_b_eart
 
 JM: TASK-020 (vie 30, 12:00), TASK-002 (sáb 31, después de TASK-004) y TASK-021 (desde el dom 1, cuando TASK-012 esté lista) = 8 h.
 
-Dentro de cada día, **el orden es el de la lista** (hay dependencias intradía: 012 → 013 → 014 y 013 → 022 el domingo; 016 → 017 → 018 y 017 → 019 el lunes). **dom 1:** decisión de D-03 (plan B de datos, TASK-035).
+Dentro de cada día, **el orden es el de la lista** (hay dependencias intradía: 012 → 013 → 014 y 013 → 022 el domingo; 016 → 017 → 018 y 017 → 019 el lunes). **dom 1:** decisión de D-03 (plan B de datos, TASK-035): **cerrado el 2026-10-31**, el plan B no se activa.
 
 ---
 
@@ -150,6 +150,8 @@ Dentro de cada día, **el orden es el de la lista** (hay dependencias intradía:
 - **Hecho cuando:** un test verifica que una cifra alterada se rechaza y que `explanation=null` si no pasa.
 
 ## Contingente (D-03)
+> **No se activa:** D-03 quedó cerrado el 2026-10-31 (autorización de la CVC para los datos de estaciones y nivel).
+
 ### TASK-035 — Plan B de datos sin estaciones
 - **Estimación:** 1,5 h · **MoSCoW:** Must **solo si** D-03 no está cerrado el 2026-11-01 (contingencia **aprobada** el 2026-10-29) · **Responsable:** JE · **Depende de:** TASK-005, TASK-008
 - `DATA_PLAN=plan_b_datos`: objetivo y variables sobre CHIRPS e IMERG Early, sin estaciones; la demo se reproduce sobre CHIRPS.
@@ -251,3 +253,4 @@ Sequía e incendios · audio · cuentas · notificaciones · app nativa · plata
 - 2026-10-30 (TASK-008): decisiones del equipo tras ver la primera evaluación (ADR-001 §1, §3, §5 y §9): calibración isotónica fuera de muestra 2020-2022 (único cambio mirando la prueba, registrado como tal) y dos variantes por disponibilidad de datos: `operativa` (en vivo) e `historica` (con CHIRPS, solo reproducción). Riesgo nuevo PRD R16. Contrato: `variant` en `GET /forecast` y en `Forecast`.
 - 2026-10-31: **TASK-002 pasa a JE**, porque JM dedica sus 8 h a los eventos y a los ~30 reportes de ejemplo (TASK-021). Solo se implementa lo que necesita TASK-014: grupos de estaciones con r ≥ `STATION_GROUP_MIN_R` sobre la tabla diaria (`climapp-groups`, `STATION_GROUPS_FILE`). El inventario completo (periodos, días válidos, duplicados e `inventory.json`) queda fuera del sprint. Por decisión del equipo, los grupos se calculan con toda la tabla y no solo con el entrenamiento (ADR-002 §4): [EST-A], [EST-B, EST-C] (r = 0,874) y [EST-D]. Los 12 días válidos extra de EST-A y EST-B frente al inventario (Cambios, 2026-10-30) siguen sin revisar.
 - 2026-11-01 (fuente: entrega de JM del 2026-11-01 y pedido de JE): se agregan TASK-038 (lector de nivel), TASK-039 (subida de nivel como evidencia de crecientes) y TASK-009b (cliente IMERG Early NRT), las tres Should de JE. El nivel nunca entra al modelo.
+- 2026-11-01: **D-03 cerrado el 2026-10-31** (CVC; TASK-035 no se activa). **La demo pasa a E3** (2026-09-30 → 2026-10-02, emisión 2026-10-01), decisión de JE con los eventos de nivel de JM; E1 queda como caso de falsa alarma (PRD SP-5). TASK-038 suma el filtro de picos de una sola lectura (`NIVEL_MAX_STEP_M`, SUPUESTO) y TASK-011 la reproducción en orden de las grabaciones repetidas.
