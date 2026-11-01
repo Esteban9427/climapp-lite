@@ -17,6 +17,17 @@
 | `suspect_mm` | float | Lluvia de esos saltos; **no** se suma a `precip_mm`, se conserva para auditoría |
 | `n_gap` | int | Pasos sobre huecos > `MAX_GAP_MIN`: si cruzan el día local no suman lluvia (`GAP`); si no, la conservan (`GAP_INTRADAY`). ADR-004 §2, PRD SP-14 |
 
+### DailyLevel — serie diaria de nivel del río (TASK-038, ADR-004 §8)
+Solo evidencia de crecientes en la confianza (TASK-039); no entra al modelo.
+
+| Campo | Tipo | Regla |
+|-------|------|-------|
+| `series_id` | str | `EST-A` (estación de la parte media) |
+| `date` | date | Día local |
+| `n_readings` | int | Lecturas con valor en el día (una cada 15 min) |
+| `level_min_m`, `level_max_m` | float | Nivel mínimo y máximo del día, en m |
+| `rise_24h_max_m` | float | Máximo, sobre las lecturas del día, de su nivel menos el mínimo de las 24 h anteriores; ≥ 0 |
+
 ## Pronóstico
 ### Forecast (`GET /forecast`)
 | Campo | Tipo | Nota |

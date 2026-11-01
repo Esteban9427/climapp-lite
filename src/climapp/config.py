@@ -70,6 +70,9 @@ class Settings(BaseSettings):
     station_exports: list[Path] = Field(min_length=1)
     station_map_file: Path
     daily_stations_file: Path
+    level_exports: list[Path] = Field(min_length=1)
+    level_sensor: str = Field(min_length=1)
+    level_daily_file: Path
     known_outages_file: Path
     min_readings: int = Field(ge=1, le=READINGS_PER_DAY)
 

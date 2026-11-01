@@ -25,6 +25,7 @@ dependencies = [
 climapp-daily = "climapp.data.cli:main"
 climapp-train = "climapp.forecast.cli:main"
 climapp-groups = "climapp.data.groups:main"
+climapp-level = "climapp.data.level:main"
 
 [dependency-groups]
 dev = [

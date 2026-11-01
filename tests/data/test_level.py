@@ -39,9 +39,7 @@ def _book(tmp_path: Path, rows: list[Row], name: str = "nivel.xlsx") -> Path:
 
 
 def _points(levels: list[float], start: datetime = T0, step_min: int = 15) -> list[LevelPoint]:
-    return [
-        LevelPoint(start + timedelta(minutes=step_min * i), m) for i, m in enumerate(levels)
-    ]
+    return [LevelPoint(start + timedelta(minutes=step_min * i), m) for i, m in enumerate(levels)]
 
 
 # --- lector --------------------------------------------------------------------

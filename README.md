@@ -37,6 +37,7 @@ Todo lo que está en este repositorio se construyó durante el evento. La lista 
 - [x] 2026-10-31: privacidad de los reportes: la lista y el mapa solo muestran campos estructurados, sin id ni afirmaciones; las afirmaciones quedan en el detalle por UUID4. Una comprobación determinista rechaza teléfonos, correos y placas (TASK-016, TDD).
 - [x] 2026-10-31: el fallback de la demo solo responde con coincidencia exacta (tarea, versión del prompt y hash de la entrada) y falla cerrado; un reporte nunca recibe la respuesta de otro. Se regrabaron E1 y 3 reportes de ejemplo con Muse Spark real (TASK-011, TDD).
 - [x] 2026-10-31: reproducción de E1 de punta a punta con `DEMO_FALLBACK=1` y respuestas reales grabadas: pronóstico, explicación verificada, reporte verificado y mapa, con un test end-to-end que bloquea la red (TASK-019, TDD).
+- [x] 2026-11-01: lector del nivel del río de la estación de la parte media y serie diaria con nivel mínimo, máximo y subida máxima en 24 h (`climapp-level`, TASK-038, TDD).
 
 ## Herramientas previas al evento, no parte del entregable
 Las usamos para trabajar, pero no forman parte de lo que se juzga y ningún archivo suyo está en este repositorio:
