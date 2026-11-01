@@ -11,11 +11,13 @@ cliente falla cerrado (`MissingRecordingError`): nunca devuelve la respuesta de 
 import hashlib
 import json
 import time
+from collections import Counter
 from collections.abc import Callable, Mapping, Sequence
 from dataclasses import dataclass
 from datetime import datetime
 from enum import StrEnum
 from pathlib import Path
+from threading import Lock
 from typing import Any, Protocol, cast
 
 import openai
@@ -222,9 +224,22 @@ class RecordedMuseClient:
     def __init__(self, recordings: Sequence[Recording]) -> None:
         """Guarda las grabaciones en el orden del archivo."""
         self._recordings = list(recordings)
+        self._served: Counter[tuple[str, str, str]] = Counter()
+        self._lock = Lock()
+
+    def _next(self, key: tuple[str, str, str], exact: Sequence[Recording]) -> Recording:
+        """La siguiente grabación de `key`, en el orden del archivo y de forma cíclica."""
+        with self._lock:
+            served = self._served[key]
+            self._served[key] += 1
+        return exact[served % len(exact)]
 
     def complete(self, task: MuseTask, messages: Sequence[Message]) -> MuseReply:
         """La grabación exacta de (tarea, versión del prompt, hash de la entrada).
+
+        Si el mismo pedido se grabó varias veces (el juez puede recibir la misma entrada
+        en dos intentos y responder distinto), se devuelven en el orden del archivo y
+        luego se vuelve a empezar: la reproducción sigue el camino de la corrida real.
 
         Raises:
             MissingRecordingError: si no hay una grabación exacta (falla cerrado).
@@ -237,7 +252,7 @@ class RecordedMuseClient:
             msg = f"sin grabación {detail} (tarea {task.value})"
             log.warning("muse.fallback_miss", task=task.value, prompt_changed=bool(same_input))
             raise MissingRecordingError(msg)
-        rec = exact[0]
+        rec = self._next((task.value, version, digest), exact)
         log.info("muse.fallback", task=task.value)
         return MuseReply(
             rec.content,
