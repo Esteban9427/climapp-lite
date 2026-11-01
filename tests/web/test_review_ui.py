@@ -162,3 +162,12 @@ def test_settings_have_the_demo_example_point_with_its_source() -> None:
     env = (ROOT / ".env.example").read_text(encoding="utf-8")
     assert "DEMO_EXAMPLE_LAT=" in env and "DEMO_EXAMPLE_LON=" in env
     assert "OpenStreetMap" in env and "ODbL" in env
+
+
+def test_event_title_without_structured_fields_is_generic() -> None:
+    """Un resumen sin tipo ni intensidad (mypy en 9c9572d) no rompe el título."""
+    from climapp.web.report_view import event_title
+
+    assert event_title(None, None) == "Reporte"
+    assert event_title("crecida", "fuerte") == "Crecida fuerte"
+    assert event_title("sin_lluvia", "ninguna") == "Sin lluvia"
