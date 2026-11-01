@@ -123,6 +123,15 @@ def test_recorded_client_returns_only_the_exact_recording_marked_fallback(tmp_pa
     assert (out.tokens_in, out.tokens_out, out.latency_ms) == (10, 20, 900)
 
 
+def test_repeated_inputs_replay_their_recordings_in_recorded_order(tmp_path: Path) -> None:
+    """Un mismo pedido grabado dos veces (p. ej. el juez en dos intentos) se repite en
+    orden y vuelve a empezar: la reproducción sigue el camino de la corrida real."""
+    path = _recordings(tmp_path, _entry("juez", "rechaza"), _entry("juez", "acepta"))
+    client = RecordedMuseClient(load_recordings(path))
+    replies = [client.complete(MuseTask.JUDGE, REQUEST).content for _ in range(4)]
+    assert replies == ["rechaza", "acepta", "rechaza", "acepta"]
+
+
 def test_without_exact_match_the_recorded_client_fails_closed(tmp_path: Path) -> None:
     client = RecordedMuseClient(load_recordings(_recordings(tmp_path, _entry("juez", "j"))))
     with pytest.raises(MissingRecordingError, match="sin grabación"):
