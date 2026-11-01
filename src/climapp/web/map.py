@@ -1,8 +1,9 @@
 """Mapa mínimo de reportes verificados con Leaflet y OpenStreetMap (TASK-018).
 
-Marcadores: reportes verificados observados el día mostrado (la fecha de emisión en la
-reproducción, hoy en vivo), con coordenadas ya redondeadas. Leyenda: el resultado del
-pronóstico para el día objetivo según `GET /evaluation` (`daily`).
+Marcadores: reportes verificados observados el día mostrado, con coordenadas ya
+redondeadas. En la reproducción, ese día es el día objetivo, el mismo que evalúa la
+leyenda; en vivo, es hoy. Leyenda: el resultado del pronóstico para el día objetivo
+según `GET /evaluation` (`daily`).
 """
 
 from dataclasses import dataclass
@@ -70,9 +71,14 @@ def _center(settings: Settings) -> list[float] | None:
 
 
 def map_view(settings: Settings, store: ReportStore, now: datetime, replay: date | None) -> MapView:
-    """Arma la vista: día, resultado del objetivo, marcadores y centro."""
-    day = replay or now.astimezone(settings.local_timezone).date()
-    target = day + timedelta(days=1)
+    """Arma la vista: día, resultado del objetivo, marcadores y centro.
+
+    En la reproducción (`replay` = día de emisión) los reportes son los del día objetivo;
+    en vivo, los de hoy, porque el día objetivo (mañana) todavía no tiene reportes.
+    """
+    issue = replay or now.astimezone(settings.local_timezone).date()
+    target = issue + timedelta(days=1)
+    day = target if replay else issue
     verified = store.list("verificado", None, None, MAP_LIST_LIMIT)
     public = (r.summary(settings.public_coord_decimals) for r in verified)
     thresholds = AgreementThresholds.from_settings(settings)

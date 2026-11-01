@@ -123,6 +123,7 @@ Todos los estados usan texto, además del color (WCAG 1.4.1). Las regiones que c
 - Leaflet con teselas de OpenStreetMap y la atribución obligatoria "© OpenStreetMap contributors" (ODbL), siempre visible.
 - Solo se muestran los reportes **verificados**, con las coordenadas redondeadas a 3 decimales (~100 m).
 - Leyenda: el resultado del pronóstico del día (`acierto`, `falsa_alarma`, `fallo` o `correcto_negativo`), con texto.
+- Día de los reportes (2026-11-01): en vivo, los de hoy; en una reproducción (`replay_date` = día de emisión), **por defecto los del día objetivo**, que es el que evalúa la leyenda. La leyenda dice "Reportes observados el AAAA-MM-DD".
 - Altura de 60 vh en móvil. Si el mapa base no carga, la lista de reportes sigue siendo la fuente accesible.
 
 ## Accesibilidad
