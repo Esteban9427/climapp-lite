@@ -16,6 +16,7 @@ from collections import defaultdict, deque
 from collections.abc import Iterable, Iterator, Sequence
 from dataclasses import astuple, dataclass, fields
 from datetime import date, datetime, timedelta
+from itertools import pairwise
 from pathlib import Path
 from zoneinfo import ZoneInfo
 
@@ -140,8 +141,9 @@ def drop_single_spikes(points: Iterable[LevelPoint], max_step_m: float) -> list[
     """Descarta las lecturas que saltan y regresan en una sola lectura (SUPUESTO).
 
     Una lectura es un pico si difiere en más de `max_step_m`, en el mismo sentido, de la
-    lectura anterior y de la siguiente (subida y bajada, o bajada y subida). Las lecturas
-    de los extremos se conservan: sin vecino a un lado no se ve el regreso.
+    última lectura conservada y de la siguiente (subida y bajada, o bajada y subida). Así,
+    una lectura buena entre dos picos no cae. Las lecturas de los extremos se conservan:
+    sin vecino a un lado no se ve el regreso. Un pico de dos lecturas no se descarta.
 
     Args:
         points: lecturas en cualquier orden (las marcas repetidas se descartan).
@@ -153,12 +155,12 @@ def drop_single_spikes(points: Iterable[LevelPoint], max_step_m: float) -> list[
     ordered = _unique_sorted(points)
     if len(ordered) < SPIKE_SPAN:
         return ordered
-    middle = [
-        point
-        for prev, point, nxt in zip(ordered, ordered[1:], ordered[2:], strict=False)
-        if not _is_spike(point.level_m - prev.level_m, point.level_m - nxt.level_m, max_step_m)
-    ]
-    return [ordered[0], *middle, ordered[-1]]
+    kept = [ordered[0]]
+    for point, nxt in pairwise(ordered[1:]):
+        up, down = point.level_m - kept[-1].level_m, point.level_m - nxt.level_m
+        if not _is_spike(up, down, max_step_m):
+            kept.append(point)
+    return [*kept, ordered[-1]]
 
 
 def _rises(points: Sequence[LevelPoint]) -> list[float]:
