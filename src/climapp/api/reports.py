@@ -63,6 +63,7 @@ def _verifier(settings: Settings, client: MuseClient) -> ReportVerifier:
         data / settings.daily_stations_file,
         data / settings.forecasts_file,
         data / settings.evaluation_file,
+        data / settings.level_daily_file,
         settings.local_timezone,
     )
     try:

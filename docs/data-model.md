@@ -110,7 +110,7 @@ Detalle para quien envió el reporte (id UUID4 no adivinable): incluye `structur
 | Campo | Tipo |
 |-------|------|
 | `score` | float [0, 1] |
-| `sources` | list[{`source_id`, `kind`: `station_group` \| `satellite` \| `forecast`, `members`: list[str], `agrees`: bool, `weight`: float}] |
+| `sources` | list[{`source_id`, `kind`: `station_group` \| `satellite` \| `forecast` \| `river_level`, `members`: list[str], `agrees`: bool, `weight`: float}] |
 | `independent_sources` | int: número de fuentes con dato; cada grupo de estaciones correlacionadas cuenta una vez (no cada estación), más IMERG Early y el pronóstico |
 
 ## Evaluación

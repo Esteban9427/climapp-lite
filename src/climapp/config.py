@@ -57,6 +57,8 @@ class Settings(BaseSettings):
     confidence_weight_station: float = Field(ge=0)
     confidence_weight_satellite: float = Field(ge=0)
     confidence_weight_forecast: float = Field(ge=0)
+    confidence_weight_level: float = Field(ge=0)
+    level_rise_threshold_m: float = Field(gt=0)
     rain_day_mm: float = Field(gt=0)
 
     local_timezone: ZoneInfo

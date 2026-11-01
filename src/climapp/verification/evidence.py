@@ -4,6 +4,8 @@
 - Satélite: IMERG Early todavía no está (TASK-009), así que queda sin dato.
 - Pronóstico: emisión `operativa` para ese día y el umbral de decisión del RF calibrado,
   fijado fuera de la prueba (`EVALUATION_FILE`).
+- Nivel del río: subida máxima en 24 h del día (`LEVEL_DAILY_FILE`, TASK-038), solo
+  para reportes que afirman creciente (TASK-039).
 Si falta un artefacto, esa fuente queda sin dato: la confianza solo usa lo que hay.
 """
 
@@ -17,6 +19,7 @@ from zoneinfo import ZoneInfo
 from pydantic import ValidationError
 
 from climapp.data.daily import read_daily_csv
+from climapp.data.level import read_level_csv
 from climapp.logging import get_logger
 from climapp.verification.confidence import Evidence
 from climapp.verification.schemas import ReportStructured
@@ -28,6 +31,11 @@ LIVE_VARIANT = "operativa"
 def report_says_rain(structured: ReportStructured) -> bool:
     """`True` si el reporte afirma que llueve (o granizó) con alguna intensidad."""
     return structured.event_type != "sin_lluvia" and structured.intensity != "ninguna"
+
+
+def report_says_flood(structured: ReportStructured) -> bool:
+    """`True` si el reporte afirma una creciente del río."""
+    return structured.event_type == "crecida"
 
 
 def _json(path: Path) -> Any:
@@ -46,6 +54,7 @@ class EvidenceSources:
     daily_file: Path
     forecasts_file: Path
     evaluation_file: Path
+    level_file: Path
     tz: ZoneInfo
 
     def _stations(self, day: date) -> dict[str, float]:
@@ -78,6 +87,16 @@ class EvidenceSources:
             return None, 0.0
         return float(probs[0]), float(thresholds[0])
 
+    def _level_rise(self, day: date) -> float | None:
+        """Subida máxima de nivel en 24 h del día, o `None` si no hay dato."""
+        try:
+            rows = read_level_csv(self.level_file)
+        except (OSError, KeyError, ValueError) as err:
+            log.warning("evidence.level_missing", error=type(err).__name__)
+            return None
+        rises = [r.rise_24h_max_m for r in rows if r.date == day]
+        return max(rises) if rises else None
+
     def evidence_for(self, structured: ReportStructured) -> Evidence:
         """Evidencia para el día local en que el ciudadano dice haber observado."""
         day = structured.observed_at.astimezone(self.tz).date()
@@ -88,4 +107,6 @@ class EvidenceSources:
             satellite_mm=None,
             forecast_prob=prob,
             forecast_threshold=threshold,
+            report_flood=report_says_flood(structured),
+            level_rise_m=self._level_rise(day),
         )

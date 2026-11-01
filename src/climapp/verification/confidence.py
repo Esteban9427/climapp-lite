@@ -7,6 +7,10 @@ llegó a `RAIN_DAY_MM`. Cada fuente "concuerda" si su señal de lluvia coincide 
 dice el reporte; el puntaje es la suma de pesos de las que concuerdan sobre la suma de
 pesos de las que tienen dato. Pesos: SUPUESTO fijos en configuración (TASK-021 los
 calibra).
+
+Si el reporte afirma una creciente, la subida de nivel del río en 24 h (TASK-039) es una
+fuente más, aparte de la lluvia: concuerda si llegó a `LEVEL_RISE_THRESHOLD_M`. Sin dato
+de nivel ese día, o en un reporte que no afirma creciente, no aporta nada.
 """
 
 import json
@@ -19,9 +23,10 @@ from pydantic import BaseModel, ConfigDict, Field
 
 from climapp.config import Settings
 
-SourceKind = Literal["station_group", "satellite", "forecast"]
+SourceKind = Literal["station_group", "satellite", "forecast", "river_level"]
 SATELLITE_ID = "IMERG_E"
 FORECAST_ID = "pronostico"
+LEVEL_ID = "nivel"
 
 
 @dataclass(frozen=True, slots=True)
@@ -34,21 +39,29 @@ class ConfidenceWeights:
         satellite: peso de IMERG Early (`CONFIDENCE_WEIGHT_SATELLITE`, SUPUESTO).
         forecast: peso del pronóstico vigente (`CONFIDENCE_WEIGHT_FORECAST`, SUPUESTO).
         rain_mm: lluvia mínima para "llovió" (`RAIN_DAY_MM`, 1 mm [OMM]).
+        level: peso de la subida de nivel en reportes de creciente
+            (`CONFIDENCE_WEIGHT_LEVEL`, SUPUESTO para JM, PRD SP-17).
+        level_rise_m: subida mínima en 24 h para "hubo creciente"
+            (`LEVEL_RISE_THRESHOLD_M`, SUPUESTO para JM, PRD SP-17).
     """
 
     station: float
     satellite: float
     forecast: float
     rain_mm: float
+    level: float
+    level_rise_m: float
 
     @classmethod
     def from_settings(cls, settings: Settings) -> "ConfidenceWeights":
-        """Toma `CONFIDENCE_WEIGHT_*` y `RAIN_DAY_MM`."""
+        """Toma `CONFIDENCE_WEIGHT_*`, `RAIN_DAY_MM` y `LEVEL_RISE_THRESHOLD_M`."""
         return cls(
             station=settings.confidence_weight_station,
             satellite=settings.confidence_weight_satellite,
             forecast=settings.confidence_weight_forecast,
             rain_mm=settings.rain_day_mm,
+            level=settings.confidence_weight_level,
+            level_rise_m=settings.level_rise_threshold_m,
         )
 
 
@@ -62,6 +75,8 @@ class Evidence:
         satellite_mm: lluvia de IMERG Early en la celda; `None` si no hay dato.
         forecast_prob: probabilidad del pronóstico vigente; `None` si no hay.
         forecast_threshold: umbral de decisión del pronóstico (fijado fuera de la prueba).
+        report_flood: `True` si el reporte afirma una creciente.
+        level_rise_m: subida máxima de nivel en 24 h del día; `None` si no hay dato.
     """
 
     report_rain: bool
@@ -69,6 +84,8 @@ class Evidence:
     satellite_mm: float | None
     forecast_prob: float | None
     forecast_threshold: float
+    report_flood: bool = False
+    level_rise_m: float | None = None
 
 
 class ConfidenceSource(BaseModel):
@@ -148,6 +165,21 @@ def _other_sources(evidence: Evidence, weights: ConfidenceWeights) -> list[Confi
     return sources
 
 
+def _level_source(evidence: Evidence, weights: ConfidenceWeights) -> list[ConfidenceSource]:
+    """Subida de nivel, solo si el reporte afirma creciente y hay dato ese día."""
+    if not evidence.report_flood or evidence.level_rise_m is None:
+        return []
+    return [
+        ConfidenceSource(
+            source_id=LEVEL_ID,
+            kind="river_level",
+            members=[],
+            agrees=evidence.level_rise_m >= weights.level_rise_m,
+            weight=weights.level,
+        )
+    ]
+
+
 def compute_confidence(
     evidence: Evidence, groups: Sequence[Sequence[str]], weights: ConfidenceWeights
 ) -> Confidence:
@@ -161,7 +193,11 @@ def compute_confidence(
     Returns:
         Puntaje en [0, 1] con su desglose; 0 si ninguna fuente tiene dato.
     """
-    sources = [*_station_sources(evidence, groups, weights), *_other_sources(evidence, weights)]
+    sources = [
+        *_station_sources(evidence, groups, weights),
+        *_other_sources(evidence, weights),
+        *_level_source(evidence, weights),
+    ]
     total = sum(s.weight for s in sources)
     agreeing = sum(s.weight for s in sources if s.agrees)
     score = agreeing / total if total > 0 else 0.0

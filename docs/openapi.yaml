@@ -226,7 +226,7 @@ components:
       required: [source_id, kind, members, agrees, weight]
       properties:
         source_id: {type: string}
-        kind: {type: string, enum: [station_group, satellite, forecast]}
+        kind: {type: string, enum: [station_group, satellite, forecast, river_level]}
         members:
           type: array
           items: {type: string}
