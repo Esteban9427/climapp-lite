@@ -180,6 +180,8 @@ def test_demo_replay_end_to_end_without_network(demo: TestClient) -> None:
     home = demo.get(f"/?replay_date={DEMO_ISSUE}").text
     assert "Reproducción histórica" in home and "No es una alerta oficial" in home
     assert "15 %" in home  # variante operativa por defecto (2026-11-01)
+    assert re.search(r"Explicación</h2>\s*<p>[^<]*\b15 %", home)  # grabación de la operativa
+    assert "respuesta grabada" in home
     assert f"{DEMO_ISSUE}: 4 mm" in home and f"{DEMO_TARGET}: 12 mm" in home  # IMERG Early
 
     api = demo.get("/forecast", params={"replay_date": DEMO_ISSUE}).json()

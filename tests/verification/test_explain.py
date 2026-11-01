@@ -64,6 +64,43 @@ def test_figures_are_rounded_as_the_gate_compares_them() -> None:
     }
 
 
+CONTEXT = FORECAST.model_copy(
+    update={
+        "accum_3d_percentile": 85,
+        "climatology_prob": 0.0806,
+        "decision_threshold": 0.1316,
+        "risk": "elevado",
+    }
+)
+
+
+def test_figures_include_the_percentile_and_the_climatology_when_present() -> None:
+    assert forecast_figures(CONTEXT) == {
+        "probabilidad_pct": 15,
+        "umbral_mm": 20.0,
+        "acumulado_3d_mm": 40.8,
+        "percentil_acumulado_pct": 85,
+        "climatologia_pct": 8,
+    }
+
+
+def test_muse_gets_the_context_in_es_co_with_its_meaning() -> None:
+    evidence = _request(CONTEXT).evidence
+    for phrase in ('"valor": "15"', '"valor": "20"', '"valor": "85"', '"valor": "8"'):
+        assert phrase in evidence, phrase
+    assert "riesgo elevado" in evidence and "lo normal para esta época" in evidence
+    assert "riesgo elevado" in _request(CONTEXT).messages[-1]["content"]  # mismo contexto
+
+
+def test_explanation_with_comma_decimals_passes_the_numeric_check() -> None:
+    text = "Hay un 15 % de probabilidad de 20 mm o más; en tres días se acumularon 40,8 mm."
+    muse = ScriptedMuse(
+        {MuseTask.EXPLAIN: [reply(_explanation(text))], MuseTask.JUDGE: [reply(_ok_verdict(text))]}
+    )
+    out = explain_forecast(muse, FORECAST, max_attempts=1)
+    assert out is not None and "40,8" in out.text
+
+
 def test_figures_without_accumulation_omit_it() -> None:
     assert "acumulado_3d_mm" not in forecast_figures(
         FORECAST.model_copy(update={"accum_3d_mm": None})
@@ -172,7 +209,8 @@ def test_judge_evidence_states_what_each_figure_means() -> None:
         "No es una alerta oficial",
     ):
         assert phrase in evidence, phrase
-    assert '"valor": 13' in evidence and '"valor": 40.8' in evidence
+    assert '"valor": "13"' in evidence and '"valor": "40,8"' in evidence  # es-CO
+    assert "40.8" not in evidence and "nivel normal" not in evidence
 
 
 def test_explainer_receives_the_same_meanings_as_the_judge() -> None:
