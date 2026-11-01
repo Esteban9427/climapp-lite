@@ -39,6 +39,7 @@ Todo lo que está en este repositorio se construyó durante el evento. La lista 
 - [x] 2026-10-31: reproducción de E1 de punta a punta con `DEMO_FALLBACK=1` y respuestas reales grabadas: pronóstico, explicación verificada, reporte verificado y mapa, con un test end-to-end que bloquea la red (TASK-019, TDD).
 - [x] 2026-11-01: lector del nivel del río de la estación de la parte media y serie diaria con nivel mínimo, máximo y subida máxima en 24 h (`climapp-level`, TASK-038, TDD).
 - [x] 2026-11-01: la subida de nivel del río es evidencia aparte en la confianza de los reportes que afirman una creciente; sin nivel ese día, la confianza no cambia (TASK-039, TDD).
+- [x] 2026-11-01: el nivel descarta los picos de una sola lectura que saltan y regresan más de `NIVEL_MAX_STEP_M` (SUPUESTO 1,0 m); en los datos reales quita 4 picos de hasta 13,68 m y los días de la demo no cambian (TASK-038, TDD).
 
 ## Herramientas previas al evento, no parte del entregable
 Las usamos para trabajar, pero no forman parte de lo que se juzga y ningún archivo suyo está en este repositorio:

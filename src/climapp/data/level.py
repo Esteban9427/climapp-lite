@@ -1,10 +1,12 @@
 """Nivel del río en la estación de la parte media (TASK-038, ADR-004).
 
-La exportación xlsx trae `STATION_ID, SENSORNAME, FECHAYHRA, ED_VALUE` (nivel en m,
-una lectura cada 15 min). La serie diaria guarda, por día local, el nivel mínimo, el
-máximo y la **subida máxima en 24 h**: para cada lectura del día, su nivel menos el
-mínimo de las lecturas de las 24 h anteriores (incluida ella), y el máximo de eso.
-Solo se usa como evidencia de crecientes en la confianza (ADR-002 §4), nunca en el modelo.
+La exportación xlsx trae `STATION_ID, SENSORNAME, FECHAYHRA, ED_VALUE` (nivel en m;
+una lectura cada 15 min hasta 2017-03 y cada 10 min desde 2017-04). La serie diaria
+guarda, por día local, el nivel mínimo, el máximo y la **subida máxima en 24 h**: para
+cada lectura del día, su nivel menos el mínimo de las lecturas de las 24 h anteriores
+(incluida ella), y el máximo de eso. Antes se descartan los picos de una sola lectura
+(`NIVEL_MAX_STEP_M`, SUPUESTO). Solo se usa como evidencia de crecientes en la
+confianza (ADR-002 §4), nunca en el modelo.
 
 Uso: `uv run climapp-level` (lee `.env`; los datos viven en `DATA_DIR`, fuera de git).
 """
@@ -27,6 +29,7 @@ from climapp.logging import configure_logging, get_logger
 
 log = get_logger(__name__)
 RISE_WINDOW = timedelta(hours=24)
+SPIKE_SPAN = 3  # un pico necesita lectura anterior, la suya y la siguiente
 
 
 @dataclass(frozen=True, slots=True)
@@ -128,6 +131,36 @@ def _unique_sorted(points: Iterable[LevelPoint]) -> list[LevelPoint]:
     return sorted(seen.values(), key=lambda p: p.ts)
 
 
+def _is_spike(up: float, down: float, max_step_m: float) -> bool:
+    """`True` si la lectura sube y baja (o baja y sube) más de `max_step_m`."""
+    return min(up, down) > max_step_m or max(up, down) < -max_step_m
+
+
+def drop_single_spikes(points: Iterable[LevelPoint], max_step_m: float) -> list[LevelPoint]:
+    """Descarta las lecturas que saltan y regresan en una sola lectura (SUPUESTO).
+
+    Una lectura es un pico si difiere en más de `max_step_m`, en el mismo sentido, de la
+    lectura anterior y de la siguiente (subida y bajada, o bajada y subida). Las lecturas
+    de los extremos se conservan: sin vecino a un lado no se ve el regreso.
+
+    Args:
+        points: lecturas en cualquier orden (las marcas repetidas se descartan).
+        max_step_m: salto máximo aceptado (`NIVEL_MAX_STEP_M`).
+
+    Returns:
+        Lecturas sin picos, en orden de tiempo.
+    """
+    ordered = _unique_sorted(points)
+    if len(ordered) < SPIKE_SPAN:
+        return ordered
+    middle = [
+        point
+        for prev, point, nxt in zip(ordered, ordered[1:], ordered[2:], strict=False)
+        if not _is_spike(point.level_m - prev.level_m, point.level_m - nxt.level_m, max_step_m)
+    ]
+    return [ordered[0], *middle, ordered[-1]]
+
+
 def _rises(points: Sequence[LevelPoint]) -> list[float]:
     """Subida de cada lectura sobre el mínimo de las 24 h anteriores (mínimo deslizante)."""
     window: deque[LevelPoint] = deque()
@@ -226,11 +259,14 @@ def build_level_daily(settings: Settings) -> Path:
     if missing:
         msg = f"{len(missing)} estación(es) de nivel sin correspondencia en STATION_MAP_FILE"
         raise ValueError(msg)
-    rows = [row for raw, pts in points.items() for row in daily_level(station_map[raw], pts, tz)]
+    step = settings.nivel_max_step_m
+    clean = {raw: drop_single_spikes(pts, step) for raw, pts in points.items()}
+    spikes = sum(len(_unique_sorted(pts)) - len(clean[raw]) for raw, pts in points.items())
+    rows = [row for raw, pts in clean.items() for row in daily_level(station_map[raw], pts, tz)]
     out = write_level_csv(
         sorted(rows, key=lambda r: (r.series_id, r.date)), data_dir / settings.level_daily_file
     )
-    log.info("level.written", path=str(out), rows=len(rows))
+    log.info("level.written", path=str(out), rows=len(rows), spikes_dropped=spikes)
     return out
 
 
