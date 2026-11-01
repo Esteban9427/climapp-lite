@@ -54,6 +54,17 @@ E1_TIME = "2024-12-31T16:30:00-05:00"
 E1_TEXT = "Cae una llovizna suave en el sendero de la parte media; el río se ve normal."
 E1_FORECASTS = [
     {
+        "variant": "operativa",
+        "issue_date": E1_ISSUE,
+        "target_date": "2025-01-01",
+        "issued_at": "2025-01-01T00:00:00-05:00",
+        "prob_ge_threshold": 0.14942528735632185,
+        "accum_3d_mm": 40.8,
+        "accum_3d_level": "normal",
+        "inputs_available": ["EST-A", "EST-B", "EST-C", "EST-D"],
+        "model_version": "c839469b8df2",
+    },
+    {
         "variant": "historica",
         "issue_date": E1_ISSUE,
         "target_date": "2025-01-01",
@@ -63,7 +74,7 @@ E1_FORECASTS = [
         "accum_3d_level": "normal",
         "inputs_available": ["CHIRPS", "EST-A", "EST-B", "EST-C", "EST-D"],
         "model_version": "c839469b8df2",
-    }
+    },
 ]
 
 # Evidencia sintética del día objetivo: llovió en las dos estaciones y el río subió
@@ -86,6 +97,15 @@ TRAIN_DAYS = [
 DEMO_CONTEXT = ForecastContext(
     accum3_train=tuple([10.0] * 98 + [100.0, 120.0]),
     observed_train={d: n < 9 for n, d in enumerate(TRAIN_DAYS)},
+    window_days=15,
+)
+
+# E1 con las cifras de su grabación real: 40,8 mm supera al 85 % de los acumulados y
+# 8 de 100 días cerca del 1-ene tuvieron 20 mm o más
+E1_DAYS = [date(year, 12, 20) + timedelta(days=i) for year in range(2014, 2018) for i in range(25)]
+E1_CONTEXT = ForecastContext(
+    accum3_train=tuple([10.0] * 85 + [100.0] * 15),
+    observed_train={d: n < 8 for n, d in enumerate(E1_DAYS)},
     window_days=15,
 )
 
@@ -126,9 +146,14 @@ def make_demo(
     env_file: Path, no_network: None, monkeypatch: pytest.MonkeyPatch
 ) -> Iterator[MakeDemo]:
     clients: list[TestClient] = []
-    monkeypatch.setattr("climapp.api.forecast_routes.load_context", lambda _: DEMO_CONTEXT)
 
-    def _make(forecasts: list[dict[str, Any]], daily: dict[str, Any], **env: str) -> TestClient:
+    def _make(
+        forecasts: list[dict[str, Any]],
+        daily: dict[str, Any],
+        context: ForecastContext = DEMO_CONTEXT,
+        **env: str,
+    ) -> TestClient:
+        monkeypatch.setattr("climapp.api.forecast_routes.load_context", lambda _: context)
         fallback = ROOT / env_example_items()["MUSE_FALLBACK_FILE"]
         rewrite_env(
             env_file, DEMO_FALLBACK="1", MUSE_FALLBACK_FILE=str(fallback), META_API_KEY="", **env
@@ -157,7 +182,9 @@ def demo(make_demo: MakeDemo) -> TestClient:
 def e1(make_demo: MakeDemo) -> TestClient:
     """E1 con su fecha y su hora de reporte grabadas."""
     e1_daily = {"date": "2025-01-01", "prob": 0.11, "observed": False, "outcome": "falsa_alarma"}
-    return make_demo(E1_FORECASTS, e1_daily, DEMO_REPLAY_DATE=E1_ISSUE, DEMO_REPORT_TIME=E1_TIME)
+    return make_demo(
+        E1_FORECASTS, e1_daily, E1_CONTEXT, DEMO_REPLAY_DATE=E1_ISSUE, DEMO_REPORT_TIME=E1_TIME
+    )
 
 
 def _report(client: TestClient, text: str) -> tuple[str, dict[str, Any]]:
@@ -258,8 +285,11 @@ def test_the_map_shows_the_demo_reports_of_the_target_day(demo: TestClient) -> N
 
 
 def test_e1_replay_is_kept_as_a_false_alarm(e1: TestClient) -> None:
-    # La explicación de E1 se grabó el 2026-10-31 con el contexto anterior: la grabación se
-    # conserva, pero ya no coincide con el pedido actual, así que el fallback falla cerrado.
+    # Regrabada el 2026-11-01 (corrida 8) con el contexto nuevo y la variante operativa
+    home = e1.get(f"/?replay_date={E1_ISSUE}").text
+    assert re.search(r"Explicación</h2>\s*<p>[^<]*\b15 %", home)
+    assert "respuesta grabada" in home
+    # la grabación histórica del 2026-10-31 se conserva, pero ya no coincide: falla cerrado
     api = e1.get("/forecast", params={"replay_date": E1_ISSUE, "variant": "historica"}).json()
     assert api["explanation"] is None
 
