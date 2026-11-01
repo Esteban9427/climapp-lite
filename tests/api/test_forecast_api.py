@@ -137,15 +137,48 @@ def test_disclaimer_and_official_link_are_always_present(client: TestClient) -> 
         assert IDEAM in body["disclaimer"]  # segundo canal: pronósticos y alertas del IDEAM
 
 
-def test_replay_defaults_to_the_historical_variant(client: TestClient) -> None:
+def test_replay_defaults_to_the_operational_variant(client: TestClient) -> None:
+    """Revisión visual del 2026-11-01: la reproducción muestra lo que se habría publicado."""
     body = client.get("/forecast", params={"replay_date": "2024-12-31"}).json()
     assert_matches(body, "Forecast")
-    assert (body["variant"], body["replay"], body["prob_ge_threshold"]) == ("historica", True, 0.15)
+    assert (body["variant"], body["replay"], body["prob_ge_threshold"]) == ("operativa", True, 0.11)
 
 
-def test_replay_can_ask_for_the_operational_variant(client: TestClient) -> None:
-    body = client.get("/forecast", params={"replay_date": "2024-12-31", "variant": "operativa"})
-    assert body.json()["prob_ge_threshold"] == 0.11
+def test_replay_can_ask_for_the_historical_variant(client: TestClient) -> None:
+    body = client.get("/forecast", params={"replay_date": "2024-12-31", "variant": "historica"})
+    assert body.json()["prob_ge_threshold"] == 0.15
+
+
+def test_forecast_carries_the_warning_threshold_and_risk_of_its_variant(
+    client: TestClient,
+) -> None:
+    body = client.get("/forecast", params={"replay_date": "2024-12-31"}).json()
+    assert (body["decision_threshold"], body["risk"]) == (0.11, "elevado")  # 0,11 ≥ 0,11
+    other = client.get("/forecast", params={"replay_date": "2024-12-31", "variant": "historica"})
+    assert (other.json()["decision_threshold"], other.json()["risk"]) == (None, None)
+
+
+def test_without_daily_table_there_is_no_percentile_or_climatology(client: TestClient) -> None:
+    body = client.get("/forecast", params={"replay_date": "2024-12-31"}).json()
+    assert (body["accum_3d_percentile"], body["climatology_prob"]) == (None, None)
+
+
+def test_percentile_and_climatology_come_from_the_training_period(
+    client: TestClient, settings: Settings
+) -> None:
+    header = (
+        "date,series_id,precip_mm,n_readings,valid,imputed,source_hash,n_suspect,suspect_mm,n_gap\n"
+    )
+    rows = [
+        f"2014-01-{d:02d},EST-A,{25.0 if d % 5 == 0 else 10.0},144,true,false,h,0,0.0,0\n"
+        for d in range(1, 31)
+    ]
+    rows.append("2024-12-31,EST-A,99.0,144,true,false,h,0,0.0,0\n")  # fuera del entrenamiento
+    (settings.data_dir / settings.daily_stations_file).write_text(header + "".join(rows))
+    body = client.get("/forecast", params={"replay_date": "2024-12-31"}).json()
+    assert_matches(body, "Forecast")
+    assert body["accum_3d_percentile"] == 100  # 50,4 mm > todos los acumulados de enero de 2014
+    assert body["climatology_prob"] == pytest.approx(3 / 16)  # ±15 días: 1 al 16 de enero
 
 
 def test_historical_variant_outside_replay_is_rejected(client: TestClient) -> None:
