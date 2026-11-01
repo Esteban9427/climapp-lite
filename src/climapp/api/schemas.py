@@ -35,6 +35,10 @@ class Forecast(BaseModel):
     target_rule: TargetRule
     accum_3d_mm: float | None
     accum_3d_level: Literal["normal", "elevado"]
+    accum_3d_percentile: int | None = Field(default=None, ge=0, le=100)
+    climatology_prob: float | None = Field(default=None, ge=0, le=1)
+    decision_threshold: float | None = Field(default=None, ge=0, le=1)
+    risk: Literal["elevado", "habitual"] | None = None
     data_plan: DataPlan
     variant: Variant
     model_version: str

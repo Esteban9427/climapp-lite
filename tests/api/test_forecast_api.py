@@ -289,7 +289,7 @@ def test_verified_explanation_is_published_with_its_fallback_flag(client: TestCl
     body = client.get("/forecast", params={"replay_date": "2024-12-31"}).json()
     assert_matches(body, "Forecast")
     assert (body["explanation"], body["explanation_fallback"]) == ("Explicación verificada.", True)
-    assert seen[0].prob_ge_threshold == 0.15
+    assert (seen[0].prob_ge_threshold, seen[0].risk) == (0.11, "elevado")  # con contexto
 
 
 def test_explanation_that_does_not_pass_the_gate_is_null(client: TestClient) -> None:

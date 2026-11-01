@@ -44,10 +44,10 @@ def test_forecast_card_shows_probability_threshold_and_accumulation(
     assert "Reproducción histórica" not in html
 
 
-def test_replay_is_labelled_and_uses_the_historical_variant(make_client: MakeClient) -> None:
+def test_replay_is_labelled_and_uses_the_operational_variant(make_client: MakeClient) -> None:
     html = make_client().get("/?replay_date=2024-12-31").text
     assert "Reproducción histórica" in html
-    assert "15 %" in html
+    assert "11 %" in html
 
 
 def test_null_explanation_is_never_replaced_by_unverified_text(make_client: MakeClient) -> None:

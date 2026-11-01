@@ -179,13 +179,14 @@ def test_home_links_to_the_demo_replay(demo: TestClient) -> None:
 def test_demo_replay_end_to_end_without_network(demo: TestClient) -> None:
     home = demo.get(f"/?replay_date={DEMO_ISSUE}").text
     assert "Reproducción histórica" in home and "No es una alerta oficial" in home
-    assert "13 %" in home
-    assert re.search(r"Explicación</h2>\s*<p>[^<]*\b13 %", home)  # explicación real grabada
-    assert "respuesta grabada" in home
+    assert "15 %" in home  # variante operativa por defecto (2026-11-01)
     assert f"{DEMO_ISSUE}: 4 mm" in home and f"{DEMO_TARGET}: 12 mm" in home  # IMERG Early
 
     api = demo.get("/forecast", params={"replay_date": DEMO_ISSUE}).json()
-    assert (api["replay"], api["variant"], api["explanation_fallback"]) == (True, "historica", True)
+    assert (api["replay"], api["variant"]) == (True, "operativa")
+    # la grabación del 2026-11-01 (corrida 5) es de la variante histórica
+    hist = demo.get("/forecast", params={"replay_date": DEMO_ISSUE, "variant": "historica"}).json()
+    assert hist["explanation_fallback"] is True and "13 %" in hist["explanation"]
 
     mapa = demo.get("/mapa", params={"replay_date": DEMO_ISSUE}).text
     assert f"Pronóstico para el {DEMO_TARGET}: acierto" in mapa
@@ -242,9 +243,9 @@ def test_the_map_shows_the_demo_reports_of_the_target_day(demo: TestClient) -> N
 
 
 def test_e1_replay_is_kept_as_a_false_alarm(e1: TestClient) -> None:
-    home = e1.get(f"/?replay_date={E1_ISSUE}").text
-    assert re.search(r"Explicación</h2>\s*<p>[^<]*\b13 %", home)
-    assert "respuesta grabada" in home
+    params = {"replay_date": E1_ISSUE, "variant": "historica"}  # grabada el 2026-10-31
+    api = e1.get("/forecast", params=params).json()
+    assert api["explanation_fallback"] is True and "13 %" in api["explanation"]
 
     status, report = _report(e1, E1_TEXT)
     assert re.search(VERIFIED_LABEL, status)

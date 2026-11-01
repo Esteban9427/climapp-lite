@@ -171,7 +171,11 @@ components:
         threshold_mm: {type: number}
         target_rule: {$ref: "#/components/schemas/TargetRule"}
         accum_3d_mm: {type: [number, "null"]}
-        accum_3d_level: {type: string, enum: [normal, elevado]}
+        accum_3d_level: {type: string, enum: [normal, elevado], description: "Indicador de SP-4 (≥ ACCUM3_THRESHOLD_MM); la web ya no lo muestra (2026-11-01)"}
+        accum_3d_percentile: {type: [integer, "null"], minimum: 0, maximum: 100, description: "% de emisiones del entrenamiento (TRAIN_START..VALID_END) con un acumulado de 3 días menor (ADR-001 §11)"}
+        climatology_prob: {type: [number, "null"], minimum: 0, maximum: 1, description: "Frecuencia del evento en el entrenamiento ±CLIMATOLOGY_WINDOW_DAYS alrededor del día objetivo"}
+        decision_threshold: {type: [number, "null"], minimum: 0, maximum: 1, description: "Umbral de aviso del RF calibrado de la variante, fijado fuera de la prueba"}
+        risk: {type: [string, "null"], enum: [elevado, habitual, null], description: "elevado si prob_ge_threshold ≥ decision_threshold (calculado por código)"}
         data_plan: {$ref: "#/components/schemas/DataPlan"}
         variant: {$ref: "#/components/schemas/Variant"}
         model_version: {type: string}

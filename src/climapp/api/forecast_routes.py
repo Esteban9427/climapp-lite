@@ -17,6 +17,7 @@ from climapp.api.artifacts import (
 from climapp.api.deps import ApiError, NowDep, SettingsDep
 from climapp.api.schemas import Forecast
 from climapp.config import Settings, TargetRule
+from climapp.forecast.context import load_context, risk_level
 from climapp.forecast.evaluation import EvaluationReport
 from climapp.forecast.features import Variant
 from climapp.forecast.publish import ForecastRecord
@@ -58,6 +59,33 @@ def get_explainer(settings: SettingsDep) -> Explainer | None:
 
 
 ExplainerDep = Annotated[Explainer | None, Depends(get_explainer)]
+
+
+def _decision_threshold(settings: Settings, variant: Variant) -> float | None:
+    """Umbral de aviso del RF calibrado de la variante, fijado fuera de la prueba."""
+    try:
+        report = load_evaluation(settings.data_dir / settings.evaluation_file)
+    except (ArtifactMissingError, ArtifactInvalidError):
+        return None
+    found = [
+        m.threshold
+        for m in report.scenarios.con_est_b
+        if m.name == "rf" and m.variant == variant and m.calibrated
+    ]
+    return found[0] if found else None
+
+
+def _with_context(forecast: Forecast, settings: Settings) -> Forecast:
+    """Percentil del acumulado, climatología del día, umbral de aviso y riesgo (ADR-001 §11)."""
+    context = load_context(settings)
+    threshold = _decision_threshold(settings, forecast.variant)
+    update = {
+        "accum_3d_percentile": context.accum3_percentile(forecast.accum_3d_mm) if context else None,
+        "climatology_prob": context.climatology(forecast.target_date) if context else None,
+        "decision_threshold": threshold,
+        "risk": risk_level(forecast.prob_ge_threshold, threshold),
+    }
+    return forecast.model_copy(update=update)
 
 
 def _to_forecast(
@@ -103,7 +131,7 @@ def forecast(
         now: instante actual (dependencia), para `stale`.
         explainer: explicador verificado (dependencia, TASK-022).
         replay_date: fecha de emisión a reproducir (solo demo).
-        variant: variante pedida; por defecto según `replay_date` (ADR-001 §3).
+        variant: variante pedida; por defecto `operativa`, también en la reproducción.
 
     Returns:
         El pronóstico con el aviso y el enlace oficial.
@@ -111,7 +139,7 @@ def forecast(
     Raises:
         ApiError: 422 si se pide `historica` sin `replay_date`; 503 sin pronóstico.
     """
-    chosen: Variant = variant or ("historica" if replay_date else "operativa")
+    chosen: Variant = variant or "operativa"  # también en la reproducción (2026-11-01)
     if chosen == "historica" and replay_date is None:
         raise ApiError(
             422, "variante_no_disponible", "la variante histórica solo existe en reproducción"
@@ -122,7 +150,9 @@ def forecast(
         raise ApiError(503, "sin_pronostico", str(err)) from err
     except ArtifactInvalidError as err:
         raise ApiError(503, "artefacto_invalido", str(err)) from err
-    built = _to_forecast(record, settings, now, replay=replay_date is not None)
+    built = _with_context(
+        _to_forecast(record, settings, now, replay=replay_date is not None), settings
+    )
     return _explained(built, explainer)
 
 
