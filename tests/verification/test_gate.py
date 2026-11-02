@@ -141,3 +141,13 @@ def test_attempt_latency_adds_generator_and_judge() -> None:
         }
     )
     assert run_gate(muse, REQUEST, max_attempts=1).attempts[0].latency_ms == 1600
+
+
+def test_judge_cut_by_max_tokens_is_an_incomplete_answer() -> None:
+    """Juez sin contenido por el tope de tokens: `respuesta_incompleta`, nunca aprobado."""
+    muse = ScriptedMuse(
+        {MuseTask.STRUCTURE: [reply(GOOD)] * 3, MuseTask.JUDGE: [reply(None, "length")] * 3}
+    )
+    result = run_gate(muse, REQUEST, max_attempts=3)
+    assert result.status == "requiere_revision_humana"
+    assert all("respuesta_incompleta" in a.reasons for a in result.attempts)

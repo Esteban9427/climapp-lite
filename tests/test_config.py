@@ -45,8 +45,11 @@ def test_empty_data_dir_is_rejected(env_file: Path) -> None:
         Settings(_env_file=env_file)
 
 
-def test_max_tokens_below_2000_is_rejected(env_file: Path) -> None:
-    rewrite_env(env_file, MUSE_MAX_TOKENS="1999")
+@pytest.mark.parametrize(
+    "key", ["MUSE_MAX_TOKENS_STRUCTURE", "MUSE_MAX_TOKENS_EXPLAIN", "MUSE_MAX_TOKENS_JUDGE"]
+)
+def test_max_tokens_below_2000_is_rejected_per_task(env_file: Path, key: str) -> None:
+    rewrite_env(env_file, **{key: "1999"})
     with pytest.raises(ValidationError):
         Settings(_env_file=env_file)
 

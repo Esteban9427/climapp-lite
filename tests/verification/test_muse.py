@@ -27,7 +27,7 @@ from tests.verification.fakes import FakeCompletions, completion
 
 PARAMS = MuseParams(
     model="muse-test",
-    max_tokens=2000,
+    max_tokens={MuseTask.STRUCTURE: 2000, MuseTask.EXPLAIN: 2100, MuseTask.JUDGE: 4000},
     efforts={MuseTask.STRUCTURE: "low", MuseTask.EXPLAIN: "low", MuseTask.JUDGE: "medium"},
 )
 MESSAGES = [{"role": "user", "content": "llueve fuerte en la vereda"}]
@@ -43,17 +43,23 @@ class _Clock:
 
 
 @pytest.mark.parametrize(
-    ("task", "effort"),
-    [(MuseTask.STRUCTURE, "low"), (MuseTask.EXPLAIN, "low"), (MuseTask.JUDGE, "medium")],
+    ("task", "effort", "max_tokens"),
+    [
+        (MuseTask.STRUCTURE, "low", 2000),
+        (MuseTask.EXPLAIN, "low", 2100),
+        (MuseTask.JUDGE, "medium", 4000),
+    ],
 )
-def test_sends_model_effort_per_task_and_max_tokens(task: MuseTask, effort: str) -> None:
+def test_sends_model_effort_and_max_tokens_per_task(
+    task: MuseTask, effort: str, max_tokens: int
+) -> None:
     fake = FakeCompletions(completion())
     LiveMuseClient(fake, PARAMS).complete(task, MESSAGES)
     (call,) = fake.calls
     assert call["model"] == "muse-test"
     assert call["messages"] == MESSAGES
     assert call["reasoning_effort"] == effort
-    assert call["max_tokens"] == 2000
+    assert call["max_tokens"] == max_tokens
 
 
 def test_maps_content_finish_reason_tokens_tools_and_latency() -> None:
@@ -74,10 +80,21 @@ def test_api_errors_are_raised_as_muse_error_with_context() -> None:
 
 
 def test_params_come_from_settings(env_file: Path) -> None:
-    rewrite_env(env_file, MUSE_MODEL="m-x", MUSE_EFFORT_EXPLAIN="medium", MUSE_MAX_TOKENS="2500")
+    rewrite_env(
+        env_file,
+        MUSE_MODEL="m-x",
+        MUSE_EFFORT_EXPLAIN="medium",
+        MUSE_MAX_TOKENS_STRUCTURE="2200",
+        MUSE_MAX_TOKENS_EXPLAIN="2500",
+        MUSE_MAX_TOKENS_JUDGE="4500",
+    )
     params = MuseParams.from_settings(Settings(_env_file=env_file))
     assert params.model == "m-x"
-    assert params.max_tokens == 2500
+    assert params.max_tokens == {
+        MuseTask.STRUCTURE: 2200,
+        MuseTask.EXPLAIN: 2500,
+        MuseTask.JUDGE: 4500,
+    }
     assert params.efforts == {
         MuseTask.STRUCTURE: "low",
         MuseTask.EXPLAIN: "medium",
