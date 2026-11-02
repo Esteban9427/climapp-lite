@@ -27,7 +27,7 @@ def test_a_module_logger_created_before_configuring_still_emits_json(
     configure_logging()
     early.info("imerg.written", days=45)
     event = json.loads(capsys.readouterr().out.strip().splitlines()[-1])
-    assert (event["event"], event["logger"], event["days"]) == ("imerg.written", "creado.antes", 45)
+    assert (event["event"], event["module"], event["days"]) == ("imerg.written", "creado.antes", 45)
 
 
 def test_dates_are_serialized_instead_of_crashing(capsys: pytest.CaptureFixture[str]) -> None:
