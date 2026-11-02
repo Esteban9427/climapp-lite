@@ -56,7 +56,9 @@ Con `EVAL_SEED` y los mismos datos, la salida es idéntica (hay test). Primero s
 - **Instrucción** (`instruccion_texto`): qué afirma el ciudadano. Los coherentes no dan cifras y solo hablan de creciente si la subida llega a 0,30 m; los exagerados afirman 5 m y casas arrasadas; los falsos afirman lluvia fuerte o creciente.
 
 ## Paso 2: textos (`reportes_simulados.jsonl`)
-**Los textos los generó un LLM** (opencode, herramienta previa al evento) a partir de esta especificación, que se deriva de los datos; no son reportes reales. Cada fila es la de la spec más el campo `texto`, que empieza con "Reporte simulado:". Validación del 2026-11-02, sin LLM: 50 filas, todos los campos de la spec intactos, prefijo en todas, 0 datos personales (la misma comprobación `dato_personal` de la compuerta) y 0 términos de `.forbidden-terms`. La etiqueta sigue siendo la de la spec: el LLM no la decide.
+**Los textos los generó Muse Spark 1.3, en el nivel Contributor por error, vía opencode** (herramienta previa al evento), a partir de esta especificación, que se deriva de los datos; no son reportes reales. El nivel Contributor era el modelo por defecto de opencode: es el incidente D-07 del 2026-11-02 (se envió solo la spec, sin nombres ni coordenadas de estaciones), y opencode ya usa `muse-spark-1.3` estándar. Cada fila es la de la spec más el campo `texto`, que empieza con "Reporte simulado:". Validación del 2026-11-02, sin LLM: 50 filas, todos los campos de la spec intactos, prefijo en todas, 0 datos personales (la misma comprobación `dato_personal` de la compuerta) y 0 términos de `.forbidden-terms`. La etiqueta sigue siendo la de la spec: **las etiquetas salen de los datos**, no del LLM.
+
+**Limitación:** el generador de los textos y el evaluador (la compuerta y el juez) son de la misma familia de modelos (Muse Spark 1.3). Los textos pueden estar escritos de una forma que a Muse le resulte fácil de interpretar, así que las tasas medidas pueden ser optimistas frente a reportes ciudadanos reales.
 
 ## Pendiente
 - Paso 3: correr la compuerta y medir la tasa de aprobación, el costo por reporte (NFR-3) y la latencia (NFR-2).
