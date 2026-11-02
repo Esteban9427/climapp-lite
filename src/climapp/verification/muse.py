@@ -1,8 +1,8 @@
 """Cliente de Muse Spark (Meta Model API, compatible con el SDK `openai`) y fallback grabado.
 
 ADR-002 §1, §2 y §5: `base_url`, clave, modelo y esfuerzo por tarea salen de `Settings`;
-`max_tokens` es siempre `MUSE_MAX_TOKENS` (≥ 2000, porque el razonamiento consume la
-salida). Con `DEMO_FALLBACK=1` se usan respuestas grabadas que pasan por la misma
+`max_tokens` es `MUSE_MAX_TOKENS_<TAREA>` (≥ 2000 cada uno, porque el razonamiento consume
+la salida; TASK-036). Con `DEMO_FALLBACK=1` se usan respuestas grabadas que pasan por la misma
 compuerta y se marcan `fallback=true`. Una grabación solo responde si coinciden la tarea,
 la versión del prompt (hash del prompt de sistema) y el hash de la entrada; si no, el
 cliente falla cerrado (`MissingRecordingError`): nunca devuelve la respuesta de otro pedido.
@@ -89,21 +89,26 @@ class Completions(Protocol):
 
 @dataclass(frozen=True, slots=True)
 class MuseParams:
-    """Modelo, `max_tokens` y esfuerzo por tarea (desde `Settings`)."""
+    """Modelo, `max_tokens` por tarea y esfuerzo por tarea (desde `Settings`)."""
 
     model: str
-    max_tokens: int
+    max_tokens: Mapping[MuseTask, int]
     efforts: Mapping[MuseTask, Effort]
 
     @classmethod
     def from_settings(cls, settings: Settings) -> "MuseParams":
-        """Toma `MUSE_MODEL`, `MUSE_MAX_TOKENS` y `MUSE_EFFORT_*`."""
+        """Toma `MUSE_MODEL`, `MUSE_MAX_TOKENS_*` y `MUSE_EFFORT_*`."""
         efforts: dict[MuseTask, Effort] = {
             MuseTask.STRUCTURE: settings.muse_effort_structure,
             MuseTask.EXPLAIN: settings.muse_effort_explain,
             MuseTask.JUDGE: settings.muse_effort_judge,
         }
-        return cls(settings.muse_model, settings.muse_max_tokens, efforts)
+        max_tokens: dict[MuseTask, int] = {
+            MuseTask.STRUCTURE: settings.muse_max_tokens_structure,
+            MuseTask.EXPLAIN: settings.muse_max_tokens_explain,
+            MuseTask.JUDGE: settings.muse_max_tokens_judge,
+        }
+        return cls(settings.muse_model, max_tokens, efforts)
 
 
 def _reply(response: ChatCompletion, latency_ms: int) -> MuseReply:
@@ -136,7 +141,7 @@ class LiveMuseClient:
         self._completions, self._params, self._clock = completions, params, clock
 
     def complete(self, task: MuseTask, messages: Sequence[Message]) -> MuseReply:
-        """Llama a Muse con el esfuerzo de `task` y `max_tokens = MUSE_MAX_TOKENS`.
+        """Llama a Muse con el esfuerzo y el `max_tokens` de `task`.
 
         Raises:
             MuseError: si la API falla (red, tiempo agotado o estado HTTP de error).
@@ -147,7 +152,7 @@ class LiveMuseClient:
                 model=self._params.model,
                 messages=list(messages),
                 reasoning_effort=self._params.efforts[task],
-                max_tokens=self._params.max_tokens,
+                max_tokens=self._params.max_tokens[task],
             )
         except openai.APIError as err:
             msg = f"Muse falló en la tarea {task.value}: {type(err).__name__}"

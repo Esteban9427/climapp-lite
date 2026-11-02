@@ -41,7 +41,10 @@ class Settings(BaseSettings):
     muse_effort_structure: Effort
     muse_effort_judge: Effort
     muse_effort_explain: Effort
-    muse_max_tokens: int = Field(ge=MIN_MUSE_MAX_TOKENS)
+    # Tope de salida por tarea: el razonamiento lo consume (ADR-002 §2, TASK-036)
+    muse_max_tokens_structure: int = Field(ge=MIN_MUSE_MAX_TOKENS)
+    muse_max_tokens_explain: int = Field(ge=MIN_MUSE_MAX_TOKENS)
+    muse_max_tokens_judge: int = Field(ge=MIN_MUSE_MAX_TOKENS)
     verify_max_attempts: int = Field(ge=1)
     muse_timeout_s: float = Field(gt=0)
     muse_fallback_file: Path
