@@ -13,12 +13,12 @@ from climapp.api.artifacts import (
     ArtifactMissingError,
     find_forecast,
     load_evaluation,
+    load_report_eval,
 )
 from climapp.api.deps import ApiError, NowDep, SettingsDep
-from climapp.api.schemas import Forecast
+from climapp.api.schemas import EvaluationOut, Forecast
 from climapp.config import Settings, TargetRule
 from climapp.forecast.context import load_context, risk_level
-from climapp.forecast.evaluation import EvaluationReport
 from climapp.forecast.features import Variant
 from climapp.forecast.publish import ForecastRecord
 from climapp.verification.explain import Explainer, build_explainer
@@ -156,15 +156,16 @@ def forecast(
     return _explained(built, explainer)
 
 
-def evaluation(settings: SettingsDep, target_rule: TargetRule | None = None) -> EvaluationReport:
-    """`GET /evaluation`: métricas del RF y de las líneas base en el periodo apartado.
+def evaluation(settings: SettingsDep, target_rule: TargetRule | None = None) -> EvaluationOut:
+    """`GET /evaluation`: métricas del RF y de las líneas base, y de la compuerta de reportes.
 
     Args:
         settings: configuración (dependencia).
         target_rule: regla pedida; por defecto `TARGET_RULE`.
 
     Returns:
-        El informe precalculado por `climapp-train`.
+        El informe precalculado por `climapp-train` y, en `report_verification`, el
+        resumen de `REPORT_EVAL_FILE` (`None` si falta o es inválido).
 
     Raises:
         ApiError: 503 sin informe válido; 422 si la regla pedida no se evaluó.
@@ -177,4 +178,5 @@ def evaluation(settings: SettingsDep, target_rule: TargetRule | None = None) -> 
         raise ApiError(503, "artefacto_invalido", str(err)) from err
     if (target_rule or settings.target_rule) != report.target_rule:
         raise ApiError(422, "regla_no_evaluada", f"solo se evaluó {report.target_rule}")
-    return report
+    summary = load_report_eval(settings.report_eval_file)
+    return EvaluationOut(**report.model_dump(), report_verification=summary)

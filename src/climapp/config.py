@@ -45,6 +45,7 @@ class Settings(BaseSettings):
     verify_max_attempts: int = Field(ge=1)
     muse_timeout_s: float = Field(gt=0)
     muse_fallback_file: Path
+    report_eval_file: Path
 
     data_dir: Path
     earthdata_token: SecretStr

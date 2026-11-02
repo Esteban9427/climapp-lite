@@ -6,10 +6,13 @@ from pathlib import Path
 
 from pydantic import TypeAdapter, ValidationError
 
+from climapp.api.schemas import ReportVerificationEval
 from climapp.forecast.evaluation import EvaluationReport
 from climapp.forecast.features import Variant
 from climapp.forecast.publish import ForecastRecord
+from climapp.logging import get_logger
 
+log = get_logger(__name__)
 _RECORDS = TypeAdapter(list[ForecastRecord])
 
 
@@ -61,3 +64,17 @@ def load_evaluation(path: Path) -> EvaluationReport:
         return EvaluationReport.model_validate(json.loads(_read(path)))
     except (json.JSONDecodeError, ValidationError) as err:
         raise ArtifactInvalidError(f"{path.name} no es válido") from err
+
+
+def load_report_eval(path: Path) -> ReportVerificationEval | None:
+    """Resumen de la evaluación de reportes (TASK-021/036), o `None` si falta o es inválido.
+
+    No lanza: sin resumen, `GET /evaluation` sigue publicando la evaluación del pronóstico.
+    """
+    try:
+        return ReportVerificationEval.model_validate(json.loads(_read(path)))
+    except ArtifactMissingError:
+        log.warning("evaluation.report_eval_missing", path=path.name)
+    except (json.JSONDecodeError, ValidationError) as err:
+        log.warning("evaluation.report_eval_invalid", path=path.name, error=type(err).__name__)
+    return None

@@ -6,7 +6,8 @@ from uuid import UUID
 
 from pydantic import BaseModel, ConfigDict, Field
 
-from climapp.config import DataPlan, TargetRule
+from climapp.config import DataPlan, Effort, TargetRule
+from climapp.forecast.evaluation import EvaluationReport
 from climapp.forecast.features import Variant
 from climapp.verification.checks import Reason
 from climapp.verification.confidence import Confidence
@@ -124,3 +125,51 @@ class ReportRecord(Report):
             confidence=self.confidence,
             fallback=self.fallback,
         )
+
+
+class ReportEvalRates(BaseModel):
+    """Tasas de un grupo de reportes simulados (`ReportEvalRates`)."""
+
+    model_config = ConfigDict(frozen=True)
+
+    n: int = Field(ge=1)
+    pass_at_1: float = Field(ge=0, le=1)
+    within_3: float = Field(ge=0, le=1)
+    human_review: float = Field(ge=0, le=1)
+    mean_attempts: float = Field(ge=0)
+    cost_usd: float = Field(ge=0)
+    latency_p50_s: float = Field(ge=0)
+    latency_p95_s: float = Field(ge=0)
+
+
+class ReportEvalRun(BaseModel):
+    """Una corrida del set con un esfuerzo por tarea (`ReportEvalRun`)."""
+
+    model_config = ConfigDict(frozen=True)
+
+    run: str
+    effort_structure: Effort
+    effort_judge: Effort
+    total: ReportEvalRates
+    by_label: dict[str, ReportEvalRates]
+    by_class: dict[str, ReportEvalRates]
+    matrix: dict[str, dict[str, int]]
+
+
+class ReportVerificationEval(BaseModel):
+    """Resumen versionado de la evaluación de reportes (`ReportVerificationEval`)."""
+
+    model_config = ConfigDict(frozen=True)
+
+    model: str
+    evaluated_on: date
+    reports: int = Field(ge=1)
+    labels_from: str
+    texts_from: str
+    runs: list[ReportEvalRun]
+
+
+class EvaluationOut(EvaluationReport):
+    """Respuesta de `GET /evaluation`: el informe del pronóstico y el de los reportes."""
+
+    report_verification: ReportVerificationEval | None = None

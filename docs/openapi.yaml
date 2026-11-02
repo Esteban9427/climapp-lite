@@ -376,3 +376,56 @@ components:
           description: Variante del RF (calibrado) con la que se calcula `daily`.
           allOf: [{$ref: "#/components/schemas/Variant"}]
         excluded_imputed_days: {type: integer}
+        report_verification:
+          description: >-
+            Evaluación de la compuerta de reportes con Muse real sobre el set simulado de
+            eval-harness (TASK-021, TASK-036). `null` si no hay resumen o está corrupto.
+          anyOf:
+            - {$ref: "#/components/schemas/ReportVerificationEval"}
+            - {type: "null"}
+    ReportEvalRates:
+      type: object
+      required: [n, pass_at_1, within_3, human_review, mean_attempts, cost_usd, latency_p50_s, latency_p95_s]
+      properties:
+        n: {type: integer, minimum: 1}
+        pass_at_1: {type: number, minimum: 0, maximum: 1, description: Acierto con un solo intento}
+        within_3: {type: number, minimum: 0, maximum: 1, description: Acierto dentro de VERIFY_MAX_ATTEMPTS}
+        human_review: {type: number, minimum: 0, maximum: 1, description: Fracción a revisión humana}
+        mean_attempts: {type: number, minimum: 0}
+        cost_usd: {type: number, minimum: 0, description: Costo total del grupo}
+        latency_p50_s: {type: number, minimum: 0, description: Por reporte (suma de sus intentos)}
+        latency_p95_s: {type: number, minimum: 0}
+    ReportEvalRun:
+      type: object
+      required: [run, effort_structure, effort_judge, total, by_label, by_class, matrix]
+      properties:
+        run: {type: string}
+        effort_structure: {type: string, enum: [low, medium, high]}
+        effort_judge: {type: string, enum: [low, medium, high]}
+        total: {$ref: "#/components/schemas/ReportEvalRates"}
+        by_label:
+          type: object
+          description: Por etiqueta esperada (verdadero, exagerado, falso)
+          additionalProperties: {$ref: "#/components/schemas/ReportEvalRates"}
+        by_class:
+          type: object
+          description: Por clase de la especificación (coherente, dificil, exagerado, falso)
+          additionalProperties: {$ref: "#/components/schemas/ReportEvalRates"}
+        matrix:
+          type: object
+          description: Etiqueta esperada → categoría obtenida (coincide, parcial, no_coincide, revision_humana) → reportes
+          additionalProperties:
+            type: object
+            additionalProperties: {type: integer, minimum: 0}
+    ReportVerificationEval:
+      type: object
+      required: [model, evaluated_on, reports, labels_from, texts_from, runs]
+      properties:
+        model: {type: string}
+        evaluated_on: {type: string, format: date}
+        reports: {type: integer, minimum: 1}
+        labels_from: {type: string}
+        texts_from: {type: string}
+        runs:
+          type: array
+          items: {$ref: "#/components/schemas/ReportEvalRun"}
