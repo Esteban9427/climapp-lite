@@ -17,8 +17,8 @@ paths:
         - name: variant
           in: query
           description: >
-            Variante del modelo (ADR-001 §3). Por defecto, `operativa` sin `replay_date` e
-            `historica` con `replay_date`. `historica` solo existe en reproducción: sin
+            Variante del modelo (ADR-001 §3). Por defecto, `operativa`, también con
+            `replay_date` (desde el 2026-11-01). `historica` solo existe en reproducción: sin
             `replay_date` responde 422.
           schema: {$ref: "#/components/schemas/Variant"}
       responses:

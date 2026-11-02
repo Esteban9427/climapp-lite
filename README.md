@@ -52,6 +52,7 @@ Todo lo que está en este repositorio se construyó durante el evento. La lista 
 - [x] 2026-11-01: el mapa dibuja y encuadra la zona aproximada de la cuenca (provisional), muestra en cada popup el desglose de evidencia y deja sus controles bajo el aviso fijo (TASK-018, TDD).
 - [x] 2026-11-01: un mismo texto enviado dos veces en menos de 10 min se marca como duplicado y no se vuelve a pintar; `uv run climapp-demo-reset` vacía los reportes de la base local con confirmación (TASK-016, TDD).
 - [x] 2026-11-01: en el desglose de evidencia, el pronóstico va aparte como expectativa y el resultado cuenta solo las fuentes observadas. La explicación de E1 se regrabó con Muse Spark real y el contexto nuevo (TASK-017 y TASK-022, TDD).
+- [x] 2026-11-01: se atiende la revisión de Muse del cierre (`docs/reviews/dia-3c.md`): los logs de módulo vuelven a salir en JSON, la caché del explicador incluye las cifras y los duplicados exigen la cuenca y la misma ubicación (TDD).
 
 ## Herramientas previas al evento, no parte del entregable
 Las usamos para trabajar, pero no forman parte de lo que se juzga y ningún archivo suyo está en este repositorio:
