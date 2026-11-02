@@ -20,7 +20,7 @@ from climapp.api.store import ReportStore
 from climapp.config import Settings
 from climapp.verification.muse import MuseTask
 from tests.api.contract import assert_matches
-from tests.api.test_reports_api import INSIDE, SQUARE, STRUCTURED, TEXT, VERDICT
+from tests.api.test_reports_api import INSIDE, OUTSIDE, SQUARE, STRUCTURED, TEXT, VERDICT
 from tests.conftest import rewrite_env
 from tests.verification.fakes import ScriptedMuse, reply
 
@@ -131,3 +131,18 @@ def test_duplicate_window_is_a_setting(env_file: Path) -> None:
     assert Settings(_env_file=env_file).duplicate_window_min == 10
     with pytest.raises(ValueError, match="duplicate_window_min"):
         Settings(_env_file=rewrite_env(env_file, DUPLICATE_WINDOW_MIN="0"))
+
+
+# --- revisión de Muse del día 3c --------------------------------------------------
+
+
+def test_same_text_from_outside_the_basin_is_rejected_not_a_duplicate(client: TestClient) -> None:
+    client.post("/reports", data={"text": TEXT, **INSIDE})
+    outside = client.post("/reports", data={"text": TEXT, **OUTSIDE}).json()
+    assert (outside["status"], outside["duplicate"]) == ("rechazado", False)
+
+
+def test_same_text_from_another_place_in_the_basin_is_a_new_report(client: TestClient) -> None:
+    first = client.post("/reports", data={"text": TEXT, **INSIDE}).json()
+    other = client.post("/reports", data={"text": TEXT, "lat": "1.7", "lon": "-1.3"}).json()
+    assert other["id"] != first["id"] and other["duplicate"] is False
