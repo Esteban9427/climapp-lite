@@ -51,6 +51,7 @@ Todo lo que está en este repositorio se construyó durante el evento. La lista 
 - [x] 2026-11-01: revisión visual en el celular. El pronóstico muestra el riesgo, lo normal para esta época y el percentil del acumulado, en es-CO. Cada reporte muestra su resultado en grande, con una frase de por qué y el desglose de evidencia (estaciones, nivel del río y satélite, con ✓/✗ y valores). Los ejemplos usan un punto del cauce del río Pance, y hay un mensaje claro si falla la ubicación (TASK-017, TDD).
 - [x] 2026-11-01: el mapa dibuja y encuadra la zona aproximada de la cuenca (provisional), muestra en cada popup el desglose de evidencia y deja sus controles bajo el aviso fijo (TASK-018, TDD).
 - [x] 2026-11-01: un mismo texto enviado dos veces en menos de 10 min se marca como duplicado y no se vuelve a pintar; `uv run climapp-demo-reset` vacía los reportes de la base local con confirmación (TASK-016, TDD).
+- [x] 2026-11-01: en el desglose de evidencia, el pronóstico va aparte como expectativa y el resultado cuenta solo las fuentes observadas. La explicación de E1 se regrabó con Muse Spark real y el contexto nuevo (TASK-017 y TASK-022, TDD).
 
 ## Herramientas previas al evento, no parte del entregable
 Las usamos para trabajar, pero no forman parte de lo que se juzga y ningún archivo suyo está en este repositorio:
