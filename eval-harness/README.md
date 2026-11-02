@@ -55,7 +55,9 @@ Con `EVAL_SEED` y los mismos datos, la salida es idéntica (hay test). Primero s
 - **Sector** (`EVAL_SECTORS`): las posiciones de ADR-004 (`alta`, `media-alta`, `media`, `piedemonte`) o un lugar público de OpenStreetMap sobre el río (La Vorágine). Nunca nombres ni coordenadas de estaciones. La especificación no trae coordenadas: la confianza no depende del punto (estaciones de toda la cuenca y una sola celda IMERG, ADR-002 §4), así que el paso 3 puede usar `DEMO_EXAMPLE_LAT`/`LON` para todos los reportes.
 - **Instrucción** (`instruccion_texto`): qué afirma el ciudadano. Los coherentes no dan cifras y solo hablan de creciente si la subida llega a 0,30 m; los exagerados afirman 5 m y casas arrasadas; los falsos afirman lluvia fuerte o creciente.
 
+## Paso 2: textos (`reportes_simulados.jsonl`)
+**Los textos los generó un LLM** (opencode, herramienta previa al evento) a partir de esta especificación, que se deriva de los datos; no son reportes reales. Cada fila es la de la spec más el campo `texto`, que empieza con "Reporte simulado:". Validación del 2026-11-02, sin LLM: 50 filas, todos los campos de la spec intactos, prefijo en todas, 0 datos personales (la misma comprobación `dato_personal` de la compuerta) y 0 términos de `.forbidden-terms`. La etiqueta sigue siendo la de la spec: el LLM no la decide.
+
 ## Pendiente
-- Paso 2: los textos (opencode), a partir de esta especificación.
 - Paso 3: correr la compuerta y medir la tasa de aprobación, el costo por reporte (NFR-3) y la latencia (NFR-2).
 - **Nota sobre la regla 9 del repositorio:** la especificación versiona, para 50 días, agregados diarios derivados de los datos (lluvia media, subida e IMERG), sin estaciones ni coordenadas. Es el entregable de TASK-021 en `eval-harness/`; si el equipo prefiere no versionarlos, se regenera con `build_spec.py` desde `DATA_DIR`.
