@@ -314,3 +314,76 @@ def test_disclaimer_without_official_url_still_names_the_ideam(env_file: Path) -
     assert text.startswith(DISCLAIMER)
     assert IDEAM in text
     assert "()" not in text
+
+
+RATES = {
+    "n": 10,
+    "pass_at_1": 0.5,
+    "within_3": 0.7,
+    "human_review": 0.3,
+    "mean_attempts": 1.8,
+    "cost_usd": 0.31,
+    "latency_p50_s": 40.0,
+    "latency_p95_s": 90.0,
+}
+REPORT_EVAL = {
+    "model": "muse-spark-1.3",
+    "evaluated_on": "2026-11-02",
+    "reports": 10,
+    "labels_from": "datos (eval-harness/README.md)",
+    "texts_from": "LLM a partir de una especificación derivada de los datos",
+    "runs": [
+        {
+            "run": "base_low-medium",
+            "effort_structure": "low",
+            "effort_judge": "medium",
+            "total": RATES,
+            "by_label": {"verdadero": RATES},
+            "by_class": {"dificil": RATES},
+            "matrix": {
+                "verdadero": {"coincide": 7, "parcial": 0, "no_coincide": 0, "revision_humana": 3}
+            },
+        }
+    ],
+}
+
+
+def _with_report_eval(settings: Settings, tmp_path: Path, body: str) -> Settings:
+    path = tmp_path / "report_eval.json"
+    path.write_text(body, encoding="utf-8")
+    return settings.model_copy(update={"report_eval_file": path})
+
+
+def _evaluation(settings: Settings) -> dict[str, object]:
+    app = create_app()
+    app.dependency_overrides[get_settings] = lambda: settings
+    with TestClient(app) as test_client:
+        response = test_client.get("/evaluation")
+    assert response.status_code == 200
+    body: dict[str, object] = response.json()
+    assert_matches(body, "EvaluationReport")
+    return body
+
+
+def test_evaluation_includes_the_report_verification_summary(
+    settings: Settings, tmp_path: Path
+) -> None:
+    body = _evaluation(_with_report_eval(settings, tmp_path, json.dumps(REPORT_EVAL)))
+    assert body["report_verification"] == REPORT_EVAL
+
+
+@pytest.mark.parametrize("content", ["{no es json", '{"runs": 1}'])
+def test_corrupt_report_verification_summary_is_null_not_503(
+    settings: Settings, tmp_path: Path, content: str
+) -> None:
+    body = _evaluation(_with_report_eval(settings, tmp_path, content))
+    assert body["report_verification"] is None
+
+
+def test_missing_report_verification_summary_is_null(settings: Settings, tmp_path: Path) -> None:
+    missing = settings.model_copy(update={"report_eval_file": tmp_path / "no_existe.json"})
+    assert _evaluation(missing)["report_verification"] is None
+
+
+def test_report_verification_summary_is_in_the_contract() -> None:
+    assert_matches(REPORT_EVAL, "ReportVerificationEval")
