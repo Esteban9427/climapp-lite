@@ -2,7 +2,8 @@
 
 Cada clave de `.env.example` es un campo obligatorio: si falta en el entorno o en
 `.env`, `Settings()` falla. Los umbrales científicos están marcados SUPUESTO en
-`docs/PRD.md` y en los ADR.
+`docs/PRD.md` y en los ADR; los pesos de la confianza están aceptados por JM para v1
+(2026-11-01, PRD SP-15).
 """
 
 from datetime import date, datetime

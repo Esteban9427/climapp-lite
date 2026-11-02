@@ -5,8 +5,8 @@ estación sin pareja es su propio grupo), IMERG Early en la celda del reporte y 
 pronóstico vigente. Un grupo indica lluvia si alguna de sus estaciones con dato
 llegó a `RAIN_DAY_MM`. Cada fuente "concuerda" si su señal de lluvia coincide con lo que
 dice el reporte; el puntaje es la suma de pesos de las que concuerdan sobre la suma de
-pesos de las que tienen dato. Pesos: SUPUESTO fijos en configuración (TASK-021 los
-calibra).
+pesos de las que tienen dato. Pesos fijos en configuración, aceptados por JM para v1
+(2026-11-01, PRD SP-15); se ajustarán con la retroalimentación de los usuarios (TASK-021).
 
 Si el reporte afirma una creciente, la subida de nivel del río en 24 h (TASK-039) es una
 fuente más, aparte de la lluvia: concuerda si llegó a `LEVEL_RISE_THRESHOLD_M`. Sin dato
@@ -34,15 +34,16 @@ class ConfidenceWeights:
     """Pesos por tipo de fuente y umbral de lluvia.
 
     Attributes:
-        station: peso de cada grupo de estaciones (`CONFIDENCE_WEIGHT_STATION`, SUPUESTO,
-            reducido porque r entre 0,49 y 0,75 sigue siendo dependencia).
-        satellite: peso de IMERG Early (`CONFIDENCE_WEIGHT_SATELLITE`, SUPUESTO).
-        forecast: peso del pronóstico vigente (`CONFIDENCE_WEIGHT_FORECAST`, SUPUESTO).
+        station: peso de cada grupo de estaciones (`CONFIDENCE_WEIGHT_STATION`, aceptado
+            por JM para v1; reducido porque r entre 0,49 y 0,75 sigue siendo dependencia).
+        satellite: peso de IMERG Early (`CONFIDENCE_WEIGHT_SATELLITE`, aceptado por JM para v1).
+        forecast: peso del pronóstico vigente (`CONFIDENCE_WEIGHT_FORECAST`, aceptado por JM
+            para v1).
         rain_mm: lluvia mínima para "llovió" (`RAIN_DAY_MM`, 1 mm [OMM]).
         level: peso de la subida de nivel en reportes de creciente
-            (`CONFIDENCE_WEIGHT_LEVEL`, SUPUESTO para JM, PRD SP-17).
+            (`CONFIDENCE_WEIGHT_LEVEL`, aceptado por JM para v1, PRD SP-15 y SP-17).
         level_rise_m: subida mínima en 24 h para "hubo creciente"
-            (`LEVEL_RISE_THRESHOLD_M`, SUPUESTO para JM, PRD SP-17).
+            (`LEVEL_RISE_THRESHOLD_M`, SUPUESTO abierto para JM, PRD SP-17).
     """
 
     station: float
@@ -188,7 +189,7 @@ def compute_confidence(
     Args:
         evidence: lo que dice el reporte y lo que dicen las fuentes.
         groups: grupos de estaciones correlacionadas (`STATION_GROUPS_FILE`).
-        weights: pesos SUPUESTO y umbral de lluvia.
+        weights: pesos (aceptados por JM para v1) y umbral de lluvia.
 
     Returns:
         Puntaje en [0, 1] con su desglose; 0 si ninguna fuente tiene dato.
