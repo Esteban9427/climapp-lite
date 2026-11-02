@@ -148,17 +148,17 @@ def _normalized(text: str) -> str:
     return " ".join(text.split()).casefold()
 
 
-def _duplicate(
-    settings: Settings, store: ReportStore, text: str | None, now: datetime
-) -> Report | None:
-    """Reporte con el mismo texto recibido en la ventana, marcado `duplicate`; o `None`."""
-    if not text:
+def _duplicate(settings: Settings, store: ReportStore, new: ReportRecord) -> Report | None:
+    """Reporte con el mismo texto y la misma ubicación publicada en la ventana; o `None`."""
+    if not new.text:
         return None
-    since = now - timedelta(minutes=settings.duplicate_window_min)
-    key = _normalized(text)
+    since = new.received_at - timedelta(minutes=settings.duplicate_window_min)
+    decimals, key = settings.public_coord_decimals, _normalized(new.text)
+    place = new.public(decimals)
     for record in store.received_since(since):
-        if record.text and _normalized(record.text) == key:
-            public = record.public(settings.public_coord_decimals)
+        public = record.public(decimals)
+        same_place = (public.lat, public.lon) == (place.lat, place.lon)
+        if same_place and record.text and _normalized(record.text) == key:
             return public.model_copy(update={"duplicate": True})
     return None
 
@@ -184,15 +184,15 @@ async def post_report(  # noqa: PLR0913 - campos del formulario del contrato (Re
     if not text and photo is None:
         raise ApiError(422, "entrada_invalida", "envía un texto o una foto")
     clean = await _clean_photo(photo, settings)
-    duplicate = _duplicate(settings, store, text, now)
-    if duplicate is not None:
-        log.info("report.duplicate", report_id=str(duplicate.id))
-        return duplicate
     record = _new_record(lat, lon, text, now)
     if not _inside_basin(settings, lat, lon):
         record = _rejected(record, "fuera_de_cuenca")
         store.add(record)
         return record.public(settings.public_coord_decimals)
+    duplicate = _duplicate(settings, store, record)
+    if duplicate is not None:
+        log.info("report.duplicate", report_id=str(duplicate.id))
+        return duplicate
     if clean is not None:
         record = _save_photo(settings, record, clean)
     store.add(record)
