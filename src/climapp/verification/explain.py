@@ -74,7 +74,8 @@ def _optional_context(forecast: Forecast, figures: dict[str, float]) -> dict[str
         meaning = "ese acumulado es mayor que el de este % de los días del entrenamiento"
         extra["percentil_acumulado_pct"] = _figure(figures["percentil_acumulado_pct"], meaning)
     if "climatologia_pct" in figures:
-        meaning = "lo normal para esta época: % de días con 20 mm o más en el entrenamiento"
+        mm = es_number(forecast.threshold_mm)
+        meaning = f"lo normal para esta época: % de días con {mm} mm o más en el entrenamiento"
         extra["climatologia_pct"] = _figure(figures["climatologia_pct"], meaning)
     if forecast.risk is not None:
         extra["riesgo"] = f"riesgo {forecast.risk} frente al umbral de aviso de la variante"
@@ -144,7 +145,11 @@ class _CachedExplainer:
 
     def __call__(self, forecast: Forecast) -> VerifiedExplanation | None:
         """Explicación de la emisión, desde la memoria si ya se pidió."""
-        key = (forecast.target_date, forecast.variant, forecast.model_version, forecast.replay)
+        figures = tuple(
+            sorted(forecast_figures(forecast).items())
+        )  # otras cifras, otra explicación
+        emission = (forecast.target_date, forecast.variant, forecast.model_version, forecast.replay)
+        key: tuple[object, ...] = (*emission, figures, forecast.risk)
         if key not in self._cache:
             self._cache[key] = self._explain(forecast)
         return self._cache[key]

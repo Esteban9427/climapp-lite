@@ -11,6 +11,7 @@ from pydantic import ValidationError
 from climapp.api.schemas import Forecast
 from climapp.config import Settings
 from climapp.verification.explain import (
+    VerifiedExplanation,
     _request,
     build_explainer,
     explain_forecast,
