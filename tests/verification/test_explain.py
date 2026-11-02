@@ -307,3 +307,32 @@ def test_real_run_6_explanations_now_pass_the_schema() -> None:
     for entry in entries["recordings"]:
         parsed = ForecastExplanation.model_validate_json(entry["content"])
         assert 93.7 in parsed.numbers_cited and "93,7" in parsed.text
+
+
+# --- revisión de Muse del día 3c ------------------------------------------------------
+
+
+def test_climatology_meaning_uses_the_configured_threshold() -> None:
+    ten = CONTEXT.model_copy(update={"threshold_mm": 10.0})
+    evidence = _request(ten).evidence
+    assert "días con 10 mm o más" in evidence and "20 mm" not in evidence
+
+
+def test_cached_explainer_asks_again_when_the_figures_change(
+    env_file: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    calls: list[float] = []
+
+    def fake(_: object, forecast: Forecast, __: int) -> VerifiedExplanation:
+        calls.append(forecast.prob_ge_threshold)
+        return VerifiedExplanation(text="ok", fallback=True)
+
+    monkeypatch.setattr("climapp.verification.explain.explain_forecast", fake)
+    monkeypatch.setattr("climapp.verification.explain.build_client", lambda _: object())
+    rewrite_env(env_file, DEMO_FALLBACK="1")
+    explainer = build_explainer(Settings(_env_file=env_file))
+    assert explainer is not None
+    explainer(FORECAST)
+    explainer(FORECAST)  # mismas cifras: desde la caché
+    explainer(FORECAST.model_copy(update={"prob_ge_threshold": 0.2}))
+    assert calls == [FORECAST.prob_ge_threshold, 0.2]
