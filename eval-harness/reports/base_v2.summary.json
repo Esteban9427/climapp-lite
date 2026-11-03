@@ -1,0 +1,106 @@
+{
+  "total": {
+    "n": 50,
+    "pass_at_1": 0.6,
+    "acierto_en_3": 0.8,
+    "revision_humana": 0.46,
+    "intentos_medios": 2.16,
+    "costo_usd": 1.05781325,
+    "latencia_p50_s": 28.011,
+    "latencia_p95_s": 80.92960000000001
+  },
+  "por_etiqueta": {
+    "falso": {
+      "n": 10,
+      "pass_at_1": 1.0,
+      "acierto_en_3": 1.0,
+      "revision_humana": 0.4,
+      "intentos_medios": 1.9,
+      "costo_usd": 0.246559,
+      "latencia_p50_s": 34.9425,
+      "latencia_p95_s": 114.95460000000003
+    },
+    "verdadero": {
+      "n": 30,
+      "pass_at_1": 0.3333333333333333,
+      "acierto_en_3": 0.6666666666666666,
+      "revision_humana": 0.3,
+      "intentos_medios": 1.9666666666666666,
+      "costo_usd": 0.6386965,
+      "latencia_p50_s": 29.009,
+      "latencia_p95_s": 78.1763
+    },
+    "exagerado": {
+      "n": 10,
+      "pass_at_1": 1.0,
+      "acierto_en_3": 1.0,
+      "revision_humana": 1.0,
+      "intentos_medios": 3.0,
+      "costo_usd": 0.17255775,
+      "latencia_p50_s": 26.783,
+      "latencia_p95_s": 42.6897
+    }
+  },
+  "por_clase": {
+    "falso": {
+      "n": 10,
+      "pass_at_1": 1.0,
+      "acierto_en_3": 1.0,
+      "revision_humana": 0.4,
+      "intentos_medios": 1.9,
+      "costo_usd": 0.246559,
+      "latencia_p50_s": 34.9425,
+      "latencia_p95_s": 114.95460000000003
+    },
+    "coherente": {
+      "n": 25,
+      "pass_at_1": 0.36,
+      "acierto_en_3": 0.72,
+      "revision_humana": 0.24,
+      "intentos_medios": 1.88,
+      "costo_usd": 0.554845,
+      "latencia_p50_s": 28.673,
+      "latencia_p95_s": 82.03979999999999
+    },
+    "exagerado": {
+      "n": 10,
+      "pass_at_1": 1.0,
+      "acierto_en_3": 1.0,
+      "revision_humana": 1.0,
+      "intentos_medios": 3.0,
+      "costo_usd": 0.17255775,
+      "latencia_p50_s": 26.783,
+      "latencia_p95_s": 42.6897
+    },
+    "dificil": {
+      "n": 5,
+      "pass_at_1": 0.2,
+      "acierto_en_3": 0.4,
+      "revision_humana": 0.6,
+      "intentos_medios": 2.4,
+      "costo_usd": 0.0838515,
+      "latencia_p50_s": 29.345,
+      "latencia_p95_s": 80.8038
+    }
+  },
+  "matriz": {
+    "falso": {
+      "coincide": 0,
+      "parcial": 0,
+      "no_coincide": 6,
+      "revision_humana": 4
+    },
+    "verdadero": {
+      "coincide": 20,
+      "parcial": 1,
+      "no_coincide": 0,
+      "revision_humana": 9
+    },
+    "exagerado": {
+      "coincide": 0,
+      "parcial": 0,
+      "no_coincide": 0,
+      "revision_humana": 10
+    }
+  }
+}
