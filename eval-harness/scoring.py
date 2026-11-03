@@ -165,3 +165,16 @@ def estimate_usd(observed_usd: float, runs: int, factor: float) -> float:
         US$ estimados.
     """
     return observed_usd * runs * factor
+
+
+API_UNAVAILABLE = "muse_no_disponible"
+
+
+def needs_api_retry(result: Result) -> bool:
+    """`True` si el reporte cayó por la API (timeout o error 500), no por la compuerta."""
+    return result.get("review_reason") == API_UNAVAILABLE
+
+
+def mark_retry(original: Result, retried: Result) -> dict[str, object]:
+    """Resultado del reintento aparte, marcado con el motivo del primer resultado."""
+    return {**retried, "reintento_api": True, "primer_resultado": original.get("review_reason")}

@@ -12,7 +12,7 @@ Llama a la API real (cuesta dinero): `DEMO_FALLBACK` debe ser 0.
 
 import argparse
 import json
-from collections.abc import Sequence
+from collections.abc import Callable, Sequence
 from concurrent.futures import ThreadPoolExecutor
 from datetime import datetime
 from pathlib import Path
@@ -20,7 +20,7 @@ from uuid import uuid4
 
 from pydantic import Field
 from pydantic_settings import BaseSettings, SettingsConfigDict
-from scoring import Bands, Prices, summarize
+from scoring import Bands, Prices, mark_retry, needs_api_retry, summarize
 
 from climapp.api.reports import _verifier
 from climapp.api.schemas import ReportRecord
@@ -117,7 +117,24 @@ def run(
         return result
 
     with ThreadPoolExecutor(max_workers=cfg.workers) as pool:
-        return list(pool.map(one, rows))
+        results = list(pool.map(one, rows))
+    return _retry_api_failures(rows, results, one)
+
+
+def _retry_api_failures(
+    rows: Sequence[dict[str, object]],
+    results: list[dict[str, object]],
+    one: Callable[[dict[str, object]], dict[str, object]],
+) -> list[dict[str, object]]:
+    """Reintenta una vez, aparte y en serie, los reportes que cayeron por la API."""
+    merged = []
+    for row, first in zip(rows, results, strict=True):
+        if needs_api_retry(first):
+            log.warning("eval.api_retry", report_id=row["id"])
+            merged.append(mark_retry(first, one(row)))
+        else:
+            merged.append(first)
+    return merged
 
 
 def _write(
