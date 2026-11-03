@@ -26,7 +26,12 @@ KEYS = {
     "latencia_p95_s": "latency_p95_s",
 }
 LABELS_FROM = "datos: regla escrita en eval-harness/README.md (SP-10, SP-17), sin LLM"
-TEXTS_FROM = "LLM (opencode) a partir de una especificación derivada de los datos"
+TEXTS_FROM = (
+    "Muse Spark 1.3 (nivel Contributor por error, incidente D-07) vía opencode, a partir de"
+    " una especificación derivada de los datos"
+)
+EFFORTS = ("low", "medium", "high")
+RUN_FORMAT = "nombre:esfuerzo_estructura:esfuerzo_juez"
 
 Summary = Mapping[str, Mapping[str, object]]
 
@@ -49,6 +54,19 @@ def _rates(rates: Mapping[str, object]) -> dict[str, object]:
 def _by(groups: Mapping[str, object]) -> dict[str, object]:
     """Tasas por grupo con las claves del contrato."""
     return {name: _rates(rates) for name, rates in groups.items() if isinstance(rates, Mapping)}
+
+
+def parse_run(spec: str) -> tuple[str, str, str]:
+    """`nombre:esfuerzo_estructura:esfuerzo_juez` a sus tres partes.
+
+    Raises:
+        ValueError: si no tiene tres partes o un esfuerzo no es low, medium o high.
+    """
+    parts = spec.split(":")
+    if len(parts) != len(RUN_FORMAT.split(":")) or not set(parts[1:]) <= set(EFFORTS):
+        msg = f"--run {spec!r} no cumple {RUN_FORMAT} con esfuerzos {EFFORTS}"
+        raise ValueError(msg)
+    return parts[0], parts[1], parts[2]
 
 
 def run_entry(
@@ -114,7 +132,7 @@ def main() -> None:
     parser.add_argument("--date", required=True, help="fecha de la evaluación (AAAA-MM-DD)")
     args = parser.parse_args()
     settings, cfg = Settings(), PublishSettings()
-    runs = [tuple(r.split(":")) for r in args.run]
+    runs = [parse_run(r) for r in args.run]
     path = publish(
         cfg.results_dir,
         runs,

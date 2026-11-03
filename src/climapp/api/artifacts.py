@@ -75,6 +75,8 @@ def load_report_eval(path: Path) -> ReportVerificationEval | None:
         return ReportVerificationEval.model_validate(json.loads(_read(path)))
     except ArtifactMissingError:
         log.warning("evaluation.report_eval_missing", path=path.name)
+    except OSError as err:  # directorio, permisos: tampoco es un 500 (revisión de Muse)
+        log.warning("evaluation.report_eval_unreadable", path=path.name, error=type(err).__name__)
     except (json.JSONDecodeError, ValidationError) as err:
         log.warning("evaluation.report_eval_invalid", path=path.name, error=type(err).__name__)
     return None

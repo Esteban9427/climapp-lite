@@ -3,7 +3,7 @@
   "evaluated_on": "2026-11-03",
   "reports": 50,
   "labels_from": "datos: regla escrita en eval-harness/README.md (SP-10, SP-17), sin LLM",
-  "texts_from": "LLM (opencode) a partir de una especificación derivada de los datos",
+  "texts_from": "Muse Spark 1.3 (nivel Contributor por error, incidente D-07) vía opencode, a partir de una especificación derivada de los datos",
   "runs": [
     {
       "run": "base_2000tok",
