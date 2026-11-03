@@ -18,6 +18,7 @@ from __future__ import annotations
 import argparse
 import json
 import logging
+import re
 import subprocess
 import sys
 from pathlib import Path
@@ -25,6 +26,7 @@ from typing import Any
 
 LOG = logging.getLogger("video.audio")
 SAMPLE_RATE = 48_000
+PICO_MAX_DBTP = -1.5  # mismo techo que el loudnorm del video final
 
 
 def filtro_audio(seg_audio: dict[str, Any], ret: dict[str, Any], lufs: int) -> str:
@@ -67,7 +69,7 @@ def ejecutar(cmd: list[str]) -> str:
         cmd: comando y argumentos.
 
     Returns:
-        Salida estándar sin espacios al final.
+        Salida estándar y de error, sin espacios al final (ffmpeg mide por stderr).
 
     Raises:
         RuntimeError: si el comando falla.
@@ -76,7 +78,7 @@ def ejecutar(cmd: list[str]) -> str:
     resultado = subprocess.run(cmd, capture_output=True, text=True, check=False)  # noqa: S603
     if resultado.returncode != 0:
         raise RuntimeError(f"{cmd[0]} falló: {resultado.stderr.strip()[-500:]}")
-    return resultado.stdout.strip()
+    return (resultado.stdout + resultado.stderr).strip()
 
 
 def duracion(ruta: Path) -> float:
@@ -143,7 +145,62 @@ def preparar(seg: dict[str, Any], guion: dict[str, Any], entrada: Path, salida: 
             str(destino),
         ]
     )
+    igualar_sonoridad(destino, guion["salida"]["lufs"])
     return duracion(destino)
+
+
+def sonoridad(ruta: Path) -> tuple[float, float]:
+    """Mide sonoridad integrada (LUFS) y pico verdadero (dBTP) con ebur128.
+
+    Args:
+        ruta: audio a medir.
+
+    Returns:
+        (LUFS integrados, pico verdadero en dBTP).
+
+    Raises:
+        RuntimeError: si ffmpeg falla o no reporta la medida.
+    """
+    log = ejecutar(
+        ["ffmpeg", "-hide_banner", "-nostats", "-i", str(ruta), "-af", "ebur128=peak=true",
+         "-f", "null", "-"]
+    )  # fmt: skip
+    integrada = re.findall(r"I:\s+(-?[\d.]+) LUFS", log)
+    pico = re.findall(r"Peak:\s+(-?[\d.]+) dBFS", log)
+    if not integrada or not pico:
+        raise RuntimeError(f"ebur128 no reportó sonoridad para {ruta.name}")
+    return float(integrada[-1]), float(pico[-1])
+
+
+def igualar_sonoridad(ruta: Path, lufs: float) -> float:
+    """Lleva el audio a ``lufs`` exactos con ganancia lineal (sin compresión).
+
+    El loudnorm de una pasada queda corto en clips de ~20 s (-19 a -21 LUFS);
+    una ganancia medida deja todos los segmentos, reales y clonados, al mismo
+    nivel. Si el pico pasara de ``PICO_MAX_DBTP``, aplica un limitador suave.
+
+    Args:
+        ruta: WAV a corregir en su lugar.
+        lufs: objetivo.
+
+    Returns:
+        Ganancia aplicada en dB.
+
+    Raises:
+        RuntimeError: si ffmpeg falla.
+    """
+    actual, pico = sonoridad(ruta)
+    ganancia = round(lufs - actual, 2)
+    filtro = f"volume={ganancia}dB"
+    if pico + ganancia > PICO_MAX_DBTP:
+        filtro += f",alimiter=limit={10 ** (PICO_MAX_DBTP / 20):.3f}:level=false"
+    tmp = ruta.with_suffix(".tmp.wav")
+    ejecutar(
+        ["ffmpeg", "-hide_banner", "-loglevel", "error", "-y", "-i", str(ruta), "-af", filtro,
+         "-ar", str(SAMPLE_RATE), str(tmp)]
+    )  # fmt: skip
+    tmp.replace(ruta)
+    return ganancia
 
 
 def main(argv: list[str] | None = None) -> int:
