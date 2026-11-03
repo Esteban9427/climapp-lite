@@ -188,3 +188,40 @@ def test_structure_prompt_forbids_extracting_personal_data() -> None:
     assert "datos personales" in STRUCTURE_SYSTEM
     for word in ("teléfonos", "correos", "placas", "nombres"):
         assert word in STRUCTURE_SYSTEM
+
+
+# Fallo B (TASK-036): una cifra del texto que no queda en numbers_cited es `cifra_omitida`
+@pytest.mark.parametrize(
+    ("text", "cited"),
+    [
+        ("Reporte simulado: el río subió 5 metros y arrasó casas", []),
+        ("Reporte simulado: el río subió unos 60 centímetros", [5]),
+        ("Reporte simulado: cayeron 40 mm en la tarde", []),
+    ],
+)
+def test_quantity_left_out_of_numbers_cited_is_rejected(text: str, cited: list[float]) -> None:
+    result = deterministic_checks(
+        reply(_report(numbers_cited=cited)), ReportStructured, frozenset(), source_text=text
+    )
+    assert Reason.CIFRA_OMITIDA in result.reasons
+    assert not result.passed
+    assert result.parsed is None
+
+
+def test_text_without_quantities_is_not_an_omission() -> None:
+    text = "Reporte simulado: a las 4:10 llovía duro, el 14/05"
+    result = deterministic_checks(reply(_report()), ReportStructured, frozenset(), source_text=text)
+    assert result.passed
+
+
+def test_without_source_text_there_is_no_omission_check() -> None:
+    result = deterministic_checks(reply(_report()), ReportStructured, frozenset())
+    assert result.passed
+
+
+def test_omission_goes_after_number_mismatch() -> None:
+    text = "subió 5 metros y cayeron 40 mm"
+    result = deterministic_checks(
+        reply(_report(numbers_cited=[5])), ReportStructured, frozenset(), source_text=text
+    )
+    assert result.reasons == (Reason.CIFRA_NO_COINCIDE, Reason.CIFRA_OMITIDA)

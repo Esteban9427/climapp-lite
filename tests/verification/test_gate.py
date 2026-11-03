@@ -151,3 +151,23 @@ def test_judge_cut_by_max_tokens_is_an_incomplete_answer() -> None:
     result = run_gate(muse, REQUEST, max_attempts=3)
     assert result.status == "requiere_revision_humana"
     assert all("respuesta_incompleta" in a.reasons for a in result.attempts)
+
+
+def test_report_that_omits_a_quantity_is_never_verified() -> None:
+    """Fallo B: "subió 5 metros" con numbers_cited vacío va a revisión humana."""
+    text = "Reporte simulado: el río subió 5 metros y arrasó con las casas"
+    request = GateRequest(
+        task=MuseTask.STRUCTURE,
+        schema=ReportStructured,
+        messages=[{"role": "user", "content": text}],
+        allowed_numbers=frozenset(),
+        evidence=f"Texto del ciudadano: {text}",
+        source_text=text,
+    )
+    muse = ScriptedMuse(
+        {MuseTask.STRUCTURE: [reply(GOOD)] * 3, MuseTask.JUDGE: [reply(_verdict(True, True))] * 3}
+    )
+    result = run_gate(muse, request, max_attempts=3)
+    assert result.status == "requiere_revision_humana"
+    assert result.output is None
+    assert all("cifra_omitida" in a.reasons for a in result.attempts)
