@@ -261,3 +261,61 @@ def test_level_only_matters_for_reports_that_claim_a_flood(evidence: Evidence, r
     assert compute_confidence(not_flood, GROUPS, WEIGHTS) == compute_confidence(
         _with(evidence, report_flood=False, level_rise_m=None), GROUPS, WEIGHTS
     )
+
+
+# Fallo A (TASK-021/036, 2026-11-02): una creciente que no dice nada de la lluvia
+# (`report_rain=None`) no afirma "no llovió"; antes la lluvia de las estaciones le
+# restaba (verdaderos R13 y R27 con 29 %) y un día seco le sumaba (falso R28 con 76 %).
+RAINY = {"EST-A": 30.0, "EST-B": 25.0, "EST-C": 28.0, "EST-D": 12.0}
+DRY = {"EST-A": 0.0, "EST-B": 0.2, "EST-C": 0.0, "EST-D": 0.0}
+
+
+def _flood_claim(
+    rain: bool | None, stations: dict[str, float], rise: float, **kw: object
+) -> Evidence:
+    return _evidence(
+        report_rain=rain, report_flood=True, level_rise_m=rise, station_mm=stations, **kw
+    )
+
+
+@pytest.mark.parametrize("stations", [RAINY, DRY])
+def test_flood_without_rain_claim_ignores_the_station_groups(stations: dict[str, float]) -> None:
+    conf = compute_confidence(_flood_claim(None, stations, 0.8), GROUPS, WEIGHTS)
+    assert "station_group" not in {s.kind for s in conf.sources}
+    assert {s.kind for s in conf.sources} == {"satellite", "forecast", "river_level"}
+
+
+def test_flood_without_rain_claim_scores_the_same_on_rainy_and_dry_station_days() -> None:
+    rainy = compute_confidence(_flood_claim(None, RAINY, 0.8), GROUPS, WEIGHTS)
+    dry = compute_confidence(_flood_claim(None, DRY, 0.8), GROUPS, WEIGHTS)
+    assert rainy.score == dry.score
+
+
+def test_flood_without_rain_claim_agrees_with_satellite_rain_and_forecast_alert() -> None:
+    """Una creciente es coherente con lluvia arriba: IMERG con lluvia y aviso concuerdan."""
+    conf = compute_confidence(_flood_claim(None, RAINY, 0.8), GROUPS, WEIGHTS)
+    assert all(s.agrees for s in conf.sources)
+    assert conf.score == pytest.approx(1.0)
+
+
+def test_false_flood_on_a_dry_day_does_not_agree() -> None:
+    conf = compute_confidence(
+        _flood_claim(None, DRY, 0.02, satellite_mm=0.1, forecast_prob=0.01), GROUPS, WEIGHTS
+    )
+    assert conf.score == pytest.approx(0.0)
+
+
+def test_flood_that_claims_no_rain_still_counts_the_stations() -> None:
+    conf = compute_confidence(_flood_claim(False, RAINY, 0.8), GROUPS, WEIGHTS)
+    stations = [s for s in conf.sources if s.kind == "station_group"]
+    assert len(stations) == 3
+    assert not any(s.agrees for s in stations)
+
+
+@given(evidences, st.floats(min_value=0, max_value=3))
+def test_stations_never_move_a_flood_without_rain_claim(evidence: Evidence, rise: float) -> None:
+    flood = _flood_claim(None, dict(evidence.station_mm), rise)
+    other = _flood_claim(None, {}, rise)
+    assert compute_confidence(flood, GROUPS, WEIGHTS).score == pytest.approx(
+        compute_confidence(other, GROUPS, WEIGHTS).score
+    )

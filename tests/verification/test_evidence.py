@@ -166,3 +166,16 @@ def test_day_without_level_gives_no_level_evidence(tmp_path: Path) -> None:
         numbers_cited=[],
     )
     assert _sources(tmp_path).evidence_for(structured).level_rise_m is None
+
+
+def test_flood_without_intensity_does_not_claim_anything_about_rain() -> None:
+    """Fallo A: "el río creció y viene café" no afirma que no llovió."""
+    assert report_says_rain(_structured("crecida", "ninguna")) is None
+    assert report_says_rain(_structured("crecida", "moderada")) is True
+    assert report_says_rain(_structured("sin_lluvia", "ninguna")) is False
+
+
+def test_evidence_of_a_flood_without_intensity_has_no_rain_claim(tmp_path: Path) -> None:
+    evidence = _sources(tmp_path).evidence_for(_structured("crecida", "ninguna"))
+    assert evidence.report_rain is None
+    assert evidence.report_flood is True
