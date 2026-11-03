@@ -22,3 +22,6 @@ __pycache__/
 .pytest_cache/
 .mypy_cache/
 .ruff_cache/
+
+# Video de demo: audios, clips y MP4 nunca se versionan
+/video/
