@@ -222,7 +222,9 @@ def main(argv: list[str] | None = None) -> int:
     guion = json.loads(args.guion.read_text(encoding="utf-8"))
     args.salida.mkdir(parents=True, exist_ok=True)
     for seg in guion["segmentos"]:
-        if seg["audio"] is None or (args.ids and seg["id"] not in args.ids):
+        # Los segmentos con voz clonada los produce igualar_clon.py.
+        omitir = seg["audio"] is None or seg["audio"].get("clon", False)
+        if omitir or (args.ids and seg["id"] not in args.ids):
             continue
         dur = preparar(seg, guion, args.entrada, args.salida)
         LOG.info(

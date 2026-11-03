@@ -133,10 +133,12 @@
       ],
       "inicio_s": 35,
       "fin_s": 65,
-      "estado_audio": "regrabado_pendiente_verificar",
+      "estado_audio": "clon_pendiente_escucha",
       "audio": {
-        "fuente": "Audio 3b.m4a",
-        "recortar_silencio": true
+        "fuente": "seg03_clon.wav",
+        "recortar_silencio": true,
+        "clon": true,
+        "nota": "Voz clonada de Juan Manuel Nogales con su consentimiento escrito (2026-11-03), solo filas 3 y 4."
       },
       "pantalla": {
         "tipo": "app",
@@ -188,14 +190,48 @@
           "ms": 9000
         }
       ],
-      "narracion_en": "Meet Laura, a fictional resident. It's October first, and her family plans a river day tomorrow. ClimApp Lite says: a fifteen percent chance of heavy rain tomorrow, well above the nine percent normal for this season. Elevated risk. And the basin already got ninety-three point seven millimeters in three days. Muse Spark explains it in plain Spanish, and our code checks every number.",
-      "subtitulo_en": null,
-      "narracion_es": null,
-      "subtitulos": [],
+      "narracion_en": "Meet Laura, a fictional character. It's October first, and her family wants to go to the Pance river tomorrow. The app gives her a fifteen percent chance of twenty millimeters or more, well above the nine percent seasonal normal. The basin already got ninety-three point seven millimeters in three days, more than on ninety-eight percent of days. Our code checks every number: it is an elevated risk to go tomorrow.",
+      "subtitulo_en": "Meet Laura, a fictional character. It's October 1st, and her family wants to go to the Pance river tomorrow. The app gives her a 15% chance of 20 millimeters or more, well above the 9% seasonal normal. The basin already got 93.7 millimeters in three days, more than on 98% of days. Our code checks every number: it is an elevated risk to go tomorrow.",
+      "narracion_es": "Les presento a Laura, un personaje ficticio. Es 1 de octubre y su familia quiere ir mañana al río Pance. La app le da un 15 % de probabilidad de 20 milímetros o más, muy por encima del 9 % normal para la época. La cuenca ya recibió 93,7 milímetros en tres días, más que en el 98 % de los días. Nuestro código revisa cada cifra: ir mañana tiene un riesgo elevado.",
+      "subtitulos": [
+        {
+          "en": "Meet Laura, a fictional character.",
+          "es": "Les presento a Laura, un personaje ficticio."
+        },
+        {
+          "en": "It's October 1st, and her family wants to go to the Pance river tomorrow.",
+          "es": "Es 1 de octubre y su familia quiere ir mañana al río Pance."
+        },
+        {
+          "en": "The app gives her a 15% chance of 20 millimeters or more,",
+          "es": "La app le da un 15 % de probabilidad de 20 milímetros o más,"
+        },
+        {
+          "en": "well above the 9% seasonal normal.",
+          "es": "muy por encima del 9 % normal para la época."
+        },
+        {
+          "en": "The basin already got 93.7 millimeters in three days,",
+          "es": "La cuenca ya recibió 93,7 milímetros en tres días,"
+        },
+        {
+          "en": "more than on 98% of days.",
+          "es": "más que en el 98 % de los días."
+        },
+        {
+          "en": "Our code checks every number:",
+          "es": "Nuestro código revisa cada cifra:"
+        },
+        {
+          "en": "it is an elevated risk to go tomorrow.",
+          "es": "ir mañana tiene un riesgo elevado."
+        }
+      ],
       "presupuesto_s": [
         null,
         30
-      ]
+      ],
+      "nota_recorte": "Recortado para caber en 30 s: sin 'of rain' (x2) ni 'Muse Spark explains it in plain Spanish, and'."
     },
     {
       "id": 4,
@@ -206,10 +242,12 @@
       ],
       "inicio_s": 65,
       "fin_s": 100,
-      "estado_audio": "regrabado_pendiente_verificar",
+      "estado_audio": "clon_pendiente_escucha",
       "audio": {
-        "fuente": "Audio 4b.m4a",
-        "recortar_silencio": true
+        "fuente": "seg04_clon.wav",
+        "recortar_silencio": true,
+        "clon": true,
+        "nota": "Voz clonada de Juan Manuel Nogales con su consentimiento escrito (2026-11-03), solo filas 3 y 4."
       },
       "pantalla": {
         "tipo": "app",
@@ -268,10 +306,39 @@
           "ms": 12000
         }
       ],
-      "narracion_en": "Laura's family stays home. The next day, a neighbor sees the river rising and reports it. Muse Spark turns the message into structured claims, and a second Muse call checks them against rain gauges, the river level, up sixty-eight centimeters, and NASA satellite rainfall. The confidence is computed by code. The report is consistent with the data.",
-      "subtitulo_en": null,
-      "narracion_es": null,
-      "subtitulos": [],
+      "narracion_en": "Laura makes a decision: her family stays at home. The next day, a neighbor sees the river rising and reports it. Muse Spark turns the informal message into structured claims, and a second Muse call judges the report against rain gauges, the river level, up sixty-eight centimeters, and NASA satellite rainfall. Confidence is computed by code, not by the model. The report is consistent with the data.",
+      "subtitulo_en": "Laura makes a decision: her family stays at home. The next day, a neighbor sees the river rising and reports it. Muse Spark turns the informal message into structured claims, and a second Muse call judges the report against rain gauges, the river level, up 68 centimeters, and NASA satellite rainfall. Confidence is computed by code, not by the model. The report is consistent with the data.",
+      "narracion_es": "Laura toma una decisión: su familia se queda en casa. Al día siguiente, un vecino ve que el río crece y lo reporta. Muse Spark convierte el mensaje informal en afirmaciones estructuradas, y una segunda llamada a Muse juzga el reporte contra los pluviómetros, el nivel del río, que subió 68 centímetros, y la lluvia satelital de la NASA. La confianza la calcula el código, no el modelo. El reporte coincide con los datos.",
+      "subtitulos": [
+        {
+          "en": "Laura makes a decision: her family stays at home.",
+          "es": "Laura toma una decisión: su familia se queda en casa."
+        },
+        {
+          "en": "The next day, a neighbor sees the river rising and reports it.",
+          "es": "Al día siguiente, un vecino ve que el río crece y lo reporta."
+        },
+        {
+          "en": "Muse Spark turns the informal message into structured claims,",
+          "es": "Muse Spark convierte el mensaje informal en afirmaciones estructuradas,"
+        },
+        {
+          "en": "and a second Muse call judges the report against rain gauges,",
+          "es": "y una segunda llamada a Muse juzga el reporte contra los pluviómetros,"
+        },
+        {
+          "en": "the river level, up 68 centimeters, and NASA satellite rainfall.",
+          "es": "el nivel del río, que subió 68 centímetros, y la lluvia satelital de la NASA."
+        },
+        {
+          "en": "Confidence is computed by code, not by the model.",
+          "es": "La confianza la calcula el código, no el modelo."
+        },
+        {
+          "en": "The report is consistent with the data.",
+          "es": "El reporte coincide con los datos."
+        }
+      ],
       "presupuesto_s": [
         null,
         34
@@ -616,12 +683,12 @@
       "pantalla": {
         "tipo": "tarjeta_final",
         "duracion_s": 8,
-        "texto": "Laura and the neighbor are fictional. The demo replays real data from Oct 1–2, 2026, with recorded Muse Spark responses. Live mode uses the Meta Model API."
+        "texto": "Laura and the neighbor are fictional. The demo replays real data from Oct 1–2, 2026, with recorded Muse Spark responses. Narration in the demo section uses an AI voice clone of Juan Manuel Nogales, made with his consent (Chatterbox, open source)."
       },
       "acciones": [],
       "narracion_en": null,
       "subtitulo_en": null,
-      "narracion_es": "Laura y el vecino son ficticios. La demo reproduce datos reales del 1 y 2 de octubre de 2026 con respuestas grabadas de Muse Spark. El modo en vivo usa la Meta Model API.",
+      "narracion_es": "Laura y el vecino son ficticios. La demo reproduce datos reales del 1 y 2 de octubre de 2026 con respuestas grabadas de Muse Spark. La narración de la sección de la demo usa un clon de voz con IA de Juan Manuel Nogales, hecho con su consentimiento (Chatterbox, open source).",
       "subtitulos": []
     }
   ]

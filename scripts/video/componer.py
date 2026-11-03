@@ -82,6 +82,21 @@ def duracion(ruta: Path) -> float:
     return float(salida.strip())
 
 
+def wav_segmento(seg: dict[str, Any], carpeta: Path) -> Path:
+    """Ruta del WAV final de un segmento: ``segNN.wav`` o el clon igualado.
+
+    Args:
+        seg: segmento del guion con bloque ``audio``.
+        carpeta: carpeta ``video/audio``.
+
+    Returns:
+        Ruta del audio que se usa en el video.
+    """
+    if seg["audio"].get("clon", False):
+        return carpeta / str(seg["audio"]["fuente"])
+    return carpeta / f"seg{seg['id']:02d}.wav"
+
+
 def planificar(guion: dict[str, Any], audio: Path) -> list[Plan]:
     """Calcula duración, inicio y subtítulos de cada segmento.
 
@@ -101,7 +116,7 @@ def planificar(guion: dict[str, Any], audio: Path) -> list[Plan]:
         if seg["audio"] is None:
             dur, cues = float(seg["pantalla"]["duracion_s"]), []
         else:
-            dur = duracion(audio / f"seg{n:02d}.wav") + relleno
+            dur = duracion(wav_segmento(seg, audio)) + relleno
             cues = json.loads((audio / f"seg{n:02d}.cues.json").read_text(encoding="utf-8"))
         planes.append(Plan(seg, round(dur, 3), round(t, 3), relleno / 2, cues))
         t += dur
@@ -266,7 +281,7 @@ def render_segmento(p: Plan, guion: dict[str, Any], rutas: dict[str, Path]) -> P
     if p.seg["audio"] is None:
         audio_in, af = ["-f", "lavfi", "-i", "anullsrc=r=48000:cl=mono"], f"[{idx_audio}:a]"
     else:
-        audio_in, af = ["-i", str(rutas["audio"] / f"seg{n:02d}.wav")], f"[{idx_audio}:a]"
+        audio_in, af = ["-i", str(wav_segmento(p.seg, rutas["audio"]))], f"[{idx_audio}:a]"
     af += f"adelay={int(p.retraso * 1000)}:all=1,apad=whole_dur={p.duracion}"
     af += f",atrim=duration={p.duracion}[a]"
     salida = tmp / f"seg{n:02d}.mkv"

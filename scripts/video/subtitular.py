@@ -25,6 +25,21 @@ LOG = logging.getLogger("video.subtitular")
 MODELO = "large-v3"
 
 
+def wav_segmento(seg: dict[str, Any], carpeta: Path) -> Path:
+    """Ruta del WAV final de un segmento: ``segNN.wav`` o el clon igualado.
+
+    Args:
+        seg: segmento del guion con bloque ``audio``.
+        carpeta: carpeta ``video/audio``.
+
+    Returns:
+        Ruta del audio que se usa en el video.
+    """
+    if seg["audio"].get("clon", False):
+        return carpeta / str(seg["audio"]["fuente"])
+    return carpeta / f"seg{seg['id']:02d}.wav"
+
+
 def palabras(modelo: WhisperModel, wav: Path) -> list[tuple[float, float]]:
     """Tiempos (inicio, fin) de cada palabra reconocida en el audio.
 
@@ -86,7 +101,7 @@ def main(argv: list[str] | None = None) -> int:
     for seg in guion["segmentos"]:
         if seg["id"] not in args.ids or not seg["subtitulos"]:
             continue
-        cues = alinear(seg["subtitulos"], palabras(modelo, args.audio / f"seg{seg['id']:02d}.wav"))
+        cues = alinear(seg["subtitulos"], palabras(modelo, wav_segmento(seg, args.audio)))
         (args.audio / f"seg{seg['id']:02d}.cues.json").write_text(
             json.dumps(cues, indent=1, ensure_ascii=False)
         )
