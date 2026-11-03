@@ -1,0 +1,16 @@
+# Guion v2 — ClimApp Lite (narra Juan Manuel, inglés; subtítulos ES)
+Audios: ~/voz/jm/Audio N.m4a = fila N (1..7). Fila 8 sin voz.
+
+| # | Ventana | Pantalla / acciones | narracion_en |
+|---|---|---|---|
+| 1 | 0:00–0:20 | Assets ~/video/assets/pance_* (domingo en el río; si no hay: tarjeta "Sunday at the Pance river") | Every Sunday, thousands of families in Cali head to the Pance river. It's a tradition: a pot of sancocho over a wood fire, kids in the water, the whole family together. But the Pance is a mountain river. Heavy rain upstream can make it rise within hours, even when the sky above you looks fine. |
+| 2 | 0:20–0:35 | Clip a cámara de JM si existe; si no, tarjeta "Juan Manuel Nogales — Hydroclimate monitoring, Cali" | I'm Juan Manuel Nogales, and I work on hydroclimate monitoring in Cali. The data to answer 'should we go tomorrow?' already exists in our rain gauges. It just never reaches families as a clear answer. So we built ClimApp Lite. |
+| 3 | 0:35–1:05 | /?replay_date=2026-10-01: zoom probabilidad, "Riesgo elevado", acumulado; scroll a la explicación | Meet Laura, a fictional resident. It's October 1st, and her family plans a river day tomorrow. ClimApp Lite gives her a 15% chance of 20 millimeters or more, about 1.7 times the seasonal normal. Elevated risk. The basin already got 93.7 millimeters in three days, more than 98% of days. Muse Spark explains it in plain Spanish, and our code checks every number. |
+| 4 | 1:05–1:40 | Formulario → enviar reporte verdadero (config/demo_reports.json) → estado "Coincide con los datos", 100 %, 5 fuentes | Laura's family stays home. The next day, a neighbor sees the river rising and reports it. Muse Spark turns the informal message into structured claims, and a second Muse call judges them against rain gauges, the river level, which rose 68 centimeters, and NASA satellite rainfall. Confidence is computed by code, not by the model: consistent with the data. |
+| 5 | 1:40–2:05 | Reporte exagerado → revisión humana; reporte falso → "No coincide"; termina en /mapa?replay_date=2026-10-01 | What if someone exaggerates? 'The river rose five meters.' The data doesn't support it, so a human reviews it, and it's never published. A false report is flagged as not consistent. Nothing reaches the public map without evidence. |
+| 6 | 2:05–2:30 | github.com README de eval-harness, tabla de corridas, resaltar base_v2 | We tested it on 50 simulated reports with labels from real data: 80% correct within three attempts, zero exaggerated or false reports verified, about two cents per report. We published every run, including our failures and the limitations. |
+| 7 | 2:30–2:50 | Assets del río otra vez → tarjeta "Juan Manuel Nogales · Juan Esteban Gallego" | So next Sunday, before packing the sancocho, families in Cali can check ClimApp Lite. Local data, open source, and Meta's Muse Spark wrapped in checks you can audit. Built for our world, by Juan Manuel Nogales and Juan Esteban Gallego. |
+| 8 | 2:50–2:58 | Tarjeta final, sin voz | (texto en pantalla) Laura and the neighbor are fictional. The demo replays real data from Oct 1–2, 2026, with recorded Muse Spark responses. Live mode uses the Meta Model API. |
+
+Las ventanas son guía: se re-temporizan con la duración real de cada audio (total ≤ 3:00).
+Subtítulos ES: traducir de lo que JM realmente dijo (los .txt).
