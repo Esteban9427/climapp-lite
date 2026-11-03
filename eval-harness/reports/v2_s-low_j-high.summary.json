@@ -1,0 +1,106 @@
+{
+  "total": {
+    "n": 50,
+    "pass_at_1": 0.6,
+    "acierto_en_3": 0.78,
+    "revision_humana": 0.46,
+    "intentos_medios": 2.26,
+    "costo_usd": 1.142728,
+    "latencia_p50_s": 28.1575,
+    "latencia_p95_s": 75.92515
+  },
+  "por_etiqueta": {
+    "falso": {
+      "n": 10,
+      "pass_at_1": 1.0,
+      "acierto_en_3": 1.0,
+      "revision_humana": 0.2,
+      "intentos_medios": 2.0,
+      "costo_usd": 0.26317575,
+      "latencia_p50_s": 44.164500000000004,
+      "latencia_p95_s": 93.96045
+    },
+    "verdadero": {
+      "n": 30,
+      "pass_at_1": 0.3333333333333333,
+      "acierto_en_3": 0.6333333333333333,
+      "revision_humana": 0.36666666666666664,
+      "intentos_medios": 2.1,
+      "costo_usd": 0.720045,
+      "latencia_p50_s": 38.807,
+      "latencia_p95_s": 75.92515
+    },
+    "exagerado": {
+      "n": 10,
+      "pass_at_1": 1.0,
+      "acierto_en_3": 1.0,
+      "revision_humana": 1.0,
+      "intentos_medios": 3.0,
+      "costo_usd": 0.15950725,
+      "latencia_p50_s": 26.454500000000003,
+      "latencia_p95_s": 28.99445
+    }
+  },
+  "por_clase": {
+    "falso": {
+      "n": 10,
+      "pass_at_1": 1.0,
+      "acierto_en_3": 1.0,
+      "revision_humana": 0.2,
+      "intentos_medios": 2.0,
+      "costo_usd": 0.26317575,
+      "latencia_p50_s": 44.164500000000004,
+      "latencia_p95_s": 93.96045
+    },
+    "coherente": {
+      "n": 25,
+      "pass_at_1": 0.36,
+      "acierto_en_3": 0.72,
+      "revision_humana": 0.28,
+      "intentos_medios": 2.0,
+      "costo_usd": 0.624933,
+      "latencia_p50_s": 39.625,
+      "latencia_p95_s": 75.13640000000001
+    },
+    "exagerado": {
+      "n": 10,
+      "pass_at_1": 1.0,
+      "acierto_en_3": 1.0,
+      "revision_humana": 1.0,
+      "intentos_medios": 3.0,
+      "costo_usd": 0.15950725,
+      "latencia_p50_s": 26.454500000000003,
+      "latencia_p95_s": 28.99445
+    },
+    "dificil": {
+      "n": 5,
+      "pass_at_1": 0.2,
+      "acierto_en_3": 0.2,
+      "revision_humana": 0.8,
+      "intentos_medios": 2.6,
+      "costo_usd": 0.095112,
+      "latencia_p50_s": 23.082,
+      "latencia_p95_s": 105.2938
+    }
+  },
+  "matriz": {
+    "falso": {
+      "coincide": 0,
+      "parcial": 0,
+      "no_coincide": 8,
+      "revision_humana": 2
+    },
+    "verdadero": {
+      "coincide": 19,
+      "parcial": 0,
+      "no_coincide": 0,
+      "revision_humana": 11
+    },
+    "exagerado": {
+      "coincide": 0,
+      "parcial": 0,
+      "no_coincide": 0,
+      "revision_humana": 10
+    }
+  }
+}
