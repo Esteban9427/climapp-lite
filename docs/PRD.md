@@ -42,8 +42,8 @@ Sequía e incendios · audio · cuentas de usuario · notificaciones · app nati
 | ID | Requisito | Métrica | Fuente |
 |----|-----------|---------|--------|
 | NFR-1 | Latencia de `GET /forecast` (precalculado) | p95 ≤ 300 ms en el host local | SUPUESTO |
-| NFR-2 | Latencia de `POST /reports` con verificación completa | p95 ≤ 30 s con ≤ 3 intentos; la respuesta es asíncrona (`202` + estado) | SUPUESTO; se mide en el eval-harness |
-| NFR-3 | Costo por reporte (estructuración + juez, todos los intentos) | ≤ US$0,03 por reporte (p95) | Precios $1,25/M de entrada y $4,25/M de salida [API]; tokens por intento: SUPUESTO (~1,5 k de entrada y ~0,4 k de salida al estructurar, ~2,5 k y ~0,8 k en el juez ≈ US$0,01 por intento) |
+| NFR-2 | Latencia de `POST /reports` con verificación completa | p95 ≤ 30 s con ≤ 3 intentos; la respuesta es asíncrona (`202` + estado) | **No se cumple: limitación de v1.** Medido el 2026-11-03 en el eval-harness (`base_v2`, 50 reportes, Muse real): p50 ≈ 28 s y **p95 ≈ 81 s** por reporte. La respuesta sigue siendo asíncrona; la demo usa respuestas grabadas (`DEMO_FALLBACK=1`, ADR-002 §5) y no muestra esta latencia |
+| NFR-3 | Costo por reporte (estructuración + juez, todos los intentos) | ≤ US$0,03 por reporte (p95) | Precios $1,25/M de entrada y $4,25/M de salida [API]; tokens por intento: SUPUESTO (~1,5 k de entrada y ~0,4 k de salida al estructurar, ~2,5 k y ~0,8 k en el juez ≈ US$0,01 por intento). **Medido el 2026-11-03** (`base_v2`, eval-harness): ≈ US$0,021 por reporte en promedio, con todos sus intentos |
 | NFR-4 | Cobertura de tests | ≥ 85 % en el núcleo (`core-paths.txt`: forecast, verification) y ≥ 70 % global | Perfil hackathon de FORGE |
 | NFR-5 | El modelo supera a las líneas base | AUC y Brier del RF mejores que climatología y persistencia en el periodo apartado | **Cumple (TASK-008, 2026-10-30; se mantiene el 2026-10-31 tras SP-12 y SP-13)**, ver §Resultados del modelo. Previo: AUC 0,75 / 0,66 / 0,57 [PREV], con otra partición |
 | NFR-6 | Confianza reproducible | El mismo reporte con la misma evidencia da la misma confianza (función pura, con test) | ADR-002 |

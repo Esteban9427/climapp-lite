@@ -18,9 +18,11 @@ La verificación sigue el taller de Meta: comprobaciones deterministas, juez y r
 2. **Parámetros por tarea:**
    | Tarea | `reasoning_effort` | `max_tokens` | Salida |
    |-------|--------------------|--------------|--------|
-   | Estructurar el reporte | `low` | 2000 | JSON según `ReportStructured` (data-model) |
-   | Explicar el pronóstico | `low` | 2000 | Texto ≤ 600 caracteres + lista de cifras citadas |
-   | Juez | `medium` | 2000 | JSON `{claims:[{text, evidence, supported}]}` |
+   | Estructurar el reporte | `low` | 3000 (`MUSE_MAX_TOKENS_STRUCTURE`) | JSON según `ReportStructured` (data-model) |
+   | Explicar el pronóstico | `low` | 2000 (`MUSE_MAX_TOKENS_EXPLAIN`) | Texto ≤ 600 caracteres + lista de cifras citadas |
+   | Juez | `medium` | 4000 (`MUSE_MAX_TOKENS_JUDGE`) | JSON `{claims:[{text, evidence, supported}]}` |
+
+   **Tope por tarea (TASK-036, 2026-11-02):** antes era un solo `MUSE_MAX_TOKENS=2000`. En la corrida `base_2000tok` del set de evaluación se cortaron (`finish_reason=length`, contenido vacío) el 24 % de los juicios y el 6 % de las estructuraciones, y reportes verdaderos iban a revisión humana. Los topes salen de la distribución de `tokens_out` de esa corrida, no de los aciertos: censurada en 2000, una lognormal ajustada da p99 ≈ 3 400 en el juez y ≈ 2 840 al estructurar. Con 3000 / 4000 no se cortó ninguna respuesta en las corridas siguientes (máximo observado del juez high: 3 983). Un juez que aun así llegue vacío sigue siendo `respuesta_incompleta`. El esfuerzo del juez sigue en `medium`: el juez `high` no mejoró el acierto en más de 10 pp y costó más (criterio fijado antes de ver sus resultados, `eval-harness/README.md`).
 3. **Compuerta, en este orden:**
    1. **Deterministas** (sin LLM, en `verification/checks.py`):
       - `finish_reason == "stop"`; si no, `respuesta_incompleta`.
@@ -28,6 +30,7 @@ La verificación sigue el taller de Meta: comprobaciones deterministas, juez y r
       - JSON válido contra el esquema Pydantic; si no, `esquema_invalido`.
       - Cada cifra citada es igual a la calculada por el modelo de pronóstico (probabilidad redondeada a entero en %, acumulado a 1 decimal en mm); si no, `cifra_no_coincide`.
       - **Sin datos personales en las afirmaciones** (decisión del equipo, 2026-10-31): una `claim` con teléfono colombiano (celular 3xx o fijo 60x, con +57 opcional), correo o placa (ABC123, ABC12D) produce `dato_personal`. El prompt de estructuración además pide omitirlos. Va después de las cifras y antes de las herramientas.
+      - **Cifras omitidas (TASK-036, 2026-11-02):** cada cifra con unidad de longitud o de lluvia del texto del ciudadano ("5 metros", "unos 60 centímetros", "40 mm"; normalizadas a metros, con coma o punto decimal) debe quedar en `numbers_cited`, en alguna unidad; si no, `cifra_omitida`. Va justo después de `cifra_no_coincide`. Las horas ("4:10"), las fechas y las cifras sin unidad de medida ("unas 3 horas") no cuentan. Caso motivador: el reporte exagerado R26 del set ("el agua subió 5 metros") se verificó con `numbers_cited` vacío y confianza 100 %. Como en los reportes `allowed_numbers` está vacío, toda cifra con unidad termina en revisión humana: citada da `cifra_no_coincide` y omitida, `cifra_omitida`.
       - Solo herramientas permitidas: la lista blanca de v1 está vacía, así que cualquier `tool_call` produce `herramienta_no_permitida`.
    2. **Juez Muse Spark:** revisa que cada afirmación del registro o de la explicación tenga evidencia en el texto o la foto del ciudadano o en los datos entregados. Cualquier `supported=false` produce `afirmacion_sin_evidencia`.
    3. **Reintentos:** hasta 3 intentos en total. Cada intento recibe los motivos del anterior. Tras el tercer fallo, el estado es `requiere_revision_humana`. Cada intento queda registrado (motivos, tokens y latencia).
@@ -37,6 +40,7 @@ La verificación sigue el taller de Meta: comprobaciones deterministas, juez y r
    - Puntaje entre 0 y 1 con su desglose por fuente. En v1 los pesos son **SUPUESTO fijos en configuración** (Must). Su calibración con el set de evaluación de reportes es **[Should]** (TASK-021).
    - **Pesos (decisión del equipo, 2026-10-31; aceptados por JM para v1 el 2026-11-01: "están bien para iniciar", PRD SP-15; se ajustarán con la retroalimentación de los usuarios, trabajo futuro fuera de v1):** cada grupo de estaciones **1,0**, IMERG Early **0,5** y pronóstico vigente **0,25**. Se cuenta como lluvia desde 1 mm ([OMM], PRD SP-2). Razones: las estaciones son la verdad de terreno en la cuenca; el satélite es una celda de 0,1° con r entre 0,46 y 0,64 frente a las estaciones; el pronóstico es una expectativa, no evidencia de lo que pasó. **Se fijaron antes de evaluar la demo** y no se ajustan mirando sus resultados. Un grupo de estaciones pesa más que el satélite y el pronóstico juntos (hay test). El puntaje es la suma de los pesos de las fuentes que concuerdan dividida por la suma de los pesos de las fuentes con dato. Un grupo indica lluvia si alguna de sus estaciones con dato llega a 1 mm; con la media, una estación duplicada podía subir la confianza (TASK-014).
    - **Nivel del río (TASK-039, 2026-11-01):** si el reporte afirma una creciente (`event_type = crecida`), la subida máxima de nivel en 24 h de la serie `LEVEL_SERIES_ID` (EST-A) ese día local (`LEVEL_DAILY_FILE`, ADR-004 §8; si el archivo trae otras series, no cuentan) es una fuente más, `kind = river_level`, **aparte de la lluvia**: mide el río, no la lluvia, así que no se agrupa con las estaciones. Concuerda si la subida llega a `LEVEL_RISE_THRESHOLD_M`. Peso `CONFIDENCE_WEIGHT_LEVEL`. Valores: **peso 1,0, aceptado por JM para v1 (2026-11-01); subida de 0,30 m, SUPUESTO abierto (PRD SP-17)**, los dos fijados antes de evaluar la demo. Sin dato de nivel ese día, o si el reporte no afirma creciente, la fuente no aparece y la confianza queda igual (tests de propiedades). Agrega `river_level` al enum `kind` del contrato (`docs/openapi.yaml`).
+   - **Creciente sin afirmación de lluvia (TASK-036, 2026-11-02; decisión aceptada por el equipo el 2026-11-03):** un reporte `crecida` con `intensity=ninguna` ("el río creció y viene café") no afirma que no llovió: `report_rain` es `None`. Entonces los grupos de estaciones **no suman ni restan**, y **IMERG Early y el pronóstico concuerdan si indican lluvia o aviso**, porque una creciente es coherente con lluvia en la cuenca; el nivel del río sigue siendo la fuente principal. Un reporte que dice que no llovió (`sin_lluvia`) sigue contando las estaciones. **Caso motivador: R28**, un reporte falso de desborde en un día seco (lluvia media 0,0 mm, subida 0,02 m), salía con 76 % ("Coincide con los datos") porque las estaciones secas concordaban con un "no llovió" que el reporte nunca dijo; también los verdaderos R13 y R27 caían a 29 % porque la lluvia les restaba. Pesos y umbrales sin cambios. **Alternativa descartada:** quitar también IMERG y el pronóstico y dejar solo el nivel. Un día sin dato de nivel dejaba el reporte sin fuentes (confianza 0), y comparar IMERG y el pronóstico con "no llovió", como antes, hacía que un día seco respaldara una creciente falsa.
    - **IMERG Early (TASK-009b, 2026-11-01):** la fuente satelital (`IMERG_E`, peso 0,5) toma el valor de `IMERG_EARLY_FILE` en la fecha del día local del reporte. El día de IMERG es UTC (19:00 a 19:00 hora local): compararlo con el día local es un **SUPUESTO** que corre la ventana 5 h. Es una sola celda de 0,1° (la del centro de la cuenca) para todos los reportes, no la celda de cada reporte. Sin dato ese día, la fuente no aparece. En la demo (2026-10-02, 18,5 mm) concuerda con el reporte verdadero y no con el falso; las confianzas siguen en 100 % y 0 %.
    - **Etiqueta visible según la confianza (2026-11-01, SUPUESTO):** en la web, un reporte `verificado` se muestra como "Coincide con los datos" si la confianza es ≥ `AGREEMENT_HIGH` (0,7), "Coincidencia parcial" si es ≥ `AGREEMENT_LOW` (0,3) y "No coincide con los datos" si es menor. `verificado` solo dice que el texto pasó la compuerta; sin la etiqueta, el reporte falso de la demo (confianza 0 %) se leía como confirmado. Umbrales propuestos por JE el 2026-11-01, pendientes de JM. El contrato de la API no cambia: la etiqueta es solo de la vista (`docs/design.md`).
 5. **Fallback:** con `DEMO_FALLBACK=1` se usan respuestas grabadas que pasan por la misma compuerta y se marcan `fallback=true`.
@@ -70,9 +74,23 @@ La verificación sigue el taller de Meta: comprobaciones deterministas, juez y r
 - **Tokens:** un intento con juez gasta entre 2 100 y 3 500 tokens de salida, porque el razonamiento consume `max_tokens`. El costo real por intento (≈ US$0,01-0,02) queda cerca del SUPUESTO de NFR-3, y un reporte que agota los 3 intentos cuesta ≈ US$0,04.
 - La explicación de la corrida 2 decía "es de 13", sin "%". El prompt ahora pide el símbolo, y un test lo exige en la grabación de la demo (corrida 3).
 
+## Evaluación con el set simulado (TASK-021 y TASK-036, 2026-11-02 y 03)
+50 reportes simulados con etiqueta salida de los datos (`eval-harness/`), `muse-spark-1.3` estándar por la API y el mismo `ReportVerifier` de la app. Resultados completos en `eval-harness/reports/` y en `GET /evaluation` (`report_verification`).
+
+| Corrida | Acierto en 3 intentos | Exagerados / falsos verificados | A revisión humana | US$/reporte | Latencia p50 / p95 |
+|---------|-----------------------|---------------------------------|-------------------|-------------|--------------------|
+| `base_2000tok` (tope 2000) | 72 % | 0 / 0 (por los cortes) | 54 % | 0,029 | 62 / 79 s |
+| `base_fix` (tope por tarea) | 64 % | 3 / 1 | 46 % | 0,025 | 38 / 76 s |
+| `base_v2` (+ cifras omitidas y crecientes) | 80 % | 0 / 0 | 46 % | 0,021 | 28 / 81 s |
+| `v2_s-low_j-high` (juez high) | 78 % | 0 / 0 | 46 % | 0,023 | 28 / 76 s |
+
+- **Latencia real: limitación de v1 (NFR-2).** Un reporte tarda ≈ 30 s en la mediana y ≈ 80 s en el p95, lejos del SUPUESTO de p95 ≤ 30 s. La API ya responde `202` y la web consulta el estado, así que el usuario no queda bloqueado, pero espera más de un minuto en el peor caso. **La demo usa respuestas grabadas** (`DEMO_FALLBACK=1`, §5): no muestra esta latencia ni gasta en la API.
+- **Costo:** ≈ US$0,02 por reporte con todos sus intentos, dentro del SUPUESTO de NFR-3 (≤ US$0,03). La evaluación completa costó US$6,30.
+- Limitaciones del set (no es ciego, misma familia de modelos, una corrida por configuración, exageraciones sin cifra): `eval-harness/README.md`.
+
 ## Consecuencias
 - Costo estimado por intento ≈ US$0,01 (SUPUESTO de tokens; NFR-3); como máximo 3 intentos por reporte.
-- La latencia de `POST /reports` es de segundos, así que la API responde `202` y el cliente consulta el estado.
+- La latencia de `POST /reports` es de decenas de segundos (p50 ≈ 28 s y p95 ≈ 81 s medidos en el set de evaluación, limitación de v1), así que la API responde `202` y el cliente consulta el estado.
 - El juez no reemplaza a las comprobaciones deterministas, que corren primero y gratis.
 
 ## Alternativas descartadas
