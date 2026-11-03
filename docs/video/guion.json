@@ -4,74 +4,186 @@
   "nota": "Narra Juan Manuel Nogales con audios reales (no voz clonada). Las ventanas de guion son guía; inicio_s/fin_s se recalculan con la duración real de cada audio.",
   "limite_total_s": 180,
   "relleno_s": 0.5,
-  "retemporizado": {"pausa_max_s": 0.35, "tempo": 1.02, "umbral_silencio_db": -40, "tempo_max": 1.08},
-  "captura": {"viewport": [390, 844], "device_scale_factor": 3, "base_url": "http://127.0.0.1:8765", "pausa_min_ms": 1500},
-  "salida": {"ancho": 1920, "alto": 1080, "lufs": -16},
+  "retemporizado": {
+    "pausa_max_s": 0.35,
+    "tempo": 1.02,
+    "umbral_silencio_db": -40,
+    "tempo_max": 1.08
+  },
+  "captura": {
+    "viewport": [
+      390,
+      844
+    ],
+    "device_scale_factor": 3,
+    "base_url": "http://127.0.0.1:8765",
+    "pausa_min_ms": 1500
+  },
+  "salida": {
+    "ancho": 1920,
+    "alto": 1080,
+    "lufs": -16
+  },
   "segmentos": [
     {
       "id": 1,
       "seccion": "Sunday at the Pance river",
-      "ventana_guion": [0, 20],
+      "ventana_guion": [
+        0,
+        20
+      ],
       "inicio_s": 0,
       "fin_s": 20,
       "estado_audio": "ok",
-      "audio": {"fuente": "Audio 1.m4a", "recortar_silencio": true},
-      "pantalla": {"tipo": "tarjeta", "texto": "Sunday at the Pance river"},
+      "audio": {
+        "fuente": "Audio 1.m4a",
+        "recortar_silencio": true
+      },
+      "pantalla": {
+        "tipo": "tarjeta",
+        "texto": "Sunday at the Pance river"
+      },
       "acciones": [],
       "narracion_en": "Every Sunday, thousands of families in Cali head to the Pance river. It's a tradition: a pot of sancocho over a wood fire, kids in the water, the whole family together. But the Pance is a mountain river. Heavy rain upstream can make it rise within hours, even when the sky above you looks fine.",
       "subtitulo_en": "Every Sunday, thousands of families in Cali head to the Pance river. It is a tradition: a pot of sancocho over a wood fire, kids in the water, the whole family enjoying time together. But Pance is a river in the mountains. Heavy rain upstream can make it rise within hours, even when the sky above you looks nice.",
       "narracion_es": "Cada domingo, miles de familias de Cali van al río Pance. Es una tradición: una olla de sancocho en fogón de leña, los niños en el agua, toda la familia disfrutando junta. Pero el Pance es un río de montaña. Un aguacero río arriba puede hacerlo crecer en pocas horas, aunque el cielo sobre ti se vea bonito.",
       "subtitulos": [
-        {"en": "Every Sunday, thousands of families in Cali head to the Pance river.", "es": "Cada domingo, miles de familias de Cali van al río Pance."},
-        {"en": "It is a tradition: a pot of sancocho over a wood fire,", "es": "Es una tradición: una olla de sancocho en fogón de leña,"},
-        {"en": "kids in the water, the whole family enjoying time together.", "es": "los niños en el agua, toda la familia disfrutando junta."},
-        {"en": "But Pance is a river in the mountains.", "es": "Pero el Pance es un río de montaña."},
-        {"en": "Heavy rain upstream can make it rise within hours,", "es": "Un aguacero río arriba puede hacerlo crecer en pocas horas,"},
-        {"en": "even when the sky above you looks nice.", "es": "aunque el cielo sobre ti se vea bonito."}
+        {
+          "en": "Every Sunday, thousands of families in Cali head to the Pance river.",
+          "es": "Cada domingo, miles de familias de Cali van al río Pance."
+        },
+        {
+          "en": "It is a tradition: a pot of sancocho over a wood fire,",
+          "es": "Es una tradición: una olla de sancocho en fogón de leña,"
+        },
+        {
+          "en": "kids in the water, the whole family enjoying time together.",
+          "es": "los niños en el agua, toda la familia disfrutando junta."
+        },
+        {
+          "en": "But Pance is a river in the mountains.",
+          "es": "Pero el Pance es un río de montaña."
+        },
+        {
+          "en": "Heavy rain upstream can make it rise within hours,",
+          "es": "Un aguacero río arriba puede hacerlo crecer en pocas horas,"
+        },
+        {
+          "en": "even when the sky above you looks nice.",
+          "es": "aunque el cielo sobre ti se vea bonito."
+        }
       ]
     },
     {
       "id": 2,
       "seccion": "Who we are",
-      "ventana_guion": [20, 35],
+      "ventana_guion": [
+        20,
+        35
+      ],
       "inicio_s": 20,
       "fin_s": 35,
       "estado_audio": "ok",
-      "audio": {"fuente": "Video 2 - 2nd.mp4", "recortar_silencio": false, "nota": "audio propio del clip a cámara, sincronizado con los labios"},
-      "pantalla": {"tipo": "camara", "fuente": "Video 2 - 2nd.mp4", "rotulo": "Juan Manuel Nogales — Hydroclimate monitoring, Cali"},
+      "audio": {
+        "fuente": "Video 2 - 2nd.mp4",
+        "recortar_silencio": false,
+        "nota": "audio propio del clip a cámara, sincronizado con los labios"
+      },
+      "pantalla": {
+        "tipo": "camara",
+        "fuente": "Video 2 - 2nd.mp4",
+        "rotulo": "Juan Manuel Nogales — Hydroclimate monitoring, Cali"
+      },
       "acciones": [],
       "narracion_en": "I'm Juan Manuel Nogales, and I work on hydroclimate monitoring in Cali. The data to answer 'should we go tomorrow?' already exists in our rain gauges. It just never reaches families as a clear answer. So we built ClimApp Lite.",
       "subtitulo_en": "I am Juan Manuel Nogales, and I work on weather monitoring in Cali. The data to answer the question 'Should we go to Pance tomorrow?' already sits in our rain gauges. It just never reaches families as clear advice. So we built ClimApp Lite.",
       "narracion_es": "Soy Juan Manuel Nogales y trabajo en monitoreo del clima en Cali. Los datos para responder '¿Vamos mañana al Pance?' ya están en nuestros pluviómetros. Pero nunca llegan a las familias como un consejo claro. Por eso creamos ClimApp Lite.",
       "subtitulos": [
-        {"en": "I am Juan Manuel Nogales, and I work on weather monitoring in Cali.", "es": "Soy Juan Manuel Nogales y trabajo en monitoreo del clima en Cali."},
-        {"en": "The data to answer the question 'Should we go to Pance tomorrow?'", "es": "Los datos para responder '¿Vamos mañana al Pance?'"},
-        {"en": "already sits in our rain gauges.", "es": "ya están en nuestros pluviómetros."},
-        {"en": "It just never reaches families as clear advice.", "es": "Pero nunca llegan a las familias como un consejo claro."},
-        {"en": "So we built ClimApp Lite.", "es": "Por eso creamos ClimApp Lite."}
+        {
+          "en": "I am Juan Manuel Nogales, and I work on weather monitoring in Cali.",
+          "es": "Soy Juan Manuel Nogales y trabajo en monitoreo del clima en Cali."
+        },
+        {
+          "en": "The data to answer the question 'Should we go to Pance tomorrow?'",
+          "es": "Los datos para responder '¿Vamos mañana al Pance?'"
+        },
+        {
+          "en": "already sits in our rain gauges.",
+          "es": "ya están en nuestros pluviómetros."
+        },
+        {
+          "en": "It just never reaches families as clear advice.",
+          "es": "Pero nunca llegan a las familias como un consejo claro."
+        },
+        {
+          "en": "So we built ClimApp Lite.",
+          "es": "Por eso creamos ClimApp Lite."
+        }
       ]
     },
     {
       "id": 3,
       "seccion": "The forecast",
-      "ventana_guion": [35, 65],
+      "ventana_guion": [
+        35,
+        65
+      ],
       "inicio_s": 35,
       "fin_s": 65,
       "estado_audio": "pendiente_regrabar",
-      "audio": {"fuente": "Audio 3.m4a", "recortar_silencio": true},
-      "pantalla": {"tipo": "app", "ruta": "/?replay_date=2026-10-01"},
+      "audio": {
+        "fuente": "Audio 3.m4a",
+        "recortar_silencio": true
+      },
+      "pantalla": {
+        "tipo": "app",
+        "ruta": "/?replay_date=2026-10-01"
+      },
       "acciones": [
-        {"op": "goto", "ruta": "/?replay_date=2026-10-01"},
-        {"op": "wait", "ms": 2000},
-        {"op": "resaltar", "selector": ".prob"},
-        {"op": "wait", "ms": 3500},
-        {"op": "resaltar", "selector": ".badge-partial"},
-        {"op": "wait", "ms": 3500},
-        {"op": "resaltar", "selector": "p.muted:has-text('Acumulado')"},
-        {"op": "wait", "ms": 4000},
-        {"op": "scroll", "selector": "h2:has-text('Explicación')"},
-        {"op": "resaltar", "selector": "h2:has-text('Explicación') + p"},
-        {"op": "wait", "ms": 9000}
+        {
+          "op": "goto",
+          "ruta": "/?replay_date=2026-10-01"
+        },
+        {
+          "op": "wait",
+          "ms": 2000
+        },
+        {
+          "op": "resaltar",
+          "selector": ".prob"
+        },
+        {
+          "op": "wait",
+          "ms": 3500
+        },
+        {
+          "op": "resaltar",
+          "selector": ".badge-partial"
+        },
+        {
+          "op": "wait",
+          "ms": 3500
+        },
+        {
+          "op": "resaltar",
+          "selector": "p.muted:has-text('Acumulado')"
+        },
+        {
+          "op": "wait",
+          "ms": 4000
+        },
+        {
+          "op": "scroll",
+          "selector": "h2:has-text('Explicación')"
+        },
+        {
+          "op": "resaltar",
+          "selector": "h2:has-text('Explicación') + p"
+        },
+        {
+          "op": "wait",
+          "ms": 9000
+        }
       ],
       "narracion_en": "Meet Laura, a fictional resident. It's October 1st, and her family plans a river day tomorrow. ClimApp Lite gives her a 15% chance of 20 millimeters or more, about 1.7 times the seasonal normal. Elevated risk. The basin already got 93.7 millimeters in three days, more than 98% of days. Muse Spark explains it in plain Spanish, and our code checks every number.",
       "subtitulo_en": null,
@@ -81,26 +193,73 @@
     {
       "id": 4,
       "seccion": "A citizen report",
-      "ventana_guion": [65, 100],
+      "ventana_guion": [
+        65,
+        100
+      ],
       "inicio_s": 65,
       "fin_s": 100,
       "estado_audio": "pendiente_regrabar",
-      "audio": {"fuente": "Audio 4.m4a", "recortar_silencio": true},
-      "pantalla": {"tipo": "app", "ruta": "/?replay_date=2026-10-01"},
+      "audio": {
+        "fuente": "Audio 4.m4a",
+        "recortar_silencio": true
+      },
+      "pantalla": {
+        "tipo": "app",
+        "ruta": "/?replay_date=2026-10-01"
+      },
       "acciones": [
-        {"op": "goto", "ruta": "/?replay_date=2026-10-01"},
-        {"op": "scroll", "selector": "#report-title"},
-        {"op": "wait", "ms": 2000},
-        {"op": "click", "selector": ".demo-example >> nth=0"},
-        {"op": "wait", "ms": 3000},
-        {"op": "click", "selector": "#report-form button[type=submit]"},
-        {"op": "esperar_resultado"},
-        {"op": "scroll", "selector": "#report-status"},
-        {"op": "resaltar", "selector": "#report-status .result-badge"},
-        {"op": "wait", "ms": 4000},
-        {"op": "scroll", "selector": "#report-status .evidence"},
-        {"op": "resaltar", "selector": "#report-status .evidence li:has-text('Nivel')"},
-        {"op": "wait", "ms": 12000}
+        {
+          "op": "goto",
+          "ruta": "/?replay_date=2026-10-01"
+        },
+        {
+          "op": "scroll",
+          "selector": "#report-title"
+        },
+        {
+          "op": "wait",
+          "ms": 2000
+        },
+        {
+          "op": "click",
+          "selector": ".demo-example >> nth=0"
+        },
+        {
+          "op": "wait",
+          "ms": 3000
+        },
+        {
+          "op": "click",
+          "selector": "#report-form button[type=submit]"
+        },
+        {
+          "op": "esperar_resultado"
+        },
+        {
+          "op": "scroll",
+          "selector": "#report-status"
+        },
+        {
+          "op": "resaltar",
+          "selector": "#report-status .result-badge"
+        },
+        {
+          "op": "wait",
+          "ms": 4000
+        },
+        {
+          "op": "scroll",
+          "selector": "#report-status .evidence"
+        },
+        {
+          "op": "resaltar",
+          "selector": "#report-status .evidence li:has-text('Nivel')"
+        },
+        {
+          "op": "wait",
+          "ms": 12000
+        }
       ],
       "narracion_en": "Laura's family stays home. The next day, a neighbor sees the river rising and reports it. Muse Spark turns the informal message into structured claims, and a second Muse call judges them against rain gauges, the river level, which rose 68 centimeters, and NASA satellite rainfall. Confidence is computed by code, not by the model: consistent with the data.",
       "subtitulo_en": null,
@@ -110,34 +269,120 @@
     {
       "id": 5,
       "seccion": "Exaggerated and false reports",
-      "ventana_guion": [100, 125],
+      "ventana_guion": [
+        100,
+        125
+      ],
       "inicio_s": 100,
       "fin_s": 125,
       "estado_audio": "pendiente_regrabar",
-      "audio": {"fuente": "Audio 5.m4a", "recortar_silencio": true},
-      "pantalla": {"tipo": "app", "ruta": "/?replay_date=2026-10-01 → /mapa?replay_date=2026-10-01"},
+      "audio": {
+        "fuente": "Audio 5.m4a",
+        "recortar_silencio": true
+      },
+      "pantalla": {
+        "tipo": "app",
+        "ruta": "/?replay_date=2026-10-01 → /mapa?replay_date=2026-10-01"
+      },
       "acciones": [
-        {"op": "goto", "ruta": "/?replay_date=2026-10-01"},
-        {"op": "scroll", "selector": "#report-title"},
-        {"op": "click", "selector": ".demo-example >> nth=1"},
-        {"op": "wait", "ms": 1500},
-        {"op": "click", "selector": "#report-form button[type=submit]"},
-        {"op": "esperar_resultado"},
-        {"op": "scroll", "selector": "#report-status"},
-        {"op": "resaltar", "selector": "#report-status .result-badge"},
-        {"op": "wait", "ms": 3500},
-        {"op": "scroll", "selector": "#report-title"},
-        {"op": "click", "selector": ".demo-example >> nth=2"},
-        {"op": "wait", "ms": 1500},
-        {"op": "click", "selector": "#report-form button[type=submit]"},
-        {"op": "esperar_resultado"},
-        {"op": "scroll", "selector": "#report-status"},
-        {"op": "resaltar", "selector": "#report-status .result-badge"},
-        {"op": "wait", "ms": 3500},
-        {"op": "goto", "ruta": "/mapa?replay_date=2026-10-01"},
-        {"op": "wait", "ms": 2500},
-        {"op": "scroll", "selector": "#map"},
-        {"op": "wait", "ms": 6000}
+        {
+          "op": "goto",
+          "ruta": "/?replay_date=2026-10-01"
+        },
+        {
+          "op": "scroll",
+          "selector": "#report-title"
+        },
+        {
+          "op": "click",
+          "selector": ".demo-example >> nth=1"
+        },
+        {
+          "op": "wait",
+          "ms": 1500
+        },
+        {
+          "op": "click",
+          "selector": "#report-form button[type=submit]"
+        },
+        {
+          "op": "esperar_resultado"
+        },
+        {
+          "op": "scroll",
+          "selector": "#report-status"
+        },
+        {
+          "op": "resaltar",
+          "selector": "#report-status .result-badge"
+        },
+        {
+          "op": "wait",
+          "ms": 3500
+        },
+        {
+          "op": "scroll",
+          "selector": "#report-title"
+        },
+        {
+          "op": "click",
+          "selector": ".demo-example >> nth=2"
+        },
+        {
+          "op": "wait",
+          "ms": 1500
+        },
+        {
+          "op": "click",
+          "selector": "#report-form button[type=submit]"
+        },
+        {
+          "op": "esperar_resultado"
+        },
+        {
+          "op": "scroll",
+          "selector": "#report-status"
+        },
+        {
+          "op": "resaltar",
+          "selector": "#report-status .result-badge"
+        },
+        {
+          "op": "wait",
+          "ms": 3500
+        },
+        {
+          "op": "goto",
+          "ruta": "/mapa?replay_date=2026-10-01"
+        },
+        {
+          "op": "resaltar",
+          "selector": "#legend-title + p"
+        },
+        {
+          "op": "wait",
+          "ms": 2500
+        },
+        {
+          "op": "scroll",
+          "selector": "#map"
+        },
+        {
+          "op": "wait",
+          "ms": 2500
+        },
+        {
+          "op": "scroll",
+          "selector": "#map-list"
+        },
+        {
+          "op": "resaltar",
+          "selector": "#map-list"
+        },
+        {
+          "op": "wait",
+          "ms": 3000
+        }
       ],
       "narracion_en": "What if someone exaggerates? 'The river rose five meters.' The data doesn't support it, so a human reviews it, and it's never published. A false report is flagged as not consistent. Nothing reaches the public map without evidence.",
       "subtitulo_en": null,
@@ -147,68 +392,194 @@
     {
       "id": 6,
       "seccion": "How we measured it",
-      "ventana_guion": [125, 150],
+      "ventana_guion": [
+        125,
+        150
+      ],
       "inicio_s": 125,
       "fin_s": 150,
       "estado_audio": "ok",
-      "audio": {"fuente": "Audio 6.m4a", "recortar_silencio": true},
-      "pantalla": {"tipo": "web", "url": "https://github.com/Esteban9427/climapp-lite/blob/main/eval-harness/README.md", "esquema": "light"},
+      "audio": {
+        "fuente": "Audio 6.m4a",
+        "recortar_silencio": true
+      },
+      "pantalla": {
+        "tipo": "web",
+        "url": "https://github.com/Esteban9427/climapp-lite/blob/main/eval-harness/README.md",
+        "esquema": "light",
+        "clip_inicio_s": 1.5
+      },
       "acciones": [
-        {"op": "goto_url", "url": "https://github.com/Esteban9427/climapp-lite/blob/main/eval-harness/README.md"},
-        {"op": "wait", "ms": 2500},
-        {"op": "scroll", "selector": "article table:has(td:has-text('base_v2'))"},
-        {"op": "resaltar", "selector": "article tr:has(td:has-text('base_v2'))"},
-        {"op": "wait", "ms": 7000},
-        {"op": "scroll", "selector": "article li:has-text('0 exagerados y 0 falsos')"},
-        {"op": "resaltar", "selector": "article li:has-text('0 exagerados y 0 falsos')"},
-        {"op": "wait", "ms": 5000},
-        {"op": "scroll", "selector": "article li:has-text('No es un set ciego')"},
-        {"op": "resaltar", "selector": "article li:has-text('No es un set ciego')"},
-        {"op": "wait", "ms": 6000}
+        {
+          "op": "goto_url",
+          "url": "https://github.com/Esteban9427/climapp-lite/blob/main/eval-harness/README.md"
+        },
+        {
+          "op": "wait",
+          "ms": 1500
+        },
+        {
+          "op": "scroll",
+          "selector": "article tr:has(td:has-text('base_v2'))"
+        },
+        {
+          "op": "resaltar",
+          "selector": "article tr:has(td:has-text('base_v2'))"
+        },
+        {
+          "op": "wait",
+          "ms": 1500
+        },
+        {
+          "op": "scroll",
+          "selector": "article tr:has(td:has-text('base_v2')) td:has-text('80 %')"
+        },
+        {
+          "op": "resaltar",
+          "selector": "article tr:has(td:has-text('base_v2')) td:has-text('80 %')",
+          "acumular": true
+        },
+        {
+          "op": "wait",
+          "ms": 3000
+        },
+        {
+          "op": "scroll",
+          "selector": "article tr:has(td:has-text('base_v2')) td:has-text('67 / 100 / 100')"
+        },
+        {
+          "op": "resaltar",
+          "selector": "article tr:has(td:has-text('base_v2')) td:has-text('67 / 100 / 100')",
+          "acumular": true
+        },
+        {
+          "op": "wait",
+          "ms": 3000
+        },
+        {
+          "op": "scroll",
+          "selector": "article tr:has(td:has-text('base_v2')) td:has-text('0,021')"
+        },
+        {
+          "op": "resaltar",
+          "selector": "article tr:has(td:has-text('base_v2')) td:has-text('0,021')",
+          "acumular": true
+        },
+        {
+          "op": "wait",
+          "ms": 2500
+        },
+        {
+          "op": "scroll",
+          "selector": "article li:has-text('No es un set ciego')"
+        },
+        {
+          "op": "resaltar",
+          "selector": "article li:has-text('No es un set ciego')"
+        },
+        {
+          "op": "wait",
+          "ms": 4000
+        }
       ],
       "narracion_en": "We tested it on 50 simulated reports with labels from real data: 80% correct within three attempts, zero exaggerated or false reports verified, about two cents per report. We published every run, including our failures and the limitations.",
       "subtitulo_en": "We tested our model on 50 simulated reports with labels from real data. 80% correct within 3 attempts. Zero exaggerated or false reports were approved. The cost was about 2 cents per report. We published every run, including all failures and limitations.",
       "narracion_es": "Probamos nuestro modelo con 50 reportes simulados, etiquetados con datos reales. 80 % de aciertos en hasta 3 intentos. Cero reportes exagerados o falsos aprobados. El costo fue de unos 2 centavos de dólar por reporte. Publicamos cada corrida, incluidos todos los fallos y las limitaciones.",
       "subtitulos": [
-        {"en": "We tested our model on 50 simulated reports", "es": "Probamos nuestro modelo con 50 reportes simulados,"},
-        {"en": "with labels from real data.", "es": "etiquetados con datos reales."},
-        {"en": "80% correct within 3 attempts.", "es": "80 % de aciertos en hasta 3 intentos."},
-        {"en": "Zero exaggerated or false reports were approved.", "es": "Cero reportes exagerados o falsos aprobados."},
-        {"en": "The cost was about 2 cents per report.", "es": "El costo fue de unos 2 centavos de dólar por reporte."},
-        {"en": "We published every run, including all failures and limitations.", "es": "Publicamos cada corrida, incluidos todos los fallos y las limitaciones."}
+        {
+          "en": "We tested our model on 50 simulated reports",
+          "es": "Probamos nuestro modelo con 50 reportes simulados,"
+        },
+        {
+          "en": "with labels from real data.",
+          "es": "etiquetados con datos reales."
+        },
+        {
+          "en": "80% correct within 3 attempts.",
+          "es": "80 % de aciertos en hasta 3 intentos."
+        },
+        {
+          "en": "Zero exaggerated or false reports were approved.",
+          "es": "Cero reportes exagerados o falsos aprobados."
+        },
+        {
+          "en": "The cost was about 2 cents per report.",
+          "es": "El costo fue de unos 2 centavos de dólar por reporte."
+        },
+        {
+          "en": "We published every run, including all failures and limitations.",
+          "es": "Publicamos cada corrida, incluidos todos los fallos y las limitaciones."
+        }
       ]
     },
     {
       "id": 7,
       "seccion": "ClimApp Lite",
-      "ventana_guion": [150, 170],
+      "ventana_guion": [
+        150,
+        170
+      ],
       "inicio_s": 150,
       "fin_s": 170,
       "estado_audio": "ok",
-      "audio": {"fuente": "Audio 7.m4a", "recortar_silencio": true},
-      "pantalla": {"tipo": "tarjetas", "textos": ["Sunday at the Pance river", "Juan Manuel Nogales · Juan Esteban Gallego"]},
+      "audio": {
+        "fuente": "Audio 7.m4a",
+        "recortar_silencio": true
+      },
+      "pantalla": {
+        "tipo": "tarjetas",
+        "textos": [
+          "Sunday at the Pance river",
+          "Juan Manuel Nogales · Juan Esteban Gallego"
+        ]
+      },
       "acciones": [],
       "narracion_en": "So next Sunday, before packing the sancocho, families in Cali can check ClimApp Lite. Local data, open source, and Meta's Muse Spark wrapped in checks you can audit. Built for our world, by Juan Manuel Nogales and Juan Esteban Gallego.",
       "subtitulo_en": "So, next Sunday, before planning the sancocho, families in Cali can check ClimApp Lite. Local data, open source, and powered by Meta's Muse Spark. You can audit the forecast against real data. Built for our city, but it can be replicated around the world, by Juan Manuel Nogales and Juan Esteban Gallego.",
       "narracion_es": "Así que el próximo domingo, antes de planear el sancocho, las familias de Cali pueden consultar ClimApp Lite. Datos locales, código abierto y con Muse Spark de Meta. Puedes auditar el pronóstico contra datos reales. Hecho para nuestra ciudad, pero replicable en cualquier lugar del mundo, por Juan Manuel Nogales y Juan Esteban Gallego.",
       "subtitulos": [
-        {"en": "So, next Sunday, before planning the sancocho,", "es": "Así que el próximo domingo, antes de planear el sancocho,"},
-        {"en": "families in Cali can check ClimApp Lite.", "es": "las familias de Cali pueden consultar ClimApp Lite."},
-        {"en": "Local data, open source, and powered by Meta's Muse Spark.", "es": "Datos locales, código abierto y con Muse Spark de Meta."},
-        {"en": "You can audit the forecast against real data.", "es": "Puedes auditar el pronóstico contra datos reales."},
-        {"en": "Built for our city, but it can be replicated around the world,", "es": "Hecho para nuestra ciudad, pero replicable en cualquier lugar del mundo,"},
-        {"en": "by Juan Manuel Nogales and Juan Esteban Gallego.", "es": "por Juan Manuel Nogales y Juan Esteban Gallego."}
+        {
+          "en": "So, next Sunday, before planning the sancocho,",
+          "es": "Así que el próximo domingo, antes de planear el sancocho,"
+        },
+        {
+          "en": "families in Cali can check ClimApp Lite.",
+          "es": "las familias de Cali pueden consultar ClimApp Lite."
+        },
+        {
+          "en": "Local data, open source, and powered by Meta's Muse Spark.",
+          "es": "Datos locales, código abierto y con Muse Spark de Meta."
+        },
+        {
+          "en": "You can audit the forecast against real data.",
+          "es": "Puedes auditar el pronóstico contra datos reales."
+        },
+        {
+          "en": "Built for our city, but it can be replicated around the world,",
+          "es": "Hecho para nuestra ciudad, pero replicable en cualquier lugar del mundo,"
+        },
+        {
+          "en": "by Juan Manuel Nogales and Juan Esteban Gallego.",
+          "es": "por Juan Manuel Nogales y Juan Esteban Gallego."
+        }
       ]
     },
     {
       "id": 8,
       "seccion": "",
-      "ventana_guion": [170, 178],
+      "ventana_guion": [
+        170,
+        178
+      ],
       "inicio_s": 170,
       "fin_s": 178,
       "estado_audio": "sin_voz",
       "audio": null,
-      "pantalla": {"tipo": "tarjeta_final", "duracion_s": 8, "texto": "Laura and the neighbor are fictional. The demo replays real data from Oct 1–2, 2026, with recorded Muse Spark responses. Live mode uses the Meta Model API."},
+      "pantalla": {
+        "tipo": "tarjeta_final",
+        "duracion_s": 8,
+        "texto": "Laura and the neighbor are fictional. The demo replays real data from Oct 1–2, 2026, with recorded Muse Spark responses. Live mode uses the Meta Model API."
+      },
       "acciones": [],
       "narracion_en": null,
       "subtitulo_en": null,
