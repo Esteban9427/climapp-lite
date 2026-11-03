@@ -286,9 +286,9 @@
       ],
       "inicio_s": 100,
       "fin_s": 125,
-      "estado_audio": "regrabado_pendiente_verificar",
+      "estado_audio": "ok_original_aceptado",
       "audio": {
-        "fuente": "Audio 5b.m4a",
+        "fuente": "Audio 5.m4a",
         "recortar_silencio": true
       },
       "pantalla": {
@@ -310,7 +310,7 @@
         },
         {
           "op": "wait",
-          "ms": 1500
+          "ms": 4500
         },
         {
           "op": "click",
@@ -329,7 +329,7 @@
         },
         {
           "op": "wait",
-          "ms": 3500
+          "ms": 2500
         },
         {
           "op": "scroll",
@@ -341,7 +341,7 @@
         },
         {
           "op": "wait",
-          "ms": 1500
+          "ms": 400
         },
         {
           "op": "click",
@@ -360,7 +360,7 @@
         },
         {
           "op": "wait",
-          "ms": 3500
+          "ms": 1200
         },
         {
           "op": "goto",
@@ -372,7 +372,7 @@
         },
         {
           "op": "wait",
-          "ms": 2500
+          "ms": 1500
         },
         {
           "op": "scroll",
@@ -380,7 +380,7 @@
         },
         {
           "op": "wait",
-          "ms": 2500
+          "ms": 1000
         },
         {
           "op": "scroll",
@@ -392,17 +392,39 @@
         },
         {
           "op": "wait",
-          "ms": 3000
+          "ms": 2000
         }
       ],
       "narracion_en": "What if someone exaggerates? 'The river rose five meters.' The data doesn't support it, so the report goes to a human reviewer, and it's never published. A false report is flagged as not consistent. Nothing reaches the public map without evidence.",
-      "subtitulo_en": null,
-      "narracion_es": null,
-      "subtitulos": [],
-      "presupuesto_s": [
-        18,
-        22
-      ]
+      "subtitulo_en": "Then, a question rises: what if someone exaggerates? Something like 'The river rose five meters.' The data doesn't support it, so this human report will never be published. A false report is flagged as non-consistent information. Nothing reaches the public map without evidence.",
+      "narracion_es": "Entonces surge una pregunta: ¿y si alguien exagera? Algo como 'El río subió cinco metros'. Los datos no lo respaldan, así que este reporte ciudadano nunca se publicará. Un reporte falso queda marcado como información que no coincide. Nada llega al mapa público sin evidencia.",
+      "subtitulos": [
+        {
+          "en": "Then, a question rises: what if someone exaggerates?",
+          "es": "Entonces surge una pregunta: ¿y si alguien exagera?"
+        },
+        {
+          "en": "Something like 'The river rose five meters.'",
+          "es": "Algo como 'El río subió cinco metros'."
+        },
+        {
+          "en": "The data doesn't support it,",
+          "es": "Los datos no lo respaldan,"
+        },
+        {
+          "en": "so this human report will never be published.",
+          "es": "así que este reporte ciudadano nunca se publicará."
+        },
+        {
+          "en": "A false report is flagged as non-consistent information.",
+          "es": "Un reporte falso queda marcado como información que no coincide."
+        },
+        {
+          "en": "Nothing reaches the public map without evidence.",
+          "es": "Nada llega al mapa público sin evidencia."
+        }
+      ],
+      "nota_audio": "Se acepta la toma original: cifras correctas y la pantalla muestra 'En revisión humana'."
     },
     {
       "id": 6,
