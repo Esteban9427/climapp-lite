@@ -5,26 +5,28 @@ Uso (Playwright en un entorno aparte, sin ``playwright install``):
         docs/video/guion.json video/clips 3 4 5 6
 
 Ejecuta las ``acciones`` de cada segmento con viewport móvil y escribe
-``segNN.webm`` más ``segNN.json`` (marcas de tiempo de cada acción).
+``segNN.mp4`` más ``segNN.json`` (marcas de tiempo de cada acción).
 Requiere el servidor de la demo en ``captura.base_url`` (127.0.0.1).
 """
 
 from __future__ import annotations
 
 import argparse
+import base64
 import json
 import logging
 import shutil
+import subprocess
 import sys
 import time
 from pathlib import Path
 from typing import Any
 
-from playwright.sync_api import Browser, Page, sync_playwright
+from playwright.sync_api import Browser, CDPSession, Page, sync_playwright
 from playwright.sync_api import TimeoutError as PlaywrightTimeout
 
 LOG = logging.getLogger("video.grabar")
-ESCALA_VIDEO = 2  # el screencast se graba a 2x del viewport (780x1688)
+CALIDAD_JPEG = 92
 TIMEOUT_RESULTADO_MS = 60_000
 NUEVO_RESULTADO_JS = """() => {
   const r = document.querySelector('#report-status .result');
@@ -90,6 +92,75 @@ def ejecutar(page: Page, accion: dict[str, Any], base_url: str) -> None:
         raise ValueError(f"operación desconocida en el guion: {op}")
 
 
+def iniciar_screencast(
+    cdp: CDPSession, carpeta: Path, t0: float, tam: tuple[int, int]
+) -> list[tuple[float, Path]]:
+    """Arranca el screencast de Chromium a resolución de dispositivo.
+
+    El video nativo de Playwright no escala el viewport al tamaño pedido;
+    el screencast de CDP entrega cuadros nítidos (p. ej. 1170x2532).
+
+    Args:
+        cdp: sesión CDP de la página.
+        carpeta: dónde guardar los cuadros JPEG.
+        t0: tiempo de referencia (epoch) de las marcas.
+        tam: ancho y alto máximos en px de dispositivo.
+
+    Returns:
+        Lista que se va llenando con (segundos desde t0, ruta del cuadro).
+    """
+    cuadros: list[tuple[float, Path]] = []
+
+    def al_recibir(params: dict[str, Any]) -> None:
+        ruta = carpeta / f"{len(cuadros):06d}.jpg"
+        ruta.write_bytes(base64.b64decode(params["data"]))
+        cuadros.append((params["metadata"]["timestamp"] - t0, ruta))
+        cdp.send("Page.screencastFrameAck", {"sessionId": params["sessionId"]})
+
+    cdp.on("Page.screencastFrame", al_recibir)
+    cdp.send(
+        "Page.startScreencast",
+        {"format": "jpeg", "quality": CALIDAD_JPEG, "maxWidth": tam[0], "maxHeight": tam[1]},
+    )
+    return cuadros
+
+
+def armar_clip(cuadros: list[tuple[float, Path]], fin_s: float, destino: Path) -> None:
+    """Convierte los cuadros (con su tiempo) en un MP4 a 30 fps.
+
+    El primer cuadro cubre desde t=0 y el último se sostiene hasta ``fin_s``,
+    así el clip queda alineado con las marcas de las acciones.
+
+    Args:
+        cuadros: (segundos desde t0, ruta) en orden.
+        fin_s: duración total del clip.
+        destino: MP4 de salida.
+
+    Raises:
+        RuntimeError: si ffmpeg falla.
+    """
+    tiempos = [0.0] + [t for t, _ in cuadros[1:]] + [max(fin_s, cuadros[-1][0] + 0.1)]
+    lineas = ["ffconcat version 1.0"]
+    for i, (_, ruta) in enumerate(cuadros):
+        lineas += [
+            f"file '{ruta.resolve()}'",
+            f"duration {max(tiempos[i + 1] - tiempos[i], 0.001):.3f}",
+        ]
+    lineas.append(f"file '{cuadros[-1][1].resolve()}'")
+    lista = destino.with_suffix(".ffconcat")
+    lista.write_text("\n".join(lineas) + "\n", encoding="utf-8")
+    cmd = [
+        "ffmpeg", "-hide_banner", "-loglevel", "error", "-y", "-f", "concat", "-safe", "0",
+        "-i", str(lista), "-t", f"{tiempos[-1]:.3f}", "-vf", "fps=30,format=yuv420p",
+        "-c:v", "libx264", "-preset", "veryfast", "-crf", "14", str(destino),
+    ]  # fmt: skip
+    # Comando fijo armado aquí, sin shell.
+    res = subprocess.run(cmd, capture_output=True, text=True, check=False)  # noqa: S603
+    lista.unlink()
+    if res.returncode != 0:
+        raise RuntimeError(f"ffmpeg falló al armar {destino.name}: {res.stderr.strip()[-500:]}")
+
+
 def grabar_segmento(
     browser: Browser, seg: dict[str, Any], captura: dict[str, Any], salida: Path
 ) -> None:
@@ -105,27 +176,31 @@ def grabar_segmento(
         PlaywrightTimeout: si alguna acción no se completa.
     """
     ancho, alto = captura["viewport"]
+    escala = captura["device_scale_factor"]
     tmp = salida / f"tmp{seg['id']:02d}"
+    tmp.mkdir(parents=True, exist_ok=True)
     contexto = browser.new_context(
         viewport={"width": ancho, "height": alto},
-        device_scale_factor=captura["device_scale_factor"],
+        device_scale_factor=escala,
         is_mobile=True,
         has_touch=True,
         color_scheme="light",
         locale="es-CO",
-        record_video_dir=str(tmp),
-        record_video_size={"width": ancho * ESCALA_VIDEO, "height": alto * ESCALA_VIDEO},
     )
     page = contexto.new_page()
-    t0, marcas = time.monotonic(), []
+    t0 = time.time()
+    cdp = contexto.new_cdp_session(page)
+    cuadros = iniciar_screencast(cdp, tmp, t0, (ancho * escala, alto * escala))
+    marcas = []
     for accion in seg["acciones"]:
         ejecutar(page, accion, captura["base_url"])
-        marcas.append({"op": accion["op"], "t_s": round(time.monotonic() - t0, 2)})
-    video = page.video
+        marcas.append({"op": accion["op"], "t_s": round(time.time() - t0, 2)})
+    cdp.send("Page.stopScreencast")
+    page.wait_for_timeout(300)
     contexto.close()
-    if video is None:
-        raise RuntimeError(f"el segmento {seg['id']} no produjo video")
-    shutil.move(video.path(), salida / f"seg{seg['id']:02d}.webm")
+    if not cuadros:
+        raise RuntimeError(f"el segmento {seg['id']} no produjo cuadros")
+    armar_clip(cuadros, marcas[-1]["t_s"], salida / f"seg{seg['id']:02d}.mp4")
     shutil.rmtree(tmp, ignore_errors=True)
     (salida / f"seg{seg['id']:02d}.json").write_text(json.dumps(marcas, indent=1))
     LOG.info(
@@ -159,7 +234,9 @@ def main(argv: list[str] | None = None) -> int:
     args.salida.mkdir(parents=True, exist_ok=True)
     segmentos = [s for s in guion["segmentos"] if s["id"] in args.ids and s["acciones"]]
     with sync_playwright() as p:
-        browser = p.chromium.launch()
+        # Sin este flag el screencast sale en px CSS (390x844) aunque se emule 3x.
+        escala = guion["captura"]["device_scale_factor"]
+        browser = p.chromium.launch(args=[f"--force-device-scale-factor={escala}"])
         try:
             for seg in segmentos:
                 grabar_segmento(browser, seg, guion["captura"], args.salida)

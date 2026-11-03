@@ -22,7 +22,10 @@
   "salida": {
     "ancho": 1920,
     "alto": 1080,
-    "lufs": -16
+    "lufs": -16,
+    "fuente_titulo": "/usr/share/fonts/google-noto/NotoSans-Bold.ttf",
+    "fuente_texto": "/usr/share/fonts/google-noto/NotoSans-Regular.ttf",
+    "fuente_subtitulos": "Noto Sans"
   },
   "segmentos": [
     {
@@ -130,9 +133,9 @@
       ],
       "inicio_s": 35,
       "fin_s": 65,
-      "estado_audio": "pendiente_regrabar",
+      "estado_audio": "regrabado_pendiente_verificar",
       "audio": {
-        "fuente": "Audio 3.m4a",
+        "fuente": "Audio 3b.m4a",
         "recortar_silencio": true
       },
       "pantalla": {
@@ -185,10 +188,14 @@
           "ms": 9000
         }
       ],
-      "narracion_en": "Meet Laura, a fictional resident. It's October 1st, and her family plans a river day tomorrow. ClimApp Lite gives her a 15% chance of 20 millimeters or more, about 1.7 times the seasonal normal. Elevated risk. The basin already got 93.7 millimeters in three days, more than 98% of days. Muse Spark explains it in plain Spanish, and our code checks every number.",
+      "narracion_en": "Meet Laura, a fictional resident. It's October first, and her family plans a river day tomorrow. ClimApp Lite says: a fifteen percent chance of heavy rain tomorrow, well above the nine percent normal for this season. Elevated risk. And the basin already got ninety-three point seven millimeters in three days. Muse Spark explains it in plain Spanish, and our code checks every number.",
       "subtitulo_en": null,
       "narracion_es": null,
-      "subtitulos": []
+      "subtitulos": [],
+      "presupuesto_s": [
+        null,
+        30
+      ]
     },
     {
       "id": 4,
@@ -199,9 +206,9 @@
       ],
       "inicio_s": 65,
       "fin_s": 100,
-      "estado_audio": "pendiente_regrabar",
+      "estado_audio": "regrabado_pendiente_verificar",
       "audio": {
-        "fuente": "Audio 4.m4a",
+        "fuente": "Audio 4b.m4a",
         "recortar_silencio": true
       },
       "pantalla": {
@@ -261,10 +268,14 @@
           "ms": 12000
         }
       ],
-      "narracion_en": "Laura's family stays home. The next day, a neighbor sees the river rising and reports it. Muse Spark turns the informal message into structured claims, and a second Muse call judges them against rain gauges, the river level, which rose 68 centimeters, and NASA satellite rainfall. Confidence is computed by code, not by the model: consistent with the data.",
+      "narracion_en": "Laura's family stays home. The next day, a neighbor sees the river rising and reports it. Muse Spark turns the message into structured claims, and a second Muse call checks them against rain gauges, the river level, up sixty-eight centimeters, and NASA satellite rainfall. The confidence is computed by code. The report is consistent with the data.",
       "subtitulo_en": null,
       "narracion_es": null,
-      "subtitulos": []
+      "subtitulos": [],
+      "presupuesto_s": [
+        null,
+        34
+      ]
     },
     {
       "id": 5,
@@ -275,9 +286,9 @@
       ],
       "inicio_s": 100,
       "fin_s": 125,
-      "estado_audio": "pendiente_regrabar",
+      "estado_audio": "regrabado_pendiente_verificar",
       "audio": {
-        "fuente": "Audio 5.m4a",
+        "fuente": "Audio 5b.m4a",
         "recortar_silencio": true
       },
       "pantalla": {
@@ -384,10 +395,14 @@
           "ms": 3000
         }
       ],
-      "narracion_en": "What if someone exaggerates? 'The river rose five meters.' The data doesn't support it, so a human reviews it, and it's never published. A false report is flagged as not consistent. Nothing reaches the public map without evidence.",
+      "narracion_en": "What if someone exaggerates? 'The river rose five meters.' The data doesn't support it, so the report goes to a human reviewer, and it's never published. A false report is flagged as not consistent. Nothing reaches the public map without evidence.",
       "subtitulo_en": null,
       "narracion_es": null,
-      "subtitulos": []
+      "subtitulos": [],
+      "presupuesto_s": [
+        18,
+        22
+      ]
     },
     {
       "id": 6,
@@ -531,7 +546,8 @@
         "textos": [
           "Sunday at the Pance river",
           "Juan Manuel Nogales · Juan Esteban Gallego"
-        ]
+        ],
+        "cambio_en_cue": 4
       },
       "acciones": [],
       "narracion_en": "So next Sunday, before packing the sancocho, families in Cali can check ClimApp Lite. Local data, open source, and Meta's Muse Spark wrapped in checks you can audit. Built for our world, by Juan Manuel Nogales and Juan Esteban Gallego.",
