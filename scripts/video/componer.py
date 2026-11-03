@@ -31,6 +31,9 @@ TEXTO_TENUE = "0x94a3b8"
 TELEFONO_ALTO = 1000
 VELOCIDAD_CLIP_MAX = 1.35  # SUPUESTO: más rápido el scroll deja de leerse
 FUNDIDO_S = 0.3
+FOTO_ALTO = 1080
+DESENFOQUE_SIGMA = 40
+BRILLO_FONDO = 0.4  # fondo oscurecido al 60 %
 TITULO_CORTO = 30  # caracteres que caben en una línea a 84 px
 
 
@@ -251,6 +254,97 @@ def video_pantalla(p: Plan, cfg: dict[str, Any], clips: Path, tmp: Path) -> tupl
     return ["-i", str(clip)], filtro
 
 
+def composicion_foto(foto_s: float, zoom: float, ancho: int) -> str:
+    """Foto vertical entera a 1080 px de alto sobre la misma foto desenfocada.
+
+    Fondo: la foto ampliada a 1920x1080, desenfoque fuerte y oscurecida.
+    Frente: la foto completa (sin recorte) con Ken Burns suave 1.0 → 1.0+zoom.
+    Parte de ``[1:v]`` (la foto en bucle) y deja ``[foto]``.
+
+    Args:
+        foto_s: segundos que dura la foto.
+        zoom: aumento total del Ken Burns (0.04 = 4 %).
+        ancho: ancho del frente en px, a ``FOTO_ALTO`` de alto con el aspecto de la foto.
+
+    Returns:
+        Cadena de filtros.
+    """
+    cuadros = max(int(foto_s * FPS), 1)
+    return (
+        "[1:v]split[fondo_src][frente_src];"
+        "[fondo_src]scale=1920:1080:force_original_aspect_ratio=increase,crop=1920:1080,"
+        f"gblur=sigma={DESENFOQUE_SIGMA},colorchannelmixer=rr={BRILLO_FONDO}:gg={BRILLO_FONDO}"
+        f":bb={BRILLO_FONDO},fps={FPS},setsar=1[fondo];"
+        f"[frente_src]scale=-2:{FOTO_ALTO * 3},"
+        f"zoompan=z='1+{zoom}*on/{cuadros}':x='iw/2-(iw/zoom/2)':y='ih/2-(ih/zoom/2)'"
+        f":d=1:s={ancho}x{FOTO_ALTO}:fps={FPS},setsar=1[frente];"
+        "[fondo][frente]overlay=(W-w)/2:0[foto]"
+    )
+
+
+def video_foto(p: Plan, cfg: dict[str, Any], assets: Path, tmp: Path) -> tuple[list[str], str]:
+    """Entradas y filtro para filas con foto (fila 1, y fila 7 antes de la tarjeta).
+
+    Args:
+        p: plan del segmento.
+        cfg: bloque ``salida`` del guion.
+        assets: carpeta de las fotos.
+        tmp: carpeta temporal.
+
+    Returns:
+        Argumentos de entrada extra y cadena de filtros.
+    """
+    pant, n = p.seg["pantalla"], p.seg["id"]
+    foto_s = float(pant.get("foto_s", p.duracion))
+    entradas = [
+        "-loop",
+        "1",
+        "-framerate",
+        str(FPS),
+        "-t",
+        str(p.duracion),
+        "-i",
+        str(assets / pant["foto"]),
+    ]
+    rotulo = texto(tmp, f"rotulo{n}", pant["rotulo"], 80)
+    sombra = ":shadowcolor=black@0.85:shadowx=3:shadowy=3"
+    ancho_foto, alto_foto = (
+        int(x)
+        for x in ejecutar(
+            [
+                "ffprobe",
+                "-v",
+                "error",
+                "-show_entries",
+                "stream=width,height",
+                "-of",
+                "csv=p=0",
+                str(assets / pant["foto"]),
+            ]
+        )
+        .strip()
+        .split(",")
+    )
+    ancho = round(FOTO_ALTO * ancho_foto / alto_foto / 2) * 2  # sin recorte: aspecto original
+    vf = composicion_foto(foto_s, float(pant["zoom"]), ancho)
+    vf += ";[foto]" + dibujar(rotulo, cfg["fuente_texto"], 24, ("40", "h-th-40"), sombra)
+    if pant.get("titulo"):
+        titulo = texto(tmp, f"titulo_foto{n}", pant["titulo"], 30)
+        t = float(pant["titulo_s"])
+        alfa = f":alpha='if(lt(t,{t - 0.6}),1,max(0,({t}-t)/0.6))'"
+        vf += "," + dibujar(
+            titulo, cfg["fuente_titulo"], 84, ("(w-text_w)/2", "(h-text_h)/2-60"), sombra + alfa
+        )
+    if pant["tipo"] == "foto_tarjeta":
+        vf += f",fade=out:st={foto_s - FUNDIDO_S}:d={FUNDIDO_S}:alpha=1[ph];"
+        nombres = texto(tmp, f"tarjeta{n}", pant["texto"], 48)
+        tarjeta = dibujar(
+            nombres, cfg["fuente_titulo"], 64, ("(w-text_w)/2", "(h-text_h)/2-60"), ":text_align=C"
+        )
+        vf += f"[0:v]{tarjeta}[tarjeta];[tarjeta][ph]overlay=enable='lt(t,{foto_s})'"
+    return entradas, vf
+
+
 def render_segmento(p: Plan, guion: dict[str, Any], rutas: dict[str, Path]) -> Path:
     """Renderiza un segmento (video + audio sin pérdida) a ``tmp/segNN.mkv``.
 
@@ -273,11 +367,13 @@ def render_segmento(p: Plan, guion: dict[str, Any], rutas: dict[str, Path]) -> P
         entradas, vf = video_camara(p, cfg, rutas["insumos"], tmp)
     elif tipo in ("app", "web"):
         entradas, vf = video_pantalla(p, cfg, rutas["clips"], tmp)
+    elif tipo in ("foto", "foto_tarjeta"):
+        entradas, vf = video_foto(p, cfg, rutas["assets"], tmp)
     else:
         vf = video_tarjeta(p, cfg, tmp)
     fundido = f"fade=in:st=0:d={FUNDIDO_S},fade=out:st={p.duracion - FUNDIDO_S}:d={FUNDIDO_S}"
     vf += f",{fundido},format=yuv420p[v]"
-    idx_audio = 1 + len(entradas) // 2
+    idx_audio = 1 + entradas.count("-i")
     if p.seg["audio"] is None:
         audio_in, af = ["-f", "lavfi", "-i", "anullsrc=r=48000:cl=mono"], f"[{idx_audio}:a]"
     else:
@@ -375,7 +471,7 @@ def escribir_subtitulos(planes: list[Plan], salida: Path, cfg: dict[str, Any]) -
         "[V4+ Styles]\nFormat: Name, Fontname, Fontsize, PrimaryColour, OutlineColour, BackColour,"
         " Bold, BorderStyle, Outline, Shadow, Alignment, MarginL, MarginR, MarginV\n"
         f"Style: Default,{cfg['fuente_subtitulos']},46,&H00FFFFFF,&H00000000,&H66000000,"
-        "-1,4,14,0,2,300,300,48\n\n[Events]\nFormat: Layer, Start, End, Style, Text\n"
+        "-1,4,14,0,2,520,520,48\n\n[Events]\nFormat: Layer, Start, End, Style, Text\n"
     )
     eventos = [
         f"Dialogue: 0,{marca_tiempo(a, True)},{marca_tiempo(b, True)},Default,{en}"
@@ -498,6 +594,7 @@ def main(argv: list[str] | None = None) -> int:
         "clips": args.video / "clips",
         "insumos": args.insumos,
         "tmp": args.video / "tmp",
+        "assets": Path(guion["salida"]["assets"]).expanduser(),
     }
     rutas["tmp"].mkdir(parents=True, exist_ok=True)
     planes = planificar(guion, rutas["audio"])

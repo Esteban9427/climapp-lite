@@ -25,7 +25,8 @@
     "lufs": -16,
     "fuente_titulo": "/usr/share/fonts/google-noto/NotoSans-Bold.ttf",
     "fuente_texto": "/usr/share/fonts/google-noto/NotoSans-Regular.ttf",
-    "fuente_subtitulos": "Noto Sans"
+    "fuente_subtitulos": "Noto Sans",
+    "assets": "~/video/assets"
   },
   "segmentos": [
     {
@@ -43,8 +44,12 @@
         "recortar_silencio": true
       },
       "pantalla": {
-        "tipo": "tarjeta",
-        "texto": "Sunday at the Pance river"
+        "tipo": "foto",
+        "foto": "pance_01.jpg",
+        "zoom": 0.04,
+        "titulo": "Sunday at the Pance river",
+        "titulo_s": 6,
+        "rotulo": "Pance river · Photo: Juan Esteban Gallego"
       },
       "acciones": [],
       "narracion_en": "Every Sunday, thousands of families in Cali head to the Pance river. It's a tradition: a pot of sancocho over a wood fire, kids in the water, the whole family together. But the Pance is a mountain river. Heavy rain upstream can make it rise within hours, even when the sky above you looks fine.",
@@ -704,12 +709,12 @@
         "recortar_silencio": true
       },
       "pantalla": {
-        "tipo": "tarjetas",
-        "textos": [
-          "Sunday at the Pance river",
-          "Juan Manuel Nogales · Juan Esteban Gallego"
-        ],
-        "cambio_en_cue": 4
+        "tipo": "foto_tarjeta",
+        "foto": "pance_01.jpg",
+        "foto_s": 5,
+        "zoom": 0.015,
+        "rotulo": "Pance river · Photo: Juan Esteban Gallego",
+        "texto": "Juan Manuel Nogales · Juan Esteban Gallego"
       },
       "acciones": [],
       "narracion_en": "So next Sunday, before packing the sancocho, families in Cali can check ClimApp Lite. Local data, open source, and Meta's Muse Spark wrapped in checks you can audit. Built for our world, by Juan Manuel Nogales and Juan Esteban Gallego.",
