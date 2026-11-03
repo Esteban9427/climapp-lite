@@ -133,12 +133,21 @@
       ],
       "inicio_s": 35,
       "fin_s": 65,
-      "estado_audio": "clon_pendiente_escucha",
+      "estado_audio": "clon_aprobado",
       "audio": {
         "fuente": "seg03_clon.wav",
         "recortar_silencio": true,
         "clon": true,
-        "nota": "Voz clonada de Juan Manuel Nogales con su consentimiento escrito (2026-11-03), solo filas 3 y 4."
+        "nota": "Voz clonada de Juan Manuel Nogales con su consentimiento escrito (2026-11-03), solo filas 3 y 4.",
+        "generacion": {
+          "modelo": "Chatterbox Multilingual (CPU)",
+          "language_id": "en",
+          "referencia": "Audio 6 + Audio 7 de JM (24 s)",
+          "toma": "t1",
+          "recorte_fin_s": null,
+          "nota": "Audio 1 se descartó de la referencia: su timbre es mucho más oscuro y el EQ no lo compensaba.",
+          "intento_muse": "2 tomas con 'Muse Spark explains it in plain Spanish, and': ninguna pronunció bien 'Muse Spark'; se queda el texto recortado."
+        }
       },
       "pantalla": {
         "tipo": "app",
@@ -150,32 +159,40 @@
           "ruta": "/?replay_date=2026-10-01"
         },
         {
-          "op": "wait",
-          "ms": 2000
+          "op": "hasta",
+          "t_s": 2.8
+        },
+        {
+          "op": "resaltar",
+          "selector": ".replay"
+        },
+        {
+          "op": "hasta",
+          "t_s": 8.2
         },
         {
           "op": "resaltar",
           "selector": ".prob"
         },
         {
-          "op": "wait",
-          "ms": 3500
+          "op": "hasta",
+          "t_s": 12.6
         },
         {
           "op": "resaltar",
-          "selector": ".badge-partial"
+          "selector": "p:has-text('lo normal para esta época')"
         },
         {
-          "op": "wait",
-          "ms": 3500
+          "op": "hasta",
+          "t_s": 14.8
         },
         {
           "op": "resaltar",
           "selector": "p.muted:has-text('Acumulado')"
         },
         {
-          "op": "wait",
-          "ms": 4000
+          "op": "hasta",
+          "t_s": 20.3
         },
         {
           "op": "scroll",
@@ -186,8 +203,20 @@
           "selector": "h2:has-text('Explicación') + p"
         },
         {
-          "op": "wait",
-          "ms": 9000
+          "op": "hasta",
+          "t_s": 22.9
+        },
+        {
+          "op": "scroll",
+          "selector": ".badge-partial"
+        },
+        {
+          "op": "resaltar",
+          "selector": ".badge-partial"
+        },
+        {
+          "op": "hasta",
+          "t_s": 26.7
         }
       ],
       "narracion_en": "Meet Laura, a fictional character. It's October first, and her family wants to go to the Pance river tomorrow. The app gives her a fifteen percent chance of twenty millimeters or more, well above the nine percent seasonal normal. The basin already got ninety-three point seven millimeters in three days, more than on ninety-eight percent of days. Our code checks every number: it is an elevated risk to go tomorrow.",
@@ -242,12 +271,20 @@
       ],
       "inicio_s": 65,
       "fin_s": 100,
-      "estado_audio": "clon_pendiente_escucha",
+      "estado_audio": "clon_aprobado",
       "audio": {
         "fuente": "seg04_clon.wav",
         "recortar_silencio": true,
         "clon": true,
-        "nota": "Voz clonada de Juan Manuel Nogales con su consentimiento escrito (2026-11-03), solo filas 3 y 4."
+        "nota": "Voz clonada de Juan Manuel Nogales con su consentimiento escrito (2026-11-03), solo filas 3 y 4.",
+        "generacion": {
+          "modelo": "Chatterbox Multilingual (CPU)",
+          "language_id": "en",
+          "referencia": "Audio 6 + Audio 7 de JM (24 s)",
+          "toma": "t2",
+          "recorte_fin_s": 26.25,
+          "nota": "Audio 1 se descartó de la referencia: su timbre es mucho más oscuro y el EQ no lo compensaba."
+        }
       },
       "pantalla": {
         "tipo": "app",
@@ -259,20 +296,24 @@
           "ruta": "/?replay_date=2026-10-01"
         },
         {
+          "op": "hasta",
+          "t_s": 2.4
+        },
+        {
           "op": "scroll",
           "selector": "#report-title"
         },
         {
-          "op": "wait",
-          "ms": 2000
+          "op": "hasta",
+          "t_s": 3.8
         },
         {
           "op": "click",
           "selector": ".demo-example >> nth=0"
         },
         {
-          "op": "wait",
-          "ms": 3000
+          "op": "hasta",
+          "t_s": 6.2
         },
         {
           "op": "click",
@@ -287,11 +328,11 @@
         },
         {
           "op": "resaltar",
-          "selector": "#report-status .result-badge"
+          "selector": "#report-status .result-title"
         },
         {
-          "op": "wait",
-          "ms": 4000
+          "op": "hasta",
+          "t_s": 11.0
         },
         {
           "op": "scroll",
@@ -299,11 +340,39 @@
         },
         {
           "op": "resaltar",
+          "selector": "#report-status .evidence"
+        },
+        {
+          "op": "hasta",
+          "t_s": 15.1
+        },
+        {
+          "op": "resaltar",
           "selector": "#report-status .evidence li:has-text('Nivel')"
         },
         {
-          "op": "wait",
-          "ms": 12000
+          "op": "hasta",
+          "t_s": 17.6
+        },
+        {
+          "op": "resaltar",
+          "selector": "#report-status .evidence li:has-text('Satélite')"
+        },
+        {
+          "op": "hasta",
+          "t_s": 19.4
+        },
+        {
+          "op": "scroll",
+          "selector": "#report-status .result-badge"
+        },
+        {
+          "op": "resaltar",
+          "selector": "#report-status .result-badge"
+        },
+        {
+          "op": "hasta",
+          "t_s": 26.4
         }
       ],
       "narracion_en": "Laura makes a decision: her family stays at home. The next day, a neighbor sees the river rising and reports it. Muse Spark turns the informal message into structured claims, and a second Muse call judges the report against rain gauges, the river level, up sixty-eight centimeters, and NASA satellite rainfall. Confidence is computed by code, not by the model. The report is consistent with the data.",
@@ -372,12 +441,16 @@
           "selector": "#report-title"
         },
         {
+          "op": "hasta",
+          "t_s": 1.5
+        },
+        {
           "op": "click",
           "selector": ".demo-example >> nth=1"
         },
         {
-          "op": "wait",
-          "ms": 4500
+          "op": "hasta",
+          "t_s": 5.4
         },
         {
           "op": "click",
@@ -395,8 +468,8 @@
           "selector": "#report-status .result-badge"
         },
         {
-          "op": "wait",
-          "ms": 2500
+          "op": "hasta",
+          "t_s": 11.6
         },
         {
           "op": "scroll",
@@ -407,8 +480,8 @@
           "selector": ".demo-example >> nth=2"
         },
         {
-          "op": "wait",
-          "ms": 400
+          "op": "hasta",
+          "t_s": 12.6
         },
         {
           "op": "click",
@@ -426,8 +499,8 @@
           "selector": "#report-status .result-badge"
         },
         {
-          "op": "wait",
-          "ms": 1200
+          "op": "hasta",
+          "t_s": 16.3
         },
         {
           "op": "goto",
@@ -438,16 +511,16 @@
           "selector": "#legend-title + p"
         },
         {
-          "op": "wait",
-          "ms": 1500
+          "op": "hasta",
+          "t_s": 18.2
         },
         {
           "op": "scroll",
           "selector": "#map"
         },
         {
-          "op": "wait",
-          "ms": 1000
+          "op": "hasta",
+          "t_s": 19.4
         },
         {
           "op": "scroll",
@@ -458,8 +531,8 @@
           "selector": "#map-list"
         },
         {
-          "op": "wait",
-          "ms": 2000
+          "op": "hasta",
+          "t_s": 20.9
         }
       ],
       "narracion_en": "What if someone exaggerates? 'The river rose five meters.' The data doesn't support it, so the report goes to a human reviewer, and it's never published. A false report is flagged as not consistent. Nothing reaches the public map without evidence.",

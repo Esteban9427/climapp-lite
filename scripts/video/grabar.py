@@ -191,9 +191,15 @@ def grabar_segmento(
     t0 = time.time()
     cdp = contexto.new_cdp_session(page)
     cuadros = iniciar_screencast(cdp, tmp, t0, (ancho * escala, alto * escala))
-    marcas = []
+    marcas: list[dict[str, Any]] = []
     for accion in seg["acciones"]:
-        ejecutar(page, accion, captura["base_url"])
+        if accion["op"] == "hasta":
+            # Espera hasta t_s del clip, que empieza al terminar la primera acción (goto).
+            inicio_clip = marcas[0]["t_s"] if marcas else 0.0
+            restante = accion["t_s"] - (time.time() - t0 - inicio_clip)
+            page.wait_for_timeout(max(restante, 0.0) * 1000)
+        else:
+            ejecutar(page, accion, captura["base_url"])
         marcas.append({"op": accion["op"], "t_s": round(time.time() - t0, 2)})
     cdp.send("Page.stopScreencast")
     page.wait_for_timeout(300)
