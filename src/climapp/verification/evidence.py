@@ -30,8 +30,15 @@ log = get_logger(__name__)
 LIVE_VARIANT = "operativa"
 
 
-def report_says_rain(structured: ReportStructured) -> bool:
-    """`True` si el reporte afirma que llueve (o granizó) con alguna intensidad."""
+def report_says_rain(structured: ReportStructured) -> bool | None:
+    """Lo que el reporte afirma de la lluvia.
+
+    Returns:
+        `True` si afirma que llueve (o granizó) con alguna intensidad; `None` si es una
+        creciente que no dice nada de la lluvia (Fallo A, TASK-036); `False` si no.
+    """
+    if structured.event_type == "crecida" and structured.intensity == "ninguna":
+        return None
     return structured.event_type != "sin_lluvia" and structured.intensity != "ninguna"
 
 

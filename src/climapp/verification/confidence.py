@@ -8,6 +8,9 @@ dice el reporte; el puntaje es la suma de pesos de las que concuerdan sobre la s
 pesos de las que tienen dato. Pesos fijos en configuración, aceptados por JM para v1
 (2026-11-01, PRD SP-15); se ajustarán con la retroalimentación de los usuarios (TASK-021).
 
+Una creciente que no dice nada de la lluvia (`report_rain=None`, TASK-036) no afirma "no
+llovió": las estaciones no cuentan, e IMERG y el pronóstico concuerdan si indican lluvia.
+
 Si el reporte afirma una creciente, la subida de nivel del río en 24 h (TASK-039) es una
 fuente más, aparte de la lluvia: concuerda si llegó a `LEVEL_RISE_THRESHOLD_M`. Sin dato
 de nivel ese día, o en un reporte que no afirma creciente, no aporta nada.
@@ -71,7 +74,8 @@ class Evidence:
     """Evidencia disponible para un reporte.
 
     Attributes:
-        report_rain: `True` si el reporte dice que llueve.
+        report_rain: `True` si el reporte dice que llueve, `False` si dice que no y `None`
+            si no dice nada de la lluvia (una creciente sin intensidad, TASK-036).
         station_mm: lluvia observada por estación en la ventana del reporte.
         satellite_mm: lluvia de IMERG Early en la celda; `None` si no hay dato.
         forecast_prob: probabilidad del pronóstico vigente; `None` si no hay.
@@ -80,7 +84,7 @@ class Evidence:
         level_rise_m: subida máxima de nivel en 24 h del día; `None` si no hay dato.
     """
 
-    report_rain: bool
+    report_rain: bool | None
     station_mm: Mapping[str, float]
     satellite_mm: float | None
     forecast_prob: float | None
@@ -119,6 +123,8 @@ def _station_sources(
     "Algún miembro" no cambia al agregar una copia de una estación (la media sí):
     así, duplicar una estación correlacionada nunca sube la confianza.
     """
+    if evidence.report_rain is None:
+        return []  # sin afirmación de lluvia, las estaciones no suman ni restan (TASK-036)
     known = {s for g in groups for s in g}
     loose = [(s,) for s in sorted(evidence.station_mm) if s not in known]
     sources = []
@@ -138,9 +144,19 @@ def _station_sources(
     return sources
 
 
+def _expects_rain(evidence: Evidence) -> bool:
+    """Señal de lluvia que concuerda: la afirmada o, en una creciente sin afirmación, lluvia.
+
+    Una creciente es coherente con lluvia en la cuenca (TASK-036): IMERG con lluvia y el
+    aviso del pronóstico concuerdan con ella.
+    """
+    return True if evidence.report_rain is None else evidence.report_rain
+
+
 def _other_sources(evidence: Evidence, weights: ConfidenceWeights) -> list[ConfidenceSource]:
     """IMERG Early y el pronóstico vigente, si tienen dato."""
     sources = []
+    expected = _expects_rain(evidence)
     if evidence.satellite_mm is not None:
         rained = evidence.satellite_mm >= weights.rain_mm
         sources.append(
@@ -148,7 +164,7 @@ def _other_sources(evidence: Evidence, weights: ConfidenceWeights) -> list[Confi
                 source_id=SATELLITE_ID,
                 kind="satellite",
                 members=[],
-                agrees=rained == evidence.report_rain,
+                agrees=rained == expected,
                 weight=weights.satellite,
             )
         )
@@ -159,7 +175,7 @@ def _other_sources(evidence: Evidence, weights: ConfidenceWeights) -> list[Confi
                 source_id=FORECAST_ID,
                 kind="forecast",
                 members=[],
-                agrees=alert == evidence.report_rain,
+                agrees=alert == expected,
                 weight=weights.forecast,
             )
         )
