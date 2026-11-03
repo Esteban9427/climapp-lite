@@ -64,3 +64,25 @@ TASK-009 (IMERG Early) vuelve a JE el 2026-10-30 como el primer Should en entrar
 - **Estimación:** 3 h
 ### TASK-022 — Explicación verificada del pronóstico
 - **Estimación:** 1,5 h
+
+## Congelamiento de alcance aplicado — 2026-11-02
+- **Fecha y hora:** al cierre del lunes **2026-11-02, 23:59 hora Cali (UTC−05:00)** (`SCOPE_FREEZE_DATE=2026-11-02`). Esta sección se registró el mismo día a las 20:12, antes del cierre.
+- **Entró el mismo día como bugfix autorizado (ninguno es una función nueva del producto):**
+
+  | Cambio | Commit (hora Cali) | Por qué |
+  |--------|--------------------|---------|
+  | Tope de tokens de Muse por tarea (estructurar 3000, juez 4000) | `f49ec96` (18:54) | Con 2000 se cortaba el 24 % de los juicios: respuestas vacías y reportes verdaderos a revisión humana |
+  | Fallo A: confianza de las crecientes sin afirmación de lluvia | `5b5fee4` (19:10) | Un falso de desborde en día seco salía "Coincide con los datos" (R28) |
+  | Fallo B: `cifra_omitida` en la compuerta | `ed021fd` (19:14) | Un exagerado con "5 metros" se verificaba con `numbers_cited` vacío (R26) |
+  | Reintento aparte de los reportes caídos por la API | `47f4d8d` (19:14) | Solo herramienta de evaluación (`eval-harness/run_eval.py`), no código del producto |
+  | Fixes de la revisión de Muse (`GET /evaluation` sin 500 con un resumen ilegible; validación de `--run`) | `705b8fe` + `b87cab4` (20:08-20:09) | Revisión en solo lectura, `docs/reviews/TASK-036.md` |
+
+  Cada uno con su test en rojo antes (TDD) y sin cambios en prompts, pesos ni umbrales.
+- **También entró el mismo día, como trabajo de las tareas comprometidas TASK-021 y TASK-036 (no es bugfix):** el set y el runner de evaluación (`eval-harness/`), el campo `report_verification` de `GET /evaluation` (`1a74184`, `1fdf32b`) y la publicación de sus resultados (`e11a140`).
+- **Regla desde ahora:** solo bugfixes CRITICAL/HIGH, documentación, video y entrega. Cualquier otra cosa va al backlog post-hackathon.
+- **Pendiente para Gate 4 (mar 3-nov, TASK-025):**
+  - [ ] Cobertura ≥ 85 % en el núcleo (≥ 70 % global).
+  - [ ] SAST.
+  - [ ] Escaneo de secretos.
+  - [ ] 0 bugs CRITICAL/HIGH.
+  - [ ] Demo con `DEMO_FALLBACK=1` de punta a punta.
