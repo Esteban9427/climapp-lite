@@ -220,7 +220,7 @@ components:
           type: array
           items:
             type: string
-            enum: [respuesta_incompleta, respuesta_vacia, esquema_invalido, cifra_no_coincide, dato_personal, herramienta_no_permitida, afirmacion_sin_evidencia]
+            enum: [respuesta_incompleta, respuesta_vacia, esquema_invalido, cifra_no_coincide, cifra_omitida, dato_personal, herramienta_no_permitida, afirmacion_sin_evidencia]
         finish_reason: {type: string}
         tokens_in: {type: integer}
         tokens_out: {type: integer}

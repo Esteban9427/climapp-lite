@@ -131,6 +131,7 @@ def test_reason_values_match_the_data_model() -> None:
         "respuesta_vacia",
         "esquema_invalido",
         "cifra_no_coincide",
+        "cifra_omitida",
         "dato_personal",
         "herramienta_no_permitida",
         "afirmacion_sin_evidencia",

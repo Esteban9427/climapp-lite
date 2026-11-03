@@ -48,6 +48,7 @@ class ReportVerifier:
             messages=structure_messages(text, (self.prompt_time or record.received_at).isoformat()),
             allowed_numbers=frozenset(),
             evidence=f"Texto del ciudadano: {text}",
+            source_text=text,
         )
         return run_gate(self.client, request, self.max_attempts)
 

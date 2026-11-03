@@ -30,6 +30,7 @@ class GateRequest[T: CitesNumbers]:
         messages: mensajes del primer intento.
         allowed_numbers: cifras del sistema, redondeadas como se citan.
         evidence: evidencia que recibe el juez (texto del ciudadano y datos entregados).
+        source_text: texto del ciudadano, para `cifra_omitida` (`None` en la explicación).
     """
 
     task: MuseTask
@@ -37,6 +38,7 @@ class GateRequest[T: CitesNumbers]:
     messages: Sequence[Message]
     allowed_numbers: Collection[float]
     evidence: str
+    source_text: str | None = None
 
 
 @dataclass(frozen=True, slots=True)
@@ -92,7 +94,9 @@ def _attempt[T: CitesNumbers](
     """Un intento: generador, deterministas y, si pasan, juez."""
     reply = client.complete(request.task, messages)
     replies = [reply]
-    checked = deterministic_checks(reply, request.schema, request.allowed_numbers)
+    checked = deterministic_checks(
+        reply, request.schema, request.allowed_numbers, source_text=request.source_text
+    )
     reasons = checked.reasons
     if checked.parsed is not None:
         reasons, judge_reply = _judge(client, checked.parsed.judged_claims(), request.evidence)

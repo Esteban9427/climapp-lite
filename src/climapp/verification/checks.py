@@ -1,9 +1,10 @@
 """Comprobaciones deterministas de la compuerta, sin LLM (ADR-002 §3.1).
 
 Orden: `finish_reason == "stop"` → contenido no vacío → esquema → cifras iguales a las
-del modelo → sin datos personales en las afirmaciones → solo herramientas permitidas. Se
-reportan todos los motivos que fallen, en ese orden; el esquema, las cifras y los datos
-personales solo se pueden revisar si hay contenido.
+del modelo → cifras con unidad del texto del ciudadano presentes en `numbers_cited`
+(`cifra_omitida`, TASK-036) → sin datos personales en las afirmaciones → solo
+herramientas permitidas. Se reportan todos los motivos que fallen, en ese orden; el
+esquema, las cifras y los datos personales solo se pueden revisar si hay contenido.
 """
 
 import json
@@ -16,6 +17,7 @@ from typing import Protocol, Self
 from pydantic import ValidationError
 
 from climapp.verification.muse import MuseReply
+from climapp.verification.quantities import cited_covers
 
 ALLOWED_TOOLS: frozenset[str] = frozenset()  # lista blanca de v1: vacía (ADR-002 §3)
 NUMBER_TOLERANCE = 1e-9  # las cifras ya vienen redondeadas: se exige igualdad
@@ -36,6 +38,7 @@ class Reason(StrEnum):
     RESPUESTA_VACIA = "respuesta_vacia"
     ESQUEMA_INVALIDO = "esquema_invalido"
     CIFRA_NO_COINCIDE = "cifra_no_coincide"
+    CIFRA_OMITIDA = "cifra_omitida"
     DATO_PERSONAL = "dato_personal"
     HERRAMIENTA_NO_PERMITIDA = "herramienta_no_permitida"
     AFIRMACION_SIN_EVIDENCIA = "afirmacion_sin_evidencia"
@@ -95,11 +98,26 @@ def _has_personal_data(texts: list[str]) -> bool:
     return any(pattern.search(text) for text in texts for pattern in PERSONAL_DATA)
 
 
+def _content_reasons(
+    parsed: CitesNumbers, allowed_numbers: Collection[float], source_text: str | None
+) -> list[Reason]:
+    """Motivos sobre el contenido validado: cifras, cifras omitidas y datos personales."""
+    reasons: list[Reason] = []
+    if not _numbers_match(parsed.cited_numbers(), allowed_numbers):
+        reasons.append(Reason.CIFRA_NO_COINCIDE)
+    if source_text is not None and not cited_covers(source_text, parsed.cited_numbers()):
+        reasons.append(Reason.CIFRA_OMITIDA)
+    if _has_personal_data(parsed.judged_claims()):
+        reasons.append(Reason.DATO_PERSONAL)
+    return reasons
+
+
 def deterministic_checks[T: CitesNumbers](
     reply: MuseReply,
     schema: type[T],
     allowed_numbers: Collection[float],
     allowed_tools: Collection[str] = ALLOWED_TOOLS,
+    source_text: str | None = None,
 ) -> CheckResult[T]:
     """Aplica las comprobaciones deterministas a una respuesta de Muse.
 
@@ -109,6 +127,8 @@ def deterministic_checks[T: CitesNumbers](
         allowed_numbers: cifras del sistema, ya redondeadas como se citan (probabilidad
             en % entero, milímetros con 1 decimal; ADR-002 §3).
         allowed_tools: herramientas permitidas (vacía en v1).
+        source_text: texto del ciudadano; sus cifras con unidad deben quedar en las
+            cifras citadas (`None` en la explicación del pronóstico).
 
     Returns:
         Los motivos que fallaron, en el orden de ADR-002, y la salida si pasó el esquema.
@@ -124,10 +144,7 @@ def deterministic_checks[T: CitesNumbers](
         if parsed is None:
             reasons.append(Reason.ESQUEMA_INVALIDO)
         else:
-            if not _numbers_match(parsed.cited_numbers(), allowed_numbers):
-                reasons.append(Reason.CIFRA_NO_COINCIDE)
-            if _has_personal_data(parsed.judged_claims()):
-                reasons.append(Reason.DATO_PERSONAL)
+            reasons.extend(_content_reasons(parsed, allowed_numbers, source_text))
     if any(tool not in allowed_tools for tool in reply.tool_calls):
         reasons.append(Reason.HERRAMIENTA_NO_PERMITIDA)
     return CheckResult(tuple(reasons), parsed if not reasons else None)

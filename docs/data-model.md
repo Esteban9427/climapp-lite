@@ -101,7 +101,7 @@ Detalle para quien envió el reporte (id UUID4 no adivinable): incluye `structur
 |-------|------|
 | `n` | int (1-3) |
 | `passed` | bool |
-| `reasons` | list[enum]: `respuesta_incompleta`, `respuesta_vacia`, `esquema_invalido`, `cifra_no_coincide`, `dato_personal`, `herramienta_no_permitida`, `afirmacion_sin_evidencia` |
+| `reasons` | list[enum]: `respuesta_incompleta`, `respuesta_vacia`, `esquema_invalido`, `cifra_no_coincide`, `cifra_omitida` (cifra con unidad del texto del ciudadano que no quedó en `numbers_cited`, TASK-036), `dato_personal`, `herramienta_no_permitida`, `afirmacion_sin_evidencia` |
 | `finish_reason` | str |
 | `tokens_in`, `tokens_out` | int |
 | `latency_ms` | int |
