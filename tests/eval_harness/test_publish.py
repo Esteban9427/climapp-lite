@@ -57,3 +57,18 @@ def test_publish_writes_a_file_valid_for_the_api(tmp_path: Path) -> None:
     parsed = ReportVerificationEval.model_validate_json(out.read_text(encoding="utf-8"))
     assert parsed.reports == 5
     assert parsed.runs[0].effort_judge == "medium"
+
+
+def test_run_spec_must_have_name_and_two_efforts() -> None:
+    assert pub.parse_run("base_v2:low:medium") == ("base_v2", "low", "medium")
+    for bad in ("base_v2", "base_v2:low", "a:b:c:d", "base_v2:low:extremo"):
+        try:
+            pub.parse_run(bad)
+        except ValueError as err:
+            assert "nombre:esfuerzo_estructura:esfuerzo_juez" in str(err)
+        else:
+            raise AssertionError(bad)
+
+
+def test_texts_from_names_the_generator_model() -> None:
+    assert "Muse Spark 1.3" in pub.TEXTS_FROM

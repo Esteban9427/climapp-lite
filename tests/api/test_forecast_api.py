@@ -387,3 +387,15 @@ def test_missing_report_verification_summary_is_null(settings: Settings, tmp_pat
 
 def test_report_verification_summary_is_in_the_contract() -> None:
     assert_matches(REPORT_EVAL, "ReportVerificationEval")
+
+
+def test_unreadable_report_verification_summary_is_null_not_500(
+    settings: Settings, tmp_path: Path
+) -> None:
+    """Revisión de Muse (TASK-036): un directorio o un archivo sin permisos no da 500."""
+    folder = tmp_path / "carpeta.json"
+    folder.mkdir()
+    assert (
+        _evaluation(settings.model_copy(update={"report_eval_file": folder}))["report_verification"]
+        is None
+    )
