@@ -54,6 +54,10 @@ Todo lo que está en este repositorio se construyó durante el evento. La lista 
 - [x] 2026-11-01: en el desglose de evidencia, el pronóstico va aparte como expectativa y el resultado cuenta solo las fuentes observadas. La explicación de E1 se regrabó con Muse Spark real y el contexto nuevo (TASK-017 y TASK-022, TDD).
 - [x] 2026-11-01: se atiende la revisión de Muse del cierre (`docs/reviews/dia-3c.md`): los logs de módulo vuelven a salir en JSON, la caché del explicador incluye las cifras y los duplicados exigen la cuenca y la misma ubicación (TDD).
 - [x] 2026-11-02: especificación del set de evaluación de reportes: 50 filas (25 coherentes, 10 exageradas, 10 falsas y 5 difíciles) del periodo de prueba, con etiqueta esperada por una regla escrita sobre los datos (SP-10, SP-17), sin LLM y sin los días de la demo (`eval-harness/`, TASK-021 paso 1, TDD).
+- [x] 2026-11-02: set de evaluación de reportes (TASK-021): 50 textos simulados validados sin LLM (campos, prefijo, datos personales y términos prohibidos); los generó Muse Spark 1.3 Contributor por error vía opencode (incidente D-07). Corrida con Muse real, puntuación sin LLM y reintento aparte de los errores de la API (`eval-harness/`, TDD).
+- [x] 2026-11-02: tope de tokens de Muse por tarea (estructurar 3000, juez 4000), fijado con la distribución de `tokens_out` de la corrida base: con 2000 se cortaba el 24 % de los juicios (TASK-036, TDD).
+- [x] 2026-11-03: dos fallos hallados con el set, corregidos con TDD: una creciente sin afirmación de lluvia ya no cuenta las estaciones, y una cifra con unidad del texto que no queda en `numbers_cited` es `cifra_omitida`. Resultado `base_v2`: 80 % de acierto, 0 exagerados y 0 falsos verificados; el juez high no mejora y se queda medium (TASK-036).
+- [x] 2026-11-03: `GET /evaluation` publica `report_verification` con las 4 corridas del set (TASK-036, TDD).
 
 ## Herramientas previas al evento, no parte del entregable
 Las usamos para trabajar, pero no forman parte de lo que se juzga y ningún archivo suyo está en este repositorio:

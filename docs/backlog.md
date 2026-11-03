@@ -95,7 +95,7 @@ Dentro de cada día, **el orden es el de la lista** (hay dependencias intradía:
 ### TASK-011 — Cliente Muse y fallback
 - **Estimación:** 1,5 h · **MoSCoW:** Must · **Responsable:** JE · **Depende de:** TASK-001
 - SDK `openai` con `base_url`, modelo y esfuerzo desde `Settings`; respuestas grabadas con `DEMO_FALLBACK=1`.
-- **Hecho cuando:** los tests con un cliente falso cubren los parámetros enviados (`reasoning_effort` por tarea y `max_tokens = MUSE_MAX_TOKENS`, que vale 2000; la configuración rechaza valores < 2000) y el fallback.
+- **Hecho cuando:** los tests con un cliente falso cubren los parámetros enviados (`reasoning_effort` por tarea y `max_tokens = MUSE_MAX_TOKENS`, que vale 2000; la configuración rechaza valores < 2000) — **actualizado el 2026-11-02 (TASK-036):** `MUSE_MAX_TOKENS_STRUCTURE` 3000, `_EXPLAIN` 2000 y `_JUDGE` 4000, cada uno ≥ 2000 (ADR-002 §2) y el fallback.
 
 ### TASK-012 — Comprobaciones deterministas
 - **Estimación:** 2,5 h · **MoSCoW:** Must · **Responsable:** JE · **Depende de:** TASK-011
