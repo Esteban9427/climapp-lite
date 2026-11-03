@@ -142,3 +142,23 @@ def test_summary_by_class_separates_hard_rows() -> None:
 def test_estimate_scales_observed_cost() -> None:
     est = sc.estimate_usd(observed_usd=1.0, runs=4, factor=1.5)
     assert est == pytest.approx(6.0)
+
+
+def test_only_api_failures_need_a_retry() -> None:
+    api = _result("verdadero", "requiere_revision_humana", None, []) | {
+        "review_reason": "muse_no_disponible"
+    }
+    gate = _result("verdadero", "requiere_revision_humana", None, [False] * 3)
+    assert sc.needs_api_retry(api) is True
+    assert sc.needs_api_retry(gate) is False
+
+
+def test_retried_result_replaces_the_original_and_is_marked() -> None:
+    api = _result("verdadero", "requiere_revision_humana", None, []) | {
+        "review_reason": "muse_no_disponible"
+    }
+    retried = _result("verdadero", "verificado", 1.0, [True])
+    merged = sc.mark_retry(api, retried)
+    assert merged["status"] == "verificado"
+    assert merged["reintento_api"] is True
+    assert merged["primer_resultado"] == "muse_no_disponible"
