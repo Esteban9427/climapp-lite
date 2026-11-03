@@ -2,6 +2,13 @@
 
 ClimApp Lite publica cada día la probabilidad de que mañana caiga lluvia de 20 mm o más en la cuenca del río Pance (Cali, Colombia), junto con un indicador de lluvia acumulada en 3 días como señal de riesgo de derrumbe. Está pensada para el ciudadano o turista que decide si va al río. Quienes están en la zona pueden confirmar lo que ven con texto o foto, como un "Waze del clima". Muse Spark estructura cada reporte y explica el pronóstico en lenguaje claro, y la confianza de cada confirmación la calcula código verificable, no el modelo.
 
+## Team
+- **Juan Manuel Nogales** — idea, domain expertise (hydroclimate monitoring), station data and narration.
+- **Juan Esteban Gallego** — engineering, ML pipeline, verification gate and evaluation.
+
+## How it was built
+Product AI: Muse Spark 1.3 (Meta Model API) structures, judges and explains — on the critical path. Development: Claude Code as coding assistant under a TDD/gates workflow (FORGE); Muse Spark also did read-only code reviews and generated the simulated test reports.
+
 > **⚠️ No es una alerta oficial.** ClimApp Lite es un proyecto experimental. Ante cualquier riesgo, sigue las indicaciones de los organismos oficiales de gestión del riesgo y de meteorología.
 
 ## Tema
