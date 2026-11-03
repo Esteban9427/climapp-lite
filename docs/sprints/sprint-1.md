@@ -86,3 +86,9 @@ TASK-009 (IMERG Early) vuelve a JE el 2026-10-30 como el primer Should en entrar
   - [ ] Escaneo de secretos.
   - [ ] 0 bugs CRITICAL/HIGH.
   - [ ] Demo con `DEMO_FALLBACK=1` de punta a punta.
+
+## Backlog post-hackathon
+- **BUG-001 (LOW): la API no emite logs en JSON.** Encontrado en el Gate 4 ([`../reviews/gate4.md`](../reviews/gate4.md)). Sin aplicar por el congelamiento de alcance.
+  - **Actual:** al levantar la API, los logs salen con el formato de consola de structlog (`2026-11-02 20:17:03 [warning ] explain.muse_error …`), no en JSON como pide la regla 4 de CLAUDE.md y la línea 55 del README.
+  - **Causa raíz:** `src/climapp/api/main.py` importa `get_logger` pero nunca llama a `configure_logging()`; solo lo hacen las CLI.
+  - **Fix propuesto (TDD):** test en rojo que capture la salida de la app y valide JSON; luego llamar a `configure_logging()` al crear la app (factory o lifespan).
