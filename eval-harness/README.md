@@ -68,6 +68,30 @@ Fijado el 2026-11-03, **antes de abrir los resultados** de `v2_s-low_j-high` (el
 3. Si solo uno cumple el punto 1, gana ese. Si ninguno cumple, se queda medium (el valor vigente) y se reporta como fallo.
 4. Si medium gana en costo y high en latencia (o al revés), decide el costo (NFR-3).
 
-## Pendiente
-- Paso 3: correr la compuerta y medir la tasa de aprobación, el costo por reporte (NFR-3) y la latencia (NFR-2).
-- **Nota sobre la regla 9 del repositorio:** la especificación versiona, para 50 días, agregados diarios derivados de los datos (lluvia media, subida e IMERG), sin estaciones ni coordenadas. Es el entregable de TASK-021 en `eval-harness/`; si el equipo prefiere no versionarlos, se regenera con `build_spec.py` desde `DATA_DIR`.
+## Paso 3: resultados con Muse real (`reports/`, 2026-11-02 y 03)
+`muse-spark-1.3` estándar por la API, el mismo `ReportVerifier` de la app, `VERIFY_MAX_ATTEMPTS=3`, una corrida por configuración. Acierto según la tabla de "Cómo se lee". US$ con los precios de ADR-002; latencia por reporte = suma de sus intentos, con 4 a 6 reportes en paralelo.
+
+| Corrida | Código | Esfuerzo (estructurar / juez) | pass@1 | Acierto en 3 | verd. / exag. / falso | Difíciles | A revisión humana | US$/reporte | p50 / p95 |
+|---------|--------|-------------------------------|--------|--------------|-----------------------|-----------|-------------------|-------------|-----------|
+| `base_2000tok` | antes de los fixes, tope 2000 | low / medium | 52 % | 72 % | 53 / 100 / 100 % | 40 % | 54 % | 0,029 | 62 / 79 s |
+| `base_fix` | tope por tarea (3000 / 4000) | low / medium | 52 % | 64 % | 53 / 70 / 90 % | 40 % | 46 % | 0,025 | 38 / 76 s |
+| `base_v2` | + Fallo A y Fallo B | low / medium | 60 % | 80 % | 67 / 100 / 100 % | 40 % | 46 % | 0,021 | 28 / 81 s |
+| `v2_s-low_j-high` | ídem | low / high | 60 % | 78 % | 63 / 100 / 100 % | 20 % | 46 % | 0,023 | 28 / 76 s |
+
+- **`base_2000tok`:** el 24 % de los juicios y el 6 % de las estructuraciones se cortaron en 2000 tokens (`respuesta_incompleta`). El 100 % de exagerados y falsos dependía en parte de ese corte.
+- **`base_fix`:** sin cortes, aparecieron 3 exagerados y 1 falso verificados: la estructuración descartaba "5 m"/"casas arrasadas" o dejaba `numbers_cited` vacío (Fallo B), y una creciente sin lluvia contaba como "no llovió" (Fallo A). 3 reportes cayeron por la API (timeout y 500).
+- **`base_v2`:** 0 exagerados y 0 falsos verificados. `cifra_omitida` manda a revisión humana a los exagerados con cifra y también a las difíciles con cifra plausible (R14, R27, R32): ese es el costo del fix.
+- **Elección del juez (criterio de arriba, commit `1063508`):** las dos corridas v2 cumplen el punto 1; high no supera a medium por más de 10 pp (78 % frente a 80 %) y cuesta más (US$0,0229 frente a 0,0212 por reporte, p50 igual). **Se queda `MUSE_EFFORT_JUDGE=medium`.**
+- **Evidencia "antes", no publicada:** `reports/antes/sweep_s-low_j-low` (juez low con el código previo a los fixes). El juez high de ese barrido se detuvo con 3 de 50 reportes (US$0,26, sin resumen).
+- **Costo total de la evaluación:** US$6,30 de los US$12 aprobados.
+
+## Limitaciones
+- **Exageraciones sin cifra pueden pasar:** "casas arrasadas" o "se llevó los puentes" sin un número con unidad no activan `cifra_omitida`; dependen de que el juez las rechace.
+- **No es un set ciego:** los fixes de la confianza (Fallo A) y de `cifra_omitida` (Fallo B) se hicieron después de ver este mismo set, así que las tasas de `base_v2` pueden ser optimistas. Hace falta un set nuevo, escrito sin ver estos resultados.
+- **Misma familia de modelos:** generador y evaluador son Muse Spark 1.3 (ver Paso 2).
+- **Una corrida por configuración:** entre `base_fix` y `base_v2` cambiaron reportes que los fixes no tocan (el juez varía entre corridas); diferencias de pocos puntos son ruido.
+- **Latencia:** p50 ≈ 28 s y p95 ≈ 81 s por reporte en `base_v2`, por encima del SUPUESTO de NFR-2 (p95 ≤ 30 s). La demo usa respuestas grabadas (`DEMO_FALLBACK=1`), así que no muestra esta latencia.
+- **Duraciones:** "llovió unas 3 horas" no es una cifra con unidad de medida para `cifra_omitida`; no se puede verificar con datos diarios.
+
+## Nota sobre la regla 9 del repositorio
+La especificación versiona, para 50 días, agregados diarios derivados de los datos (lluvia media, subida e IMERG), sin estaciones ni coordenadas. Es el entregable de TASK-021 en `eval-harness/`; si el equipo prefiere no versionarlos, se regenera con `build_spec.py` desde `DATA_DIR`.
