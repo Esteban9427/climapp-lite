@@ -60,6 +60,14 @@ Con `EVAL_SEED` y los mismos datos, la salida es idéntica (hay test). Primero s
 
 **Limitación:** el generador de los textos y el evaluador (la compuerta y el juez) son de la misma familia de modelos (Muse Spark 1.3). Los textos pueden estar escritos de una forma que a Muse le resulte fácil de interpretar, así que las tasas medidas pueden ser optimistas frente a reportes ciudadanos reales.
 
+## Criterio de elección del esfuerzo del juez: medium vs. high (TASK-036)
+Fijado el 2026-11-03, **antes de abrir los resultados** de `v2_s-low_j-high` (el hash de este commit lo prueba). Ambas corridas usan el código v2 y estructuración low.
+
+1. **Obligatorio:** 0 reportes `exagerado` y 0 `falso` verificados (es decir, ninguno en `coincide` ni `parcial`; un `falso` en `no_coincide` es acierto según la tabla de arriba).
+2. **Si ambos cumplen:** gana el de menor US$/reporte y menor latencia p50, **salvo** que high supere a medium en **más de 10 puntos porcentuales** de acierto dentro de 3 intentos. Con n = 50 y una sola corrida, una diferencia menor se considera ruido.
+3. Si solo uno cumple el punto 1, gana ese. Si ninguno cumple, se queda medium (el valor vigente) y se reporta como fallo.
+4. Si medium gana en costo y high en latencia (o al revés), decide el costo (NFR-3).
+
 ## Pendiente
 - Paso 3: correr la compuerta y medir la tasa de aprobación, el costo por reporte (NFR-3) y la latencia (NFR-2).
 - **Nota sobre la regla 9 del repositorio:** la especificación versiona, para 50 días, agregados diarios derivados de los datos (lluvia media, subida e IMERG), sin estaciones ni coordenadas. Es el entregable de TASK-021 en `eval-harness/`; si el equipo prefiere no versionarlos, se regenera con `build_spec.py` desde `DATA_DIR`.
